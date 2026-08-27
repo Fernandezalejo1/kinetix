@@ -79,7 +79,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
     setConfirmAction(null);
   };
 
-  const featuredProgram = PREBUILT_PROGRAMS[0]; // PPL Science Hypertrophy
+  const featuredProgram = PREBUILT_PROGRAMS[0]; // NIGHTWING (7 días)
   const nextRoutine = featuredProgram.routines[0];
 
   // FASE 6: Weekly summary stats

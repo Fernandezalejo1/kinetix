@@ -13,6 +13,7 @@ import {
 import { useWorkout } from "../../context/WorkoutContext";
 import { useToast } from "../../context/ToastContext";
 import { MealItem } from "../../types";
+import { MealSchedulerPanel } from "./MealSchedulerPanel";
 
 export const NutritionVisionHub: React.FC = () => {
   const {
@@ -299,6 +300,11 @@ export const NutritionVisionHub: React.FC = () => {
           </form>
         </div>
       )}
+
+      {/* Daily Meal Scheduler Plan */}
+      <div className="p-5 rounded-3xl bg-neutral-900/50 border border-neutral-800">
+        <MealSchedulerPanel />
+      </div>
 
       {/* Quick meals */}
       <div className="p-6 rounded-3xl bg-gradient-to-br from-neutral-900 via-neutral-900 to-neutral-950 border border-neutral-800 shadow-2xl space-y-4">

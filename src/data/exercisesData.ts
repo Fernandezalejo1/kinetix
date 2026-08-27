@@ -2495,5 +2495,565 @@ export const EXERCISES_DATABASE: Exercise[] = [
     defaultRir: 2,
     videoUrl: "/assets/exercises/medicine-ball-slam.mp4",
     videoPosterUrl: "/assets/exercises/medicine-ball-slam-poster.jpg"
+  },
+  // ================= NIGHTWING SPECIFIC EXERCISES =================
+  {
+    id: "smith-incline-bench-press",
+    name: "Smith Machine Incline Bench Press",
+    nameEs: "Press Inclinado en Smith",
+    category: "push",
+    primaryMuscles: ["chest", "front_delts"],
+    secondaryMuscles: ["triceps"],
+    equipment: "smith",
+    resistanceProfile: "lengthened",
+    lengthTensionDescription: "Sobrecarga del pectoral superior en la posición inclinada con trayectoria guiada, enfatizando negativas controladas.",
+    setupCues: [
+      "Banco a 30-45°, espalda clavada y pies estables.",
+      "Agarre apenas fuera de los hombros en la barra guiada."
+    ],
+    executionCues: [
+      "Desciende controlado hasta un estiramiento profundo en la parte alta del pecho.",
+      "Empuja hacia arriba sin perder el contacto escapular."
+    ],
+    commonMistakes: [
+      { mistake: "Rebotar en la parte baja", correction: "Controla la negativa en 3s: aquí nace la estimulación de estiramiento." }
+    ],
+    preMobility: ["Rotación externa de hombro con banda", "Aperturas con foam roller"],
+    postStretching: ["Estiramiento de pectoral en marco de puerta"],
+    progressions: ["Pausa 2s en el estiramiento", "Más carga progresiva semanal"],
+    regressions: ["Press inclinado en máquina", "Press con mancuernas ligeras"],
+    defaultTempo: "3-1-1-0",
+    defaultRir: 1
+  },
+  {
+    id: "low-to-high-cable-flye",
+    name: "Low to High Single-Arm Cable Flye",
+    nameEs: "Apertura Baja a Alta (Cable)",
+    category: "push",
+    primaryMuscles: ["chest"],
+    secondaryMuscles: ["front_delts"],
+    equipment: "cable",
+    resistanceProfile: "shortened",
+    lengthTensionDescription: "Apertura unilateral de baja a alta que maximiza la contracción del pectoral superior con estiramiento y apretón final.",
+    setupCues: [
+      "Polea en la posición más baja, de pie en el marco."
+    ],
+    executionCues: [
+      "Lleva la palanca hacia arriba y cruzada mientras contraes el pecho.",
+      "Aprieta el pectoral en cada repetición y regresa controlando."
+    ],
+    commonMistakes: [
+      { mistake: "Convertir el movimiento en un press", correction: "Mantén el codo levemente flexionado: la tensión va al pectoral, no al tríceps." }
+    ],
+    preMobility: ["Aperturas torácicas con banda"],
+    postStretching: ["Estiramiento de pectoral contra marco"],
+    progressions: ["Más carga o pausa en contracción"],
+    regressions: ["Apertura baja con mancuerna muy ligera"],
+    defaultTempo: "3-0-1-2",
+    defaultRir: 0
+  },
+  {
+    id: "cable-pullover",
+    name: "Cable Pullover",
+    nameEs: "Pullover en Polea",
+    category: "pull",
+    primaryMuscles: ["lats"],
+    secondaryMuscles: ["triceps", "chest", "front_delts"],
+    equipment: "cable",
+    resistanceProfile: "lengthened",
+    lengthTensionDescription: "Perfecto estiramiento del dorsal y activación del serrato anterior en la posición alargada: reduce la fatiga del core.",
+    setupCues: [
+      "Polea alta, de pie y brazo (o ambos) extendidos.",
+      "Bajo peso para sentir el dorsal."
+    ],
+    executionCues: [
+      "Estira el dorsal mientras desciende el brazo.",
+      "Contrae el serrato proyectando el hombro hacia adelante al final."
+    ],
+    commonMistakes: [
+      { mistake: "Usar demasiado peso y convertirla en press", correction: "Rango completo controlado: la estrella del día es el estiramiento y la activación del serrato." }
+    ],
+    preMobility: ["Dislocaciones con banda"],
+    postStretching: ["Estiramiento del dorsal en polea"],
+    progressions: ["Pausa en estiramiento completo"],
+    regressions: ["Pullover con mancuerna en banco"],
+    defaultTempo: "3-1-1-0",
+    defaultRir: 1
+  },
+  {
+    id: "serratus-punches",
+    name: "Serratus Punches",
+    nameEs: "Serratus Punches (Proyección de Hombro)",
+    category: "core",
+    primaryMuscles: ["lats"],
+    secondaryMuscles: ["front_delts", "abs"],
+    equipment: "cable",
+    resistanceProfile: "shortened",
+    lengthTensionDescription: "Proyección del hombro hacia adelante contra resistencia ligera: aísla el serrato anterior y mejora la salud escapular.",
+    setupCues: [
+      "Polea alta o con mancuerna muy ligera, brazo extendido.",
+      "Hombro pegado al torso sin invadir en tackle."
+    ],
+    executionCues: [
+      "Proyecta el puño hacia adelante llevando el omóplato en protracción.",
+      "Sensación de quemazón en el costado de la parrilla costal."
+    ],
+    commonMistakes: [
+      { mistake: "Empujar con la trampa o encogiendo hombros", correction: "Aisla la protracción escapular; el brazo se mantiene extendido." }
+    ],
+    preMobility: ["Movilidad escapular activa"],
+    postStretching: ["Estiramiento lateral de serrato"],
+    progressions: ["Más repeticiones o sostén isométrico"],
+    regressions: ["Proyección escapular en pared"],
+    defaultTempo: "2-1-0-1",
+    defaultRir: 2
+  },
+  {
+    id: "seated-cable-row",
+    name: "Seated Cable Row (Neutral Grip)",
+    nameEs: "Remo en Polea Baja (Agarre Neutro)",
+    category: "pull",
+    primaryMuscles: ["lats", "upper_back"],
+    secondaryMuscles: ["biceps", "rear_delts"],
+    equipment: "cable",
+    resistanceProfile: "mid_range",
+    lengthTensionDescription: "Remo sentado con agarre neutro enfocado en la espalda media y el grosor del dorsal.",
+    setupCues: [
+      "Sentado, pies firmes y torso estable.",
+      "Empuñadura neutra hacia el core."
+    ],
+    executionCues: [
+      "Tira hacia la parte media del abdomen contrayendo la espalda.",
+      "Regresa con estiramiento controlado sin perder la postura."
+    ],
+    commonMistakes: [
+      { mistake: "Balancear el torso usando inercia", correction: "Peso que permita rango completo sin rebote." }
+    ],
+    preMobility: ["Retracción escapular con banda"],
+    postStretching: ["Estiramiento de dorsal"],
+    progressions: ["Más carga controlada"],
+    regressions: ["Remo en polea con menos peso"],
+    defaultTempo: "3-1-1-0",
+    defaultRir: 1
+  },
+  {
+    id: "lat-pushdown",
+    name: "Lat Pushdown",
+    nameEs: "Lat Pushdown (Brazo Estirado)",
+    category: "pull",
+    primaryMuscles: ["lats"],
+    secondaryMuscles: ["triceps", "rear_delts"],
+    equipment: "cable",
+    resistanceProfile: "lengthened",
+    lengthTensionDescription: "Empuje con el brazo estirado en polea alta: estiramiento del dorsal al subir y depresión escapular al bajar.",
+    setupCues: [
+      "Polea alta, brazo extendido agarrando la barra.",
+      "Torso ligeramente inclinado."
+    ],
+    executionCues: [
+      "Descendé el brazo hacia el muslo llevando el dorsal abajo.",
+      "Soltá de arriba con estiramiento controlado."
+    ],
+    commonMistakes: [
+      { mistake: "Flexionar el codo convirtiéndolo en tríceps", correction: "Mantén el codo fijo: mueve el hombro, no la articulación del codo." }
+    ],
+    preMobility: ["Dislocaciones con banda"],
+    postStretching: ["Estiramiento del dorsal"],
+    progressions: ["Pausa en contracción"],
+    regressions: ["Lat pushdown con banda"],
+    defaultTempo: "3-1-1-0",
+    defaultRir: 1
+  },
+  {
+    id: "rear-delt-fly-machine",
+    name: "Rear Delt Fly (Pec Deck Reverse)",
+    nameEs: "Apertura Posterior (Pec Deck Reverso)",
+    category: "pull",
+    primaryMuscles: ["rear_delts"],
+    secondaryMuscles: ["traps", "upper_back"],
+    equipment: "machine",
+    resistanceProfile: "mid_range",
+    lengthTensionDescription: "Aislamiento del deltoides posterior con contracción de la espalda alta y buena postura escapular.",
+    setupCues: [
+      "Sentado de frente a la máquina de pec deck.",
+      "Asas a la altura del pecho con codos ligeramente flexionados."
+    ],
+    executionCues: [
+      "Abre los brazos contrayendo el deltoides posterior.",
+      "Retorno controlado sin descargar todo el peso."
+    ],
+    commonMistakes: [
+      { mistake: "Encoger hombros al contraer", correction: "Mantén escápulas estabilizadas: la tensión vive en el deltoides posterior." }
+    ],
+    preMobility: ["Rotaciones externas con banda"],
+    postStretching: ["Estiramiento cruzado del hombro"],
+    progressions: ["Más repeticiones o pausa en contracción"],
+    regressions: ["Rear delt fly con banda ligera"],
+    defaultTempo: "3-0-1-1",
+    defaultRir: 1
+  },
+  {
+    id: "bulgarian-split-squat",
+    name: "Bulgarian Split Squat",
+    nameEs: "Sentadilla Búlgara",
+    category: "legs",
+    primaryMuscles: ["quads", "glutes"],
+    secondaryMuscles: ["hamstrings", "calves"],
+    equipment: "dumbbell",
+    resistanceProfile: "lengthened",
+    lengthTensionDescription: "Sentadilla búlgara unilateral con énfasis en profundidad y equilibrio: glúteos y cuádriceps en estiramiento.",
+    setupCues: [
+      "Pie trasero elevado en banco, pie delantero adelante.",
+      "Torso erguido para cargar el cuádriceps y glúteo."
+    ],
+    executionCues: [
+      "Desciende por debajo de la paralela controlando.",
+      "Empuja con el pie delantero."
+    ],
+    commonMistakes: [
+      { mistake: "Perder el equilibrio o acortar el rango", correction: "Reducé peso y usá un punto de apoyo: el rango profundo importa más que la carga." }
+    ],
+    preMobility: ["Movilidad de cadera"],
+    postStretching: ["Estiramiento del flexor de cadera"],
+    progressions: ["Mancuernas más pesadas"],
+    regressions: ["Split squat estático sin elevación"],
+    defaultTempo: "3-1-1-0",
+    defaultRir: 1
+  },
+  {
+    id: "box-jump",
+    name: "Box Jumps",
+    nameEs: "Saltos al Cajón (Box Jumps)",
+    category: "legs",
+    primaryMuscles: ["quads", "glutes"],
+    secondaryMuscles: ["calves", "hamstrings"],
+    equipment: "bodyweight",
+    resistanceProfile: "linear",
+    lengthTensionDescription: "Potencia explosiva de la cadena posterior y de la cadera: desarrolla la velocidad de producción de fuerza.",
+    setupCues: [
+      "De pie frente al cajón, salto con extensión triple.",
+      "Aterrizaje suave en cuclillas controlada."
+    ],
+    executionCues: [
+      "Explosión máxima en cada repetición.",
+      "Baja del cajón sin dejarse caer."
+    ],
+    commonMistakes: [
+      { mistake: "Saltar a un cajón demasiado alto con técnica perdida", correction: "Elevación que permita aterrizaje silencioso y controlado." }
+    ],
+    preMobility: ["Movilidad de tobillos y cadera"],
+    postStretching: ["Estiramiento de isquiotibiales"],
+    progressions: ["Cajón más alto o saltos laterales"],
+    regressions: ["Step-ups explosivos"],
+    defaultTempo: "Explosivo",
+    defaultRir: 2
+  },
+  {
+    id: "handstand-hold",
+    name: "Handstand Hold (Against Wall)",
+    nameEs: "Parada de Manos (Contra Pared)",
+    category: "core",
+    primaryMuscles: ["front_delts", "traps"],
+    secondaryMuscles: ["abs", "forearms", "upper_back"],
+    equipment: "bodyweight",
+    resistanceProfile: "mid_range",
+    lengthTensionDescription: "Isometría de estabilidad de hombros en posición invertida: gran activador del core y del manguito.",
+    setupCues: [
+      "Colócate de espaldas o de frente a la pared apoyando los pies.",
+      "Manos bajo los hombros, brazos extendidos y cuerpo alineado."
+    ],
+    executionCues: [
+      "Empuja el suelo hacia abajo y sostén 30-60s.",
+      "Aprieta glúteos y abdomen manteniendo la línea dura."
+    ],
+    commonMistakes: [
+      { mistake: "Arquear demasiado la lumbar", correction: "Aprieta glúteos y estira el cuerpo desde los omóplatos." }
+    ],
+    preMobility: ["Muñecas fuera de carga y rol de hombro"],
+    postStretching: ["Decompresión de hombros en hang"],
+    progressions: ["Segundos extra o parada libre"],
+    regressions: ["Pike hold (pica estática)"],
+    defaultTempo: "Sostén isométrico",
+    defaultRir: 2
+  },
+  {
+    id: "l-sit-hold",
+    name: "L-Sit Hold (Parallels)",
+    nameEs: "L-Sit Hold (Sostén en L)",
+    category: "core",
+    primaryMuscles: ["abs"],
+    secondaryMuscles: ["quads", "front_delts", "lats"],
+    equipment: "bodyweight",
+    resistanceProfile: "mid_range",
+    lengthTensionDescription: "Sostén en suspensión con piernas paralelas: compresión abdominal e isometría de tríceps y hombros.",
+    setupCues: [
+      "Apoya manos en las paralelas o entre dos sillas.",
+      "Empuja hacia abajo y eleva el peso del cuerpo."
+    ],
+    executionCues: [
+      "Extiende las piernas en paralelo al suelo.",
+      "Mantén el abdomen contraído sin dejar caer la pelvis."
+    ],
+    commonMistakes: [
+      { mistake: "Redondear los hombros por fatiga", correction: "Menos duración pero con hombros activados y pelvis alta." }
+    ],
+    preMobility: ["Calentamiento de muñecas"],
+    postStretching: ["Hanging decompresión"],
+    progressions: ["Más segundos o piernas extendidas"],
+    regressions: ["Tuck L-sit (rodillas juntas)"],
+    defaultTempo: "Sostén isométrico",
+    defaultRir: 2
+  },
+  {
+    id: "windshield-wipers",
+    name: "Hanging Windshield Wipers",
+    nameEs: "Limpiabrisas Colgado (Windshield Wipers)",
+    category: "core",
+    primaryMuscles: ["abs"],
+    secondaryMuscles: ["lats", "lower_back"],
+    equipment: "bodyweight",
+    resistanceProfile: "mid_range",
+    lengthTensionDescription: "Torsión controlada desde la suspensión: movilidad y fuerza oblicua con control total de la columna.",
+    setupCues: [
+      "Colgado de la barra, piernas elevadas en la vertical.",
+      "Controla la pelvis para proteger la lumbar."
+    ],
+    executionCues: [
+      "Desciende las piernas de lado a lado con control.",
+      "Mantén el torso estable mientras rotan las caderas."
+    ],
+    commonMistakes: [
+      { mistake: "Balanceo descontrolado", correction: "Movimiento lento y corto: la tensión vive en el abdomen, no en el impulso." }
+    ],
+    preMobility: ["Movilidad de cadera y columna"],
+    postStretching: ["Child pose"],
+    progressions: ["Rango mayor o peso en tobillos"],
+    regressions: ["Windshield wipers de rodillas"],
+    defaultTempo: "3-0-1-0",
+    defaultRir: 1
+  },
+  {
+    id: "dragon-flag",
+    name: "Dragon Flags",
+    nameEs: "Dragon Flags",
+    category: "core",
+    primaryMuscles: ["abs"],
+    secondaryMuscles: ["lats", "lower_back", "rear_delts"],
+    equipment: "bodyweight",
+    resistanceProfile: "mid_range",
+    lengthTensionDescription: "Control total del core en extensión: la máxima prueba de estabilidad del tronco y la cadena anterior.",
+    setupCues: [
+      "Agarrándote a un banco o poste detrás de la cabeza.",
+      "Cuerpo rígido en línea recta al elevar."
+    ],
+    executionCues: [
+      "Eleva el cuerpo recto controlando la bajada.",
+      "Descenso lento sin arquear la lumbar."
+    ],
+    commonMistakes: [
+      { mistake: "Arquear la zona lumbar por falta de rigidez", correction: "Aprieta glúteos y abdomen; reduce el rango si pierde la línea." }
+    ],
+    preMobility: ["Activación de core y cadera"],
+    postStretching: ["Estiramiento de flexores"],
+    progressions: ["Más rango o peso en tobillos"],
+    regressions: ["Dragon flag de rodillas (negative only)"],
+    defaultTempo: "3-0-2-0",
+    defaultRir: 1
+  },
+  {
+    id: "explosive-step-up",
+    name: "Explosive Step-Ups",
+    nameEs: "Steps Explosivos / Sentadilla con Salto",
+    category: "legs",
+    primaryMuscles: ["quads", "glutes"],
+    secondaryMuscles: ["calves", "hamstrings"],
+    equipment: "bodyweight",
+    resistanceProfile: "linear",
+    lengthTensionDescription: "Saltos en escalón o sentadilla con salto explosivo: potencia de piernas con poco estrés axial.",
+    setupCues: [
+      "De pie ante el escalón con los pies a la anchura del hombro.",
+      "Caderas bajas en posición de salto."
+    ],
+    executionCues: [
+      "Explota hacia arriba extendiendo cadera, rodilla y tobillo.",
+      "Aterriza suave y continúa el movimiento."
+    ],
+    commonMistakes: [
+      { mistake: "Aterrizar con la pelvis hundida", correction: "Controla el aterrizaje con las rodillas estables y el pecho alto." }
+    ],
+    preMobility: ["Movilidad de tobillos"],
+    postStretching: ["Estiramiento de cuádriceps"],
+    progressions: ["Salto más alto o con carga ligera"],
+    regressions: ["Step-up controlado (sin salto)"],
+    defaultTempo: "Explosivo",
+    defaultRir: 2
+  },
+  {
+    id: "pike-push-up",
+    name: "Pike Push-Ups",
+    nameEs: "Pike Push-Ups (Flexión en Pica)",
+    category: "push",
+    primaryMuscles: ["front_delts", "traps"],
+    secondaryMuscles: ["triceps", "chest"],
+    equipment: "bodyweight",
+    resistanceProfile: "lengthened",
+    lengthTensionDescription: "Flexión en pica: sobrecarga del deltoides anterior en posición erguida, puente hacia las flexiones de pino.",
+    setupCues: [
+      "Caderas altas en forma de V invertida (pica).",
+      "Cabeza baja hacia el suelo entre las manos."
+    ],
+    executionCues: [
+      "Flexiona los codos descendiendo la cabeza.",
+      "Empuja hacia arriba recuperando la pica."
+    ],
+    commonMistakes: [
+      { mistake: "Abrir demasiado los codos", correction: "Codos cerca del torso para centrar el deltoides anterior." }
+    ],
+    preMobility: ["Movilidad de hombros"],
+    postStretching: ["Estiramiento de hombros"],
+    progressions: ["Pies elevados y mayor profundidad"],
+    regressions: ["Pike push-up con rodillas flexionadas"],
+    defaultTempo: "3-0-1-0",
+    defaultRir: 1
+  },
+  {
+    id: "seated-calf-raise",
+    name: "Seated Calf Raise",
+    nameEs: "Elevación de Gemelos Sentado",
+    category: "legs",
+    primaryMuscles: ["calves"],
+    secondaryMuscles: [],
+    equipment: "machine",
+    resistanceProfile: "lengthened",
+    lengthTensionDescription: "Gemelo sóleo en posición sentado: asegura el segundo estímulo semanal de pantorrilla con énfasis en el estiramiento profundo.",
+    setupCues: [
+      "Sentado en la máquina con las puntas en la plataforma.",
+      "Rodillas flexionadas a 90°."
+    ],
+    executionCues: [
+      "Desciende hasta el estiramiento máximo.",
+      "Empuja hasta el bloqueo de puntas con pausa de 2s."
+    ],
+    commonMistakes: [
+      { mistake: "Movimiento corto sin estiramiento", correction: "Pausa 2s abajo en el estiramiento para maximizar la tensión." }
+    ],
+    preMobility: ["Movilidad de tobillo"],
+    postStretching: ["Estiramiento de gemelo contra pared"],
+    progressions: ["Más carga o pausa más larga"],
+    regressions: ["Gemelo sentado con barras o cuerpo libre"],
+    defaultTempo: "3-2-1-0",
+    defaultRir: 1
+  },
+  {
+    id: "weighted-chin-up",
+    name: "Weighted Chin-Ups",
+    nameEs: "Dominadas Lastradas",
+    category: "pull",
+    primaryMuscles: ["lats", "biceps"],
+    secondaryMuscles: ["upper_back", "forearms"],
+    equipment: "bodyweight",
+    resistanceProfile: "mid_range",
+    lengthTensionDescription: "Dominada con agarre supino y extra de carga lastrada: el ejercicio rey para ensanchar la espalda en V.",
+    setupCues: [
+      "Agarre supino (palmas hacia ti) a anchura de hombros.",
+      "Cuelga completamente abajo con estiramiento del dorsal."
+    ],
+    executionCues: [
+      "Tira llevando el pecho a la barra.",
+      "Baja con control hasta colgar totalmente cada repetición."
+    ],
+    commonMistakes: [
+      { mistake: "Medio rango sin colgar abajo", correction: "Cuelga a fondo en cada repetición: de ahí la tensión del dorsal." }
+    ],
+    preMobility: ["Movilidad escapular"],
+    postStretching: ["Hanging stretch del dorsal"],
+    progressions: ["Más peso o pausa abajo"],
+    regressions: ["Dominadas asistidas o negativas"],
+    defaultTempo: "3-1-1-0",
+    defaultRir: 1
+  },
+  {
+    id: "inverted-row",
+    name: "Inverted Rows",
+    nameEs: "Remo Invertido",
+    category: "pull",
+    primaryMuscles: ["upper_back", "lats"],
+    secondaryMuscles: ["biceps", "rear_delts"],
+    equipment: "bodyweight",
+    resistanceProfile: "lengthened",
+    lengthTensionDescription: "Remo con el cuerpo horizontal bajo una barra: compromiso de core y espalda con gran estiramiento en tensión.",
+    setupCues: [
+      "Bajo una barra fija, cuerpo rígido en línea recta.",
+      "Agarre neutro/supino con talones en el suelo."
+    ],
+    executionCues: [
+      "Tira del pecho hacia la barra retrayendo escápulas.",
+      "Baja controlado sin dejar caer la cadera."
+    ],
+    commonMistakes: [
+      { mistake: "Hundir la cadera o balancearse", correction: "Mantén el cuerpo rígido: trabaja espalda y core a la vez." }
+    ],
+    preMobility: ["Retracción escapular"],
+    postStretching: ["Estiramiento de dorsal"],
+    progressions: ["Pies elevados o peso extra"],
+    regressions: ["Remo invertido con rodillas flexionadas"],
+    defaultTempo: "3-1-1-0",
+    defaultRir: 1
+  },
+  {
+    id: "dumbbell-rear-delt-fly",
+    name: "Rear Delt Fly (Dumbbells)",
+    nameEs: "Apertura Posterior con Mancuernas",
+    category: "pull",
+    primaryMuscles: ["rear_delts"],
+    secondaryMuscles: ["traps", "upper_back"],
+    equipment: "dumbbell",
+    resistanceProfile: "shortened",
+    lengthTensionDescription: "Apertura posterior con mancuernas en bisagra: contracción del deltoides posterior con movimiento controlado.",
+    setupCues: [
+      "Inclinado con torso paralelo o ligeramente por encima.",
+      "Codos levemente flexionados todo el recorrido."
+    ],
+    executionCues: [
+      "Abre los brazos hacia los lados contrayendo el deltoides posterior.",
+      "Regresa controlado sin descargar el peso."
+    ],
+    commonMistakes: [
+      { mistake: "Recargar en la trampa trapecio", correction: "Estabiliza escápulas y pivota desde el hombro." }
+    ],
+    preMobility: ["Rotaciones externas con banda"],
+    postStretching: ["Estiramiento cruzado del hombro"],
+    progressions: ["Pausa en contracción"],
+    regressions: ["Rear delt fly con banda"],
+    defaultTempo: "3-0-1-1",
+    defaultRir: 1
+  },
+  {
+    id: "superman-hold",
+    name: "Superman Holds",
+    nameEs: "Superman Hold (Fuerza Lumbar)",
+    category: "core",
+    primaryMuscles: ["lower_back", "glutes"],
+    secondaryMuscles: ["upper_back", "hamstrings"],
+    equipment: "bodyweight",
+    resistanceProfile: "mid_range",
+    lengthTensionDescription: "Harness isométrico de la zona lumbar: fortalece la cadena posterior media para proteger la columna.",
+    setupCues: [
+      "Tumbado boca abajo con brazos extendidos.",
+      "Eleva piernas y torso a la vez."
+    ],
+    executionCues: [
+      "Sostén la posición superior apretando glúteos y lumbar.",
+      "Baja controlado."
+    ],
+    commonMistakes: [
+      { mistake: "Cervical en hiperextensión", correction: "Mantén la mirada al suelo con el cuello neutro." }
+    ],
+    preMobility: ["Activación de glúteo y core"],
+    postStretching: ["Child pose"],
+    progressions: ["Más duración o peso en manos"],
+    regressions: ["Superman de piernas o torso por separado"],
+    defaultTempo: "Sostén isométrico",
+    defaultRir: 2
   }
 ];
