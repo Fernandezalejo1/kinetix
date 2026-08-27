@@ -7,8 +7,11 @@ import {
   Zap,
   Sparkles,
   Edit3,
+  Scale,
+  X,
 } from "lucide-react";
 import { useWorkout } from "../../context/WorkoutContext";
+import { useToast } from "../../context/ToastContext";
 import { MealItem } from "../../types";
 
 export const NutritionVisionHub: React.FC = () => {
@@ -18,7 +21,9 @@ export const NutritionVisionHub: React.FC = () => {
     addMeal,
     removeMeal,
     updateMacroTargets,
+    addBodyMetric,
   } = useWorkout();
+  const { showToast } = useToast();
 
   const [manualName, setManualName] = useState("");
   const [manualCalories, setManualCalories] = useState(400);
@@ -31,6 +36,27 @@ export const NutritionVisionHub: React.FC = () => {
   const [editProtein, setEditProtein] = useState(nutritionLog.proteinTarget);
   const [editCarbs, setEditCarbs] = useState(nutritionLog.carbsTarget);
   const [editFats, setEditFats] = useState(nutritionLog.fatsTarget);
+
+  const [weightEditorOpen, setWeightEditorOpen] = useState(false);
+  const [newWeight, setNewWeight] = useState(() => bodyMetrics[bodyMetrics.length - 1]?.weightKg ?? 80);
+
+  const saveWeight = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newWeight || newWeight <= 0) return;
+    addBodyMetric({
+      id: `bm-${Date.now()}`,
+      date: new Date().toISOString().split("T")[0],
+      weightKg: newWeight,
+    });
+    // Recompute macro targets from the new body weight (lean-bulk formula)
+    const protein = Math.round(newWeight * 2.2);
+    const fats = Math.round(newWeight * 0.9);
+    const calories = Math.round(newWeight * 34);
+    const carbs = Math.max(50, Math.round((calories - fats * 9 - protein * 4) / 4));
+    updateMacroTargets({ calories, protein, carbs, fats });
+    setWeightEditorOpen(false);
+    showToast(`Peso actualizado a ${newWeight} kg. Objetivos recalculados.`, "success");
+  };
 
   // Targets
   const targetCalories = nutritionLog.calorieTarget;
@@ -64,6 +90,7 @@ export const NutritionVisionHub: React.FC = () => {
     };
     addMeal(meal);
     setManualName("");
+    showToast("Comida añadida al registro", "success");
   };
 
   const saveTargets = (e: React.FormEvent) => {
@@ -75,6 +102,7 @@ export const NutritionVisionHub: React.FC = () => {
       fats: editFats,
     });
     setEditingTargets(false);
+    showToast("Objetivos diarios actualizados", "success");
   };
 
   const QuickMeals: { name: string; cal: number; pro: number; carb: number; fat: number }[] = [
@@ -134,19 +162,28 @@ export const NutritionVisionHub: React.FC = () => {
               : "Registrá tu peso en Analytics para calcular objetivos exactos"}
           </p>
         </div>
-        <button
-          onClick={() => {
-            setEditCalories(targetCalories);
-            setEditProtein(targetProtein);
-            setEditCarbs(targetCarbs);
-            setEditFats(targetFats);
-            setEditingTargets(true);
-          }}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-neutral-800/60 border border-neutral-700 text-xs font-bold text-neutral-300 hover:text-white transition-colors"
-        >
-          <Edit3 className="w-3.5 h-3.5" />
-          Ajustar objetivos
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => { setNewWeight(currentWeight ?? 80); setWeightEditorOpen(true); }}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-cyan-600/10 border border-cyan-500/30 text-xs font-bold text-cyan-300 hover:bg-cyan-600/20 transition-colors"
+          >
+            <Scale className="w-3.5 h-3.5" />
+            Registrar peso
+          </button>
+          <button
+            onClick={() => {
+              setEditCalories(targetCalories);
+              setEditProtein(targetProtein);
+              setEditCarbs(targetCarbs);
+              setEditFats(targetFats);
+              setEditingTargets(true);
+            }}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-neutral-800/60 border border-neutral-700 text-xs font-bold text-neutral-300 hover:text-white transition-colors"
+          >
+            <Edit3 className="w-3.5 h-3.5" />
+            Ajustar objetivos
+          </button>
+        </div>
       </div>
 
       {/* Macro overview */}
@@ -217,6 +254,52 @@ export const NutritionVisionHub: React.FC = () => {
         </div>
       )}
 
+      {/* Weight editor modal */}
+      {weightEditorOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-end sm:items-center justify-center p-4">
+          <form onSubmit={saveWeight} className="w-full max-w-md rounded-3xl bg-neutral-900 border border-neutral-800 p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-black text-white uppercase tracking-wider">Registrar peso corporal</h4>
+              <button type="button" onClick={() => setWeightEditorOpen(false)} className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-[11px] text-neutral-400 leading-relaxed">
+              Tu peso se guarda en el historial de métricas y los objetivos de macros se recalculan automáticamente
+              (proteína 2.2g/kg, grasas 0.9g/kg, ~34 kcal/kg).
+            </p>
+            <label className="block">
+              <span className="text-[11px] font-bold text-cyan-400 uppercase tracking-wider">Peso (kg)</span>
+              <input
+                type="number"
+                step="0.1"
+                min={20}
+                max={300}
+                value={newWeight}
+                onChange={(e) => setNewWeight(parseFloat(e.target.value))}
+                className="mt-1 w-full px-3 py-2.5 bg-neutral-950 border border-neutral-800 rounded-xl text-base text-white text-center focus:outline-none focus:border-cyan-500"
+                autoFocus
+              />
+            </label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setWeightEditorOpen(false)}
+                className="flex-1 py-2.5 rounded-xl bg-neutral-800 text-xs font-bold text-neutral-300 hover:bg-neutral-700 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="flex-1 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold transition-colors"
+              >
+                Guardar peso
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
       {/* Quick meals */}
       <div className="p-6 rounded-3xl bg-gradient-to-br from-neutral-900 via-neutral-900 to-neutral-950 border border-neutral-800 shadow-2xl space-y-4">
         <h3 className="text-base font-black text-white tracking-tight">Platos Rápidos</h3>
@@ -224,7 +307,7 @@ export const NutritionVisionHub: React.FC = () => {
           {QuickMeals.map((meal) => (
             <button
               key={meal.name}
-              onClick={() =>
+              onClick={() => {
                 addMeal({
                   id: `meal-${Date.now()}-${meal.name}`,
                   time: new Date().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }),
@@ -236,8 +319,9 @@ export const NutritionVisionHub: React.FC = () => {
                   fats: meal.fat,
                   fiber: 6,
                   mpsQuality: "Suficiente",
-                })
-              }
+                });
+                showToast("Plato rápido agregado", "success");
+              }}
               className="px-4 py-3 rounded-xl bg-neutral-950 hover:bg-neutral-800 border border-neutral-800 text-left text-xs text-neutral-300 hover:text-white transition-all space-y-1"
             >
               <div className="flex items-center gap-1.5 font-bold">
@@ -316,7 +400,7 @@ export const NutritionVisionHub: React.FC = () => {
                   <div className="flex items-center justify-between md:justify-end gap-3 pt-2 md:pt-0 border-t md:border-t-0 border-neutral-800">
                     <span className="text-[11px] text-neutral-500 font-mono">{meal.time}</span>
                     <button
-                      onClick={() => removeMeal(meal.id)}
+                      onClick={() => { removeMeal(meal.id); showToast("Comida eliminada", "info"); }}
                       className="p-2 rounded-lg text-neutral-500 hover:text-red-400 hover:bg-neutral-800 transition-colors"
                       title="Eliminar comida"
                     >

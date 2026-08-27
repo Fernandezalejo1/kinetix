@@ -27,6 +27,8 @@ import {
   Zap
 } from "lucide-react";
 import { useWorkout } from "../../context/WorkoutContext";
+import { useToast } from "../../context/ToastContext";
+import { ConfirmDialog } from "../ConfirmDialog";
 import { SetType, Exercise, WorkoutExercise, DifficultyLevel } from "../../types";
 import { PlateCalculatorModal } from "./PlateCalculatorModal";
 import { WarmupGeneratorModal } from "./WarmupGeneratorModal";
@@ -145,6 +147,14 @@ export const LiveWorkoutLogger: React.FC = () => {
   const [replacingWExId, setReplacingWExId] = useState<string | null>(null);
   const [finishedSummary, setFinishedSummary] = useState<{ prsAchieved: any[]; totalVolumeKg: number } | null>(null);
   const [difficultySurvey, setDifficultySurvey] = useState<{ exerciseId: string; exerciseName: string } | null>(null);
+  const [confirmCancel, setConfirmCancel] = useState(false);
+  const { showToast } = useToast();
+
+  const handleCancelConfirmed = () => {
+    cancelWorkout();
+    setConfirmCancel(false);
+    showToast("Entrenamiento cancelado", "info");
+  };
 
   // Auto-trigger difficulty survey when all working sets of an exercise are completed
   useEffect(() => {
@@ -901,17 +911,24 @@ export const LiveWorkoutLogger: React.FC = () => {
         {/* Cancel session option */}
         <div className="text-center pt-4">
           <button
-            onClick={() => {
-              if (window.confirm("¿Seguro que deseas cancelar el entrenamiento en curso?")) {
-                cancelWorkout();
-              }
-            }}
+            onClick={() => setConfirmCancel(true)}
             className="text-xs text-red-400/80 hover:text-red-400 font-medium underline py-3 touch-target"
           >
             Descartar y cancelar sesión
           </button>
         </div>
       </div>
+
+      {/* Cancel session confirmation */}
+      <ConfirmDialog
+        open={confirmCancel}
+        title="Cancelar entrenamiento"
+        message="¿Seguro que deseas cancelar el entrenamiento en curso? Se perderá todo el progreso de esta sesión."
+        confirmLabel="Cancelar sesión"
+        danger
+        onConfirm={handleCancelConfirmed}
+        onCancel={() => setConfirmCancel(false)}
+      />
 
       {/* Difficulty Survey Modal */}
       {difficultySurvey && (

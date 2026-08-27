@@ -20,6 +20,8 @@ import {
   Zap
 } from "lucide-react";
 import { useWorkout } from "../../context/WorkoutContext";
+import { useToast } from "../../context/ToastContext";
+import { ConfirmDialog } from "../ConfirmDialog";
 import { PREBUILT_PROGRAMS } from "../../data/programsData";
 import { EXERCISES_DATABASE } from "../../data/exercisesData";
 import { PlateCalculatorModal } from "./PlateCalculatorModal";
@@ -47,6 +49,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
     clearGhostSessions,
     getExerciseHistory,
     weightUnit,
+    nutritionLog,
   } = useWorkout();
 
   const [isPlateOpen, setIsPlateOpen] = useState(false);
@@ -54,6 +57,27 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
   const [isTempoOpen, setIsTempoOpen] = useState(false);
   const [selectedSession, setSelectedSession] = useState<any | null>(null);
   const [selectedExHistory, setSelectedExHistory] = useState<any | null>(null);
+  const [confirmAction, setConfirmAction] = useState<null | {
+    type: "ghost" | "clearAll" | "deleteOne";
+    id?: string;
+    name?: string;
+  }>(null);
+  const { showToast } = useToast();
+
+  const runConfirmed = () => {
+    if (!confirmAction) return;
+    if (confirmAction.type === "ghost") {
+      clearGhostSessions();
+      showToast("Sesión activa fantasma eliminada", "success");
+    } else if (confirmAction.type === "clearAll") {
+      clearWorkoutHistory();
+      showToast("Historial de entrenamiento eliminado", "success");
+    } else if (confirmAction.type === "deleteOne") {
+      deleteWorkoutHistory(confirmAction.id!);
+      showToast("Sesión eliminada del historial", "success");
+    }
+    setConfirmAction(null);
+  };
 
   const featuredProgram = PREBUILT_PROGRAMS[0]; // PPL Science Hypertrophy
   const nextRoutine = featuredProgram.routines[0];
@@ -72,6 +96,23 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
     const volDelta = lastWeekVol > 0 ? Math.round(((thisWeekVol - lastWeekVol) / lastWeekVol) * 100) : 0;
     return { workouts: thisWeek.length, volume: thisWeekVol, sets: thisWeekSets, prs: totalPRs, volDelta };
   }, [workoutHistory]);
+
+  // FASE 6b: Today's progress summary
+  const todayStats = useMemo(() => {
+    const today = new Date();
+    const todayStr = today.toLocaleDateString("es-ES");
+    const todayWorkouts = workoutHistory.filter((w) => {
+      const d = new Date(w.date);
+      return d.toLocaleDateString("es-ES") === todayStr;
+    });
+    const todaySets = todayWorkouts.reduce((a, w) => a + w.totalSets, 0);
+    return {
+      workouts: todayWorkouts.length,
+      sets: todaySets,
+      meals: nutritionLog.meals.length,
+      hasNutritionGoal: nutritionLog.calorieTarget > 0,
+    };
+  }, [workoutHistory, nutritionLog]);
 
   return (
     <div id="workout-hub" className="space-y-8 animate-fadeIn pb-16">
@@ -126,6 +167,57 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
                 </button>
               </>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* Today's Progress Card */}
+      <div className="p-5 rounded-3xl bg-gradient-to-br from-cyan-500/5 via-neutral-900 to-neutral-950 border border-neutral-800 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-cyan-400" />
+            <h3 className="text-sm font-black text-white tracking-tight">Resumen de hoy</h3>
+          </div>
+          <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
+            {new Date().toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "short" })}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3">
+          {/* Sesiones */}
+          <div className="rounded-2xl bg-neutral-950/60 border border-neutral-800 p-3">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] font-bold text-neutral-400 uppercase">Sesiones</span>
+              <span className="text-[10px] font-black text-white">{todayStats.workouts}/1</span>
+            </div>
+            <div className="h-1.5 bg-neutral-800 rounded-full overflow-hidden">
+              <div className="h-full bg-cyan-400 rounded-full transition-all duration-500" style={{ width: `${Math.min(100, todayStats.workouts * 100)}%` }} />
+            </div>
+            <p className="text-[10px] text-neutral-500 mt-1.5">
+              {todayStats.workouts >= 1 ? "¡Meta cumplida!" : "Entrená hoy para mantener el ritmo"}
+            </p>
+          </div>
+
+          {/* Series */}
+          <div className="rounded-2xl bg-neutral-950/60 border border-neutral-800 p-3">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] font-bold text-neutral-400 uppercase">Series</span>
+              <span className="text-[10px] font-black text-purple-400">{todayStats.sets}</span>
+            </div>
+            <div className="text-lg font-black text-white">{todayStats.sets > 0 ? `${todayStats.sets} hoy` : "Sin registrar"}</div>
+            <p className="text-[10px] text-neutral-500 mt-1.5">Volumen de calidad en las sesiones de hoy</p>
+          </div>
+
+          {/* Comidas */}
+          <div className="rounded-2xl bg-neutral-950/60 border border-neutral-800 p-3">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] font-bold text-neutral-400 uppercase">Comidas</span>
+              <span className="text-[10px] font-black text-white">{todayStats.meals}/4</span>
+            </div>
+            <div className="h-1.5 bg-neutral-800 rounded-full overflow-hidden">
+              <div className="h-full bg-emerald-400 rounded-full transition-all duration-500" style={{ width: `${Math.min(100, (todayStats.meals / 4) * 100)}%` }} />
+            </div>
+            <p className="text-[10px] text-neutral-500 mt-1.5">Registrá tus comidas en Nutrición</p>
           </div>
         </div>
       </div>
@@ -267,11 +359,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
           <div className="flex items-center gap-2">
             {activeSession && (
               <button
-                onClick={() => {
-                  if (window.confirm("¿Eliminar la sesión activa fantasma?")) {
-                    clearGhostSessions();
-                  }
-                }}
+                onClick={() => setConfirmAction({ type: "ghost" })}
                 className="px-3 py-1.5 rounded-xl bg-amber-950/40 hover:bg-amber-900/60 text-amber-300 text-[11px] font-bold border border-amber-500/30 transition-all"
               >
                 Limpiar sesión activa
@@ -279,11 +367,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
             )}
             {workoutHistory.length > 0 && (
               <button
-                onClick={() => {
-                  if (window.confirm(`¿Eliminar las ${workoutHistory.length} sesiones del historial? Esta acción no se puede deshacer.`)) {
-                    clearWorkoutHistory();
-                  }
-                }}
+                onClick={() => setConfirmAction({ type: "clearAll" })}
                 className="px-3 py-1.5 rounded-xl bg-red-950/40 hover:bg-red-900/60 text-red-300 text-[11px] font-bold border border-red-500/30 transition-all"
               >
                 Borrar todo
@@ -342,11 +426,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
                     </div>
                   )}
                   <button
-                    onClick={() => {
-                      if (window.confirm(`¿Eliminar sesión "${log.routineName}"?`)) {
-                        deleteWorkoutHistory(log.id);
-                      }
-                    }}
+                    onClick={() => setConfirmAction({ type: "deleteOne", id: log.id, name: log.routineName })}
                     className="p-2 rounded-lg text-neutral-500 hover:text-red-400 hover:bg-red-950/40 transition-all"
                     title="Eliminar sesión"
                   >
@@ -509,6 +589,29 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
           </div>
         );
       })()}
+
+      {/* Confirmation Dialog */}
+      <ConfirmDialog
+        open={confirmAction !== null}
+        title={
+          confirmAction?.type === "ghost"
+            ? "Eliminar sesión activa"
+            : confirmAction?.type === "clearAll"
+            ? "Borrar todo el historial"
+            : "Eliminar sesión"
+        }
+        message={
+          confirmAction?.type === "ghost"
+            ? "¿Eliminar la sesión activa fantasma? El entrenamiento en curso no se ve afectado."
+            : confirmAction?.type === "clearAll"
+            ? `¿Eliminar las ${workoutHistory.length} sesiones del historial? Esta acción no se puede deshacer.`
+            : `¿Eliminar la sesión "${confirmAction?.name}" del historial? Esta acción no se puede deshacer.`
+        }
+        confirmLabel="Eliminar"
+        danger
+        onConfirm={runConfirmed}
+        onCancel={() => setConfirmAction(null)}
+      />
     </div>
   );
 };

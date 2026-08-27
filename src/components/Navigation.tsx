@@ -8,6 +8,7 @@ import {
   Play,
   Volume2,
   VolumeX,
+  Settings,
 
   Zap
 } from "lucide-react";
@@ -18,11 +19,13 @@ export type NavTab = "workout" | "programs" | "exercises" | "analytics" | "nutri
 interface NavigationProps {
   currentTab: NavTab;
   onSelectTab: (tab: NavTab) => void;
+  onOpenSettings: () => void;
 }
 
 export const Navigation: React.FC<NavigationProps> = ({
   currentTab,
   onSelectTab,
+  onOpenSettings,
 }) => {
   const {
     activeSession,
@@ -99,7 +102,13 @@ export const Navigation: React.FC<NavigationProps> = ({
               {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4 text-neutral-500" />}
             </button>
 
-
+            <button
+              onClick={onOpenSettings}
+              className="p-1.5 sm:p-2 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white transition-colors touch-target"
+              title="Configuración"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
 
             {!activeSession && (
               <button

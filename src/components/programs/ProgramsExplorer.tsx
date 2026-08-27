@@ -18,17 +18,29 @@ import { PREBUILT_PROGRAMS } from "../../data/programsData";
 import { EXERCISES_DATABASE } from "../../data/exercisesData";
 import { Program, Routine, CustomRoutine } from "../../types";
 import { useWorkout } from "../../context/WorkoutContext";
+import { useToast } from "../../context/ToastContext";
+import { ConfirmDialog } from "../ConfirmDialog";
 import { MUSCLE_LANDMARKS_CONFIG } from "../../utils/scienceCalculators";
 import { RoutineEditorModal } from "./RoutineEditorModal";
 
 export const ProgramsExplorer: React.FC = () => {
   const { startWorkoutFromRoutine, setSelectedExerciseForDetail, customRoutines, deleteCustomRoutine } = useWorkout();
+  const { showToast } = useToast();
   const [selectedProgram, setSelectedProgram] = useState<Program>(PREBUILT_PROGRAMS[0]);
   const [selectedRoutine, setSelectedRoutine] = useState<Routine>(PREBUILT_PROGRAMS[0].routines[0]);
 
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingRoutine, setEditingRoutine] = useState<CustomRoutine | undefined>(undefined);
   const [activeTab, setActiveTab] = useState<"programs" | "custom">("programs");
+  const [routineToDelete, setRoutineToDelete] = useState<CustomRoutine | null>(null);
+
+  const handleDeleteConfirmed = () => {
+    if (routineToDelete) {
+      deleteCustomRoutine(routineToDelete.id);
+      showToast("Rutina eliminada", "success");
+    }
+    setRoutineToDelete(null);
+  };
 
   const handleSelectProgram = (program: Program) => {
     setSelectedProgram(program);
@@ -140,11 +152,7 @@ export const ProgramsExplorer: React.FC = () => {
                       Iniciar
                     </button>
                     <button
-                      onClick={() => {
-                        if (window.confirm("¿Eliminar esta rutina?")) {
-                          deleteCustomRoutine(routine.id);
-                        }
-                      }}
+                      onClick={() => setRoutineToDelete(routine)}
                       className="p-2 rounded-xl bg-neutral-800 hover:bg-red-900/40 text-neutral-400 hover:text-red-400 border border-neutral-700 transition-colors"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -327,6 +335,17 @@ export const ProgramsExplorer: React.FC = () => {
         isOpen={isEditorOpen}
         onClose={() => { setIsEditorOpen(false); setEditingRoutine(undefined); }}
         routine={editingRoutine}
+      />
+
+      {/* Delete routine confirmation */}
+      <ConfirmDialog
+        open={routineToDelete !== null}
+        title="Eliminar rutina"
+        message={`¿Eliminar la rutina "${routineToDelete?.name}"? Esta acción no se puede deshacer.`}
+        confirmLabel="Eliminar"
+        danger
+        onConfirm={handleDeleteConfirmed}
+        onCancel={() => setRoutineToDelete(null)}
       />
     </div>
   );

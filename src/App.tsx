@@ -3,6 +3,7 @@ import { WorkoutProvider, useWorkout } from "./context/WorkoutContext";
 import { Navigation, NavTab } from "./components/Navigation";
 import { LiveWorkoutLogger } from "./components/workout/LiveWorkoutLogger";
 import { PinLock } from "./components/PinLock";
+import { SettingsModal } from "./components/SettingsModal";
 
 // Eagerly load the first screen (workout hub) for instant display
 import { WorkoutHub } from "./components/workout/WorkoutHub";
@@ -35,6 +36,7 @@ const TabLoader: React.FC = () => (
 
 const AppContent: React.FC = () => {
   const [currentTab, setCurrentTab] = useState<NavTab>("workout");
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { selectedExerciseForDetail, setSelectedExerciseForDetail, isWorkoutModalOpen, setIsWorkoutModalOpen } = useWorkout();
 
   const handleBack = useCallback(() => {
@@ -46,16 +48,20 @@ const AppContent: React.FC = () => {
       setIsWorkoutModalOpen(false);
       return true;
     }
+    if (isSettingsOpen) {
+      setIsSettingsOpen(false);
+      return true;
+    }
     return false;
-  }, [selectedExerciseForDetail, isWorkoutModalOpen, setSelectedExerciseForDetail, setIsWorkoutModalOpen]);
+  }, [selectedExerciseForDetail, isWorkoutModalOpen, isSettingsOpen, setSelectedExerciseForDetail, setIsWorkoutModalOpen]);
 
   // Push a history entry when a modal opens so Android back button closes it
   useEffect(() => {
-    const hasModalOpen = !!(selectedExerciseForDetail || isWorkoutModalOpen);
+    const hasModalOpen = !!(selectedExerciseForDetail || isWorkoutModalOpen || isSettingsOpen);
     if (hasModalOpen) {
       history.pushState({ modal: true }, "");
     }
-  }, [selectedExerciseForDetail, isWorkoutModalOpen]);
+  }, [selectedExerciseForDetail, isWorkoutModalOpen, isSettingsOpen]);
 
   useEffect(() => {
     const onPopState = () => {
@@ -86,6 +92,7 @@ const AppContent: React.FC = () => {
       <Navigation
         currentTab={currentTab}
         onSelectTab={setCurrentTab}
+        onOpenSettings={() => setIsSettingsOpen(true)}
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 pt-3 sm:pt-6 pb-20 md:pb-6">
@@ -107,6 +114,9 @@ const AppContent: React.FC = () => {
       </main>
 
       <LiveWorkoutLogger />
+
+      {/* SettingsModal stays mounted so the workout reminder keeps active while closed */}
+      <SettingsModal open={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
 
     </div>
   );
