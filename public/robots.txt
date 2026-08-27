@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /assets/
+Disallow: /android/
+
+Sitemap: https://kinetix.app/sitemap.xml

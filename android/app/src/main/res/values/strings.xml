@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">KINETIX</string>
+    <string name="title_activity_main">KINETIX</string>
+    <string name="package_name">com.kinetix.hypertrophy</string>
+    <string name="custom_url_scheme">com.kinetix.hypertrophy</string>
+</resources>

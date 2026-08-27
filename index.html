@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>KINETIX — Entrenamiento Basado en Ciencia | Hipertrofia & Biomecánica</title>
+    <meta name="description" content="KINETIX: Tu motor de hipertrofia y biomecánica basado en evidencia científica. Programas de entrenamiento personalizados, analytics de volumen, calculadora de 1RM y coach IA." />
+    <meta name="keywords" content="hipertrofia, fuerza, entrenamiento, fitness, biología, ciencia, 1RM, volumen, MEV, programación, ejercicios, nutrición, KINETIX" />
+    <meta name="author" content="KINETIX" />
+    <meta name="theme-color" content="#0a0a0a" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://kinetix.app" />
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://kinetix.app" />
+    <meta property="og:title" content="KINETIX — Entrenamiento Basado en Ciencia" />
+    <meta property="og:description" content="Tu motor de hipertrofia y biomecánica basado en evidencia científica. Programas personalizados, analytics avanzados y coach IA." />
+    <meta property="og:image" content="https://kinetix.app/icon-512.png" />
+    <meta property="og:image:alt" content="KINETIX - Science-Based Training" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content="es_AR" />
+    <meta property="og:site_name" content="KINETIX" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="KINETIX — Entrenamiento Basado en Ciencia" />
+    <meta name="twitter:description" content="Tu motor de hipertrofia y biomecánica basado en evidencia científica." />
+    <meta name="twitter:image" content="https://kinetix.app/icon-512.png" />
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "KINETIX",
+      "description": "Science-Based Hypertrophy & Strength Training Engine",
+      "url": "https://kinetix.app",
+      "applicationCategory": "HealthApplication",
+      "operatingSystem": "Web, Android, iOS",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "featureList": [
+        "Personalized training programs",
+        "Volume landmarks & MEV tracking",
+        "1RM calculator with epley formulas",
+        "Nutrition tracking with AI coach",
+        "Exercise biomechanics library",
+        "Progress analytics dashboard"
+      ],
+      "screenshot": "https://kinetix.app/icon-512.png"
+    }
+    </script>
+
+    <style>
+      html, body { background: #0a0a0a; margin: 0; padding: 0; }
+      body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
+      * { -webkit-touch-callout: none; box-sizing: border-box; }
+      #root { min-height: 100dvh; }
+
+      /* Critical CSS for initial load */
+      .skeleton-loader {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100dvh;
+        background: #0a0a0a;
+      }
+      .skeleton-spinner {
+        width: 40px; height: 40px;
+        border: 3px solid rgba(34, 211, 238, 0.2);
+        border-top-color: #22d3ee;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <!-- Loading skeleton visible before JS loads -->
+      <div class="skeleton-loader">
+        <div class="skeleton-spinner"></div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
