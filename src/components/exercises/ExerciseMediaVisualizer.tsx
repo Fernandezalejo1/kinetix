@@ -22,6 +22,13 @@ export const ExerciseMediaVisualizer: React.FC<ExerciseMediaVisualizerProps> = (
   const getExerciseFunctionBio = () => {
     const name = (exercise.nameEs + " " + exercise.name + " " + exercise.id).toLowerCase();
     
+    if (name.includes("smith") && name.includes("incline") && name.includes("bench")) {
+      return {
+        whatIs: "Ejercicio básico multiarticular de empuje horizontal sobre banco inclinado a 30-45° con barra guiada en rieles verticales.",
+        whatDoes: "Produce la aducción horizontal y flexión del húmero con prioridad en el fascículo clavicular del pectoral mayor (por la inclinación), asistido por el deltoides anterior y el tríceps braquial en la extensión del codo; la guía de la Smith elimina el componente de estabilización horizontal y fija una trayectoria vertical determinada.",
+        biomechanics: "La barra guiada mantiene la escápula retraída y deprimida contra el banco durante todo el recorrido, permitiendo concentrarse en el estiramiento del pectoral superior sin depender del equilibrio. Al ser una máquina, el punto muerto es solo muscular y no de palanca: conviene pausar 2s abajo y controlar la negativa en 3s para aprovechar la sobrecarga en estiramiento.",
+      };
+    }
     if (name.includes("banca") || name.includes("bench press") || name.includes("pecho")) {
       return {
         whatIs: "Ejercicio básico multiarticular de empuje horizontal para la cadena anterior superior.",
