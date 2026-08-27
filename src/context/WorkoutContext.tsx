@@ -197,41 +197,27 @@ const INITIAL_WORKOUT_HISTORY: CompletedWorkout[] = [
 
 const INITIAL_NUTRITION: NutritionLog = {
   date: new Date().toISOString().split("T")[0],
-  calorieTarget: 2750,
+  calorieTarget: 2700,
   proteinTarget: 175,
-  carbsTarget: 330,
+  carbsTarget: 320,
   fatsTarget: 75,
-  waterMl: 2800,
-  meals: [
-    {
-      id: "m-1",
-      time: "08:30",
-      dishName: "Bowl de Avena con Proteína Aislada, Plátano y Frutos Rojos",
-      description: "80g avena integral, 35g Whey Isolate, 1 plátano maduro, 50g arándanos y 15g mantequilla de cacahuete.",
-      calories: 620,
-      protein: 44,
-      carbs: 78,
-      fats: 14,
-      fiber: 9,
-      mpsQuality: "Excelente (3.6g Leucina para activación mTOR)",
-      timingRecommendation: "Comida Pre-Entreno óptima consumida 2 horas antes de la sesión de fuerza.",
-      microNutrients: ["Magnesio", "Potasio", "Antioxidantes Flavonoides"],
-    },
-    {
-      id: "m-2",
-      time: "13:30",
-      dishName: "Pechuga de Pollo Salteada con Arroz Jazmín y Brócoli al Vapor",
-      description: "200g pechuga de pollo a la plancha, 120g arroz jazmín pesado en seco, 150g brócoli y 10ml aceite de oliva virgen extra.",
-      calories: 780,
-      protein: 58,
-      carbs: 95,
-      fats: 16,
-      fiber: 6,
-      mpsQuality: "Máxima respuesta anabólica (>4g Leucina)",
-      timingRecommendation: "Comida Post-Entreno ideal para reabastecimiento rápido de glucógeno y resíntesis proteica.",
-      microNutrients: ["Hierro", "Vitamina C", "Zinc", "Vitamina B6"],
-    },
-  ],
+  waterMl: 0,
+  meals: [],
+};
+
+// Science-based daily macro targets from body weight (used for a lean-bulk / hypertrophy goal).
+// - Protein: 2.2 g/kg  (upper end for muscle protein synthesis)
+// - Fats:    0.9 g/kg  (hormonal health floor)
+// - Calories: ~34 kcal/kg for a moderate surplus
+// - Carbs:   remainder of calories (4 kcal/g)
+const computeTargetsFromWeight = (weightKg: number) => {
+  const protein = Math.round(weightKg * 2.2);
+  const fats = Math.round(weightKg * 0.9);
+  const calories = Math.round(weightKg * 34);
+  const fatCalories = fats * 9;
+  const proteinCalories = protein * 4;
+  const carbs = Math.max(50, Math.round((calories - fatCalories - proteinCalories) / 4));
+  return { calories, protein, carbs, fats };
 };
 
 const INITIAL_BODY_METRICS: BodyMetricEntry[] = [
@@ -321,7 +307,24 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
   });
 
   const [nutritionLog, setNutritionLog] = useState<NutritionLog>(() => {
-    return safeParse("kinetix_nutrition_log", INITIAL_NUTRITION);
+    const saved = safeParse<NutritionLog | null>("kinetix_nutrition_log", null);
+    const today = new Date().toISOString().split("T")[0];
+    // Same day: keep the logged meals and targets as-is.
+    if (saved && saved.date === today) {
+      return saved;
+    }
+    // New day (or nothing saved): reset meals/water and recompute targets from body weight.
+    const savedMetrics = safeParse<BodyMetricEntry[] | null>("kinetix_body_metrics", null);
+    const list = savedMetrics && savedMetrics.length ? savedMetrics : INITIAL_BODY_METRICS;
+    const weightKg = list[list.length - 1]?.weightKg ?? 78;
+    const targets = computeTargetsFromWeight(weightKg);
+    return {
+      ...(saved ?? INITIAL_NUTRITION),
+      ...targets,
+      date: today,
+      waterMl: 0,
+      meals: [],
+    };
   });
 
   const [bodyMetrics, setBodyMetrics] = useState<BodyMetricEntry[]>(() => {
@@ -858,19 +861,30 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
     stopRestTimer();
   }, [stopRestTimer]);
 
-  const addMeal = useCallback((meal: MealItem) => {
-    setNutritionLog((prev) => ({
-      ...prev,
-      meals: [meal, ...prev.meals],
-    }));
+  const ensureTodayLogic = useCallback((): { today: string; targets: { calories: number; protein: number; carbs: number; fats: number } } => {
+    const today = new Date().toISOString().split("T")[0];
+    const savedMetrics = safeParse<BodyMetricEntry[] | null>("kinetix_body_metrics", null);
+    const list = savedMetrics && savedMetrics.length ? savedMetrics : INITIAL_BODY_METRICS;
+    const weightKg = list[list.length - 1]?.weightKg ?? 78;
+    return { today, targets: computeTargetsFromWeight(weightKg) };
   }, []);
 
+  const addMeal = useCallback((meal: MealItem) => {
+    setNutritionLog((prev) => {
+      const { today, targets } = ensureTodayLogic();
+      // If the stored day is not today, start a fresh daily log (keeping new targets).
+      const base = prev.date === today ? prev : { ...INITIAL_NUTRITION, ...targets, date: today, meals: [], waterMl: 0 };
+      return { ...base, meals: [meal, ...base.meals] };
+    });
+  }, [ensureTodayLogic]);
+
   const removeMeal = useCallback((mealId: string) => {
-    setNutritionLog((prev) => ({
-      ...prev,
-      meals: prev.meals.filter((m) => m.id !== mealId),
-    }));
-  }, []);
+    setNutritionLog((prev) => {
+      const { today, targets } = ensureTodayLogic();
+      const base = prev.date === today ? prev : { ...INITIAL_NUTRITION, ...targets, date: today, meals: [], waterMl: 0 };
+      return { ...base, meals: base.meals.filter((m) => m.id !== mealId) };
+    });
+  }, [ensureTodayLogic]);
 
   const updateMacroTargets = useCallback(
     (targets: { calories: number; protein: number; carbs: number; fats: number }) => {

@@ -115,16 +115,6 @@ const AppContent: React.FC = () => {
 function AppWithPin() {
   const [isUnlocked, setIsUnlocked] = useState(() => false);
 
-  // On first mount, check if PIN exists
-  useEffect(() => {
-    const hasPin = localStorage.getItem("kinetix_pin_hash");
-    const hasSkipped = localStorage.getItem("kinetix_pin_skipped");
-    // Auto-unlock only if user explicitly skipped PIN setup
-    if (hasSkipped) {
-      setIsUnlocked(true);
-    }
-  }, []);
-
   if (!isUnlocked) {
     return <PinLock onUnlock={() => setIsUnlocked(true)} />;
   }
