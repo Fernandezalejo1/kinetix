@@ -1,6 +1,5 @@
 {
   "name": "KINETIX - Science-Based Hypertrophy & Strength",
-  "description": "Aplicación de entrenamiento de hipertrofia y fuerza basada en evidencia científica, cálculo de MEV/MRV, RIR/RPE, tempo, anatomía biomecánica interactiva, progresión automática y análisis nutricional con IA.",
-  "requestFramePermissions": ["camera"],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "description": "Aplicación de entrenamiento de hipertrofia y fuerza basada en evidencia científica, cálculo de MEV/MRV, RIR/RPE, tempo, anatomía biomecánica interactiva, progresión automática y nutrición basada en tu peso corporal. Funciona offline, sin APIs externas.",
+  "requestFramePermissions": ["camera"]
 }

@@ -11,6 +11,12 @@ coverage/
 .freebuff
 *.apk
 
+# Local exercise video library (not part of the source repo)
+Videos/
+
+# bun lockfile (repo uses npm)
+bun.lock
+
 # Android / Gradle build output
 android/.gradle/
 android/build/

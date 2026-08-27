@@ -39,7 +39,7 @@ export const Navigation: React.FC<NavigationProps> = ({
     { id: "programs", label: "Programas", shortLabel: "Programas", icon: Layers },
     { id: "exercises", label: "Biomecánica", shortLabel: "Músculos", icon: Activity },
     { id: "analytics", label: "Analytics & MEV", shortLabel: "Stats", icon: BarChart3 },
-    { id: "nutrition", label: "Nutrición & IA", shortLabel: "Nutrición", icon: Utensils },
+    { id: "nutrition", label: "Nutrición", shortLabel: "Nutrición", icon: Utensils },
   ];
 
   return (

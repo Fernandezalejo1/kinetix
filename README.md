@@ -1,108 +1,106 @@
-# KINETIX — Science-Based Training Engine
+# ⚡ KINETIX — Science-Based Hypertrophy & Strength Engine
 
-Entrenamiento de hipertrofia y fuerza basado en evidencia científica, con analytics avanzados, coach IA y soporte PWA/mobile.
+Entrenamiento de hipertrofia y fuerza basado en evidencia científica, con analytics avanzados de volumen (MEV/MAV/MRV), calculadora de 1RM, programa de nutrición y soporte PWA/mobile. **Sin APIs externas, sin claves, 100% offline en tu dispositivo.**
 
-## 🚀 Deploy a Vercel
+## 📱 Screenshots
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/your-username/kinetix)
+| | | |
+|:---:|:---:|:---:|
+| <img src="screenshots/workout-home.png" width="220" alt="Pantalla de inicio / Entreno"/> | <img src="screenshots/programs.png" width="220" alt="Programas"/> | <img src="screenshots/biomechanics.png" width="220" alt="Biomecánica"/> |
+| **Inicio & Entrenar** | **Programas** | **Biomecánica** |
+| <img src="screenshots/analytics.png" width="220" alt="Analytics"/> | <img src="screenshots/nutrition.png" width="220" alt="Nutrición"/> | <img src="screenshots/live-workout.png" width="220" alt="Entrenamiento en vivo"/> |
+| **Analytics & MEV** | **Nutrición** | **Logger en vivo** |
+| <img src="screenshots/exercise-detail.png" width="220" alt="Detalle de ejercicio"/> | | |
+| **Detalle de ejercicio** | | |
 
-### Pasos manuales:
+---
 
-```bash
-# 1. Instalar Vercel CLI
-npm i -g vercel
+## 🚀 Live Demo
 
-# 2. Login
-vercel login
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Fernandezalejo1/kinetix)
 
-# 3. Deploy
-vercel
+Desplegada en: **https://kinetix-science-based-hypertrophy-a.vercel.app/**
 
-# 4. Deploy a producción
-vercel --prod
-```
+> 🔒 **PIN de acceso:** la app está protegida con el PIN `2113` (fijo, en cualquier dispositivo).
 
-### Variables de entorno en Vercel:
+## ✨ Features
 
-| Variable | Descripción | Obligatoria |
-|----------|-------------|-------------|
-| `VITE_GEMINI_API_KEY` | API key de Google Gemini para el Coach IA | No |
-
-## 📱 Desarrollo Local
-
-```bash
-# Instalar dependencias
-npm install
-
-# Configurar API key (opcional)
-cp .env.example .env.local
-# Editar .env.local con tu GEMINI_API_KEY
-
-# Iniciar servidor de desarrollo
-npm run dev
-```
-
-## 🔧 Scripts Disponibles
-
-| Script | Descripción |
-|--------|-------------|
-| `npm run dev` | Servidor de desarrollo con HMR |
-| `npm run build` | Build de producción (Vercel) |
-| `npm run build:capacitor` | Build + server para Capacitor/Android |
-| `npm run start` | Ejecutar build de producción |
-| `npm run preview` | Previsualizar build localmente |
-| `npm run typecheck` | Verificar tipos TypeScript |
-
-## 📦 Tech Stack
-
-- **Frontend:** React 19, TypeScript, Tailwind CSS 4
-- **Build:** Vite 6, esbuild
-- **Charts:** Recharts
-- **Icons:** Lucide React
-- **Mobile:** Capacitor 8 (Android)
-- **AI:** Google Gemini API
-- **Deploy:** Vercel
+- ✅ **Acceso con PIN** fijo para proteger la app
+- ✅ **Programas de entrenamiento** con progresión automática
+- ✅ **Workout logger** con timer de descanso y tracking de RIR/RPE
+- ✅ **Analytics** de volumen (MEV, MAV, MRV) y progreso de fuerza
+- ✅ **Calculadora de 1RM** con múltiples fórmulas (Brzycki, Epley, Wathan)
+- ✅ **Calculadora de placas**, metrónomo de tempo y generador de calentamiento
+- ✅ **Nutrición** con objetivos calculados según tu peso corporal, reseteo diario y tracking de macros
+- ✅ **Biomecánica** con base de datos de ejercicios, anatomía, errores frecuentes y variaciones
+- ✅ **PWA instalable** con service worker y soporte offline
+- ✅ **Mobile-first** con navegación por pestañas y safe areas
+- ✅ **Dark theme** optimizado para AMOLED
 
 ## 🏗️ Arquitectura
 
 ```
 src/
 ├── components/
-│   ├── workout/        # WorkoutLogger, WorkoutHub, PlateCalculator
-│   ├── exercises/      # BiomechanicsHub, ExerciseDetail, Library
+│   ├── workout/        # WorkoutHub, LiveWorkoutLogger, PlateCalculator, TempoMetronome, WarmupGenerator
+│   ├── exercises/      # BiomechanicsHub, ExerciseDetail, Library, AnatomyVisualizer
 │   ├── programs/       # ProgramsExplorer, RoutineEditor
-│   ├── analytics/      # ScienceDashboard, Charts
-│   ├── nutrition/      # NutritionVisionHub, MealTracker
-│   ├── ai/             # ScienceCoachModal (Gemini)
-│   └── Navigation.tsx
-├── context/            # WorkoutContext (state management)
+│   ├── analytics/      # ScienceDashboard (MEV/MAV/MRV, PRs, progress)
+│   ├── nutrition/      # NutritionVisionHub (macros, comidas, objetivos)
+│   └── Navigation.tsx  # Bottom/header navigation
+├── context/            # WorkoutContext (estado global + localStorage)
 ├── data/               # exercisesData, programsData
 ├── utils/              # scienceCalculators, exerciseEnhancer
-├── types.ts            # TypeScript interfaces
-├── App.tsx             # Root with lazy loading
-└── main.tsx            # Entry with ErrorBoundary
+├── types.ts
+├── App.tsx             # Root con lazy loading
+└── main.tsx            # Entry con ErrorBoundary + PWA
 ```
 
-## 📊 Features
+## 🧰 Tech Stack
 
-- ✅ **Programas de entrenamiento** con progresión automática
-- ✅ **Workout logger** con timer de descanso y tracking de RIR
-- ✅ **Analytics** de volumen (MEV, MAV, MRV) y progreso
-- ✅ **Calculadora de 1RM** con múltiples fórmulas
-- ✅ **Nutrición** con tracking de macros y análisis de comidas
-- ✅ **Coach IA** (Google Gemini) para recomendaciones
-- ✅ **PWA** instalable con service worker offline
-- ✅ **Mobile-first** con safe areas y touch targets optimizados
-- ✅ **Dark theme** optimizado para AMOLED
+- **Frontend:** React 19, TypeScript, Tailwind CSS 4
+- **Build:** Vite 6, esbuild
+- **Charts:** Recharts
+- **Icons:** Lucide React
+- **Animations:** Motion (Framer Motion)
+- **Mobile:** Capacitor 8 (Android)
+- **Deploy:** Vercel (PWA estática, sin backend)
 
-## 🐛 Debug & Error Handling
+## 📦 Scripts
 
-La app incluye un **ErrorOverlay** global que captura:
-- Errores de JavaScript no capturados
-- Promesas rechazadas
-- Crashes de React
+| Script | Descripción |
+|--------|-------------|
+| `npm run dev` | Servidor de desarrollo con HMR |
+| `npm run build` | Build de producción (Vercel) |
+| `npm run build:capacitor` | Build + server para Android |
+| `npm run start` | Ejecutar el servidor de producción (self-host) |
+| `npm run preview` | Previsualizar el build localmente |
+| `npm run typecheck` | Verificar tipos TypeScript |
 
-Los errores se muestran en una tarjeta roja en la parte inferior de la pantalla.
+## 🚀 Deploy a Vercel
+
+```bash
+npm i -g vercel
+vercel
+vercel --prod
+```
+
+> La app es estática: no requiere variables de entorno ni servicios externos.
+
+## 📱 Build Android (Capacitor)
+
+```bash
+npm run build:capacitor
+npx cap sync android
+npx cap open android
+```
+
+## 🛠️ Desarrollo Local
+
+```bash
+npm install
+npm run dev
+```
 
 ## 📄 Licencia
 

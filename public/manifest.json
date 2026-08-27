@@ -1,4 +1,5 @@
 {
+  "id": "/",
   "name": "KINETIX - Science-Based Training",
   "short_name": "KINETIX",
   "description": "Evidence-Based Hypertrophy & Biomechanics Engine",
@@ -22,6 +23,20 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Entrenar",
+      "short_name": "Entrenar",
+      "url": "/?tab=workout",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Programas",
+      "short_name": "Programas",
+      "url": "/?tab=programs",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }
