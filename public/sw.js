@@ -1,9 +1,9 @@
-const STATIC_CACHE = 'kinetix-static-v3';
-const DYNAMIC_CACHE = 'kinetix-dynamic-v3';
-const PAGE_CACHE = 'kinetix-pages-v3';
+const STATIC_CACHE = 'kinetix-static-v4';
+const DYNAMIC_CACHE = 'kinetix-dynamic-v4';
+const PAGE_CACHE = 'kinetix-pages-v4';
 
 // Version marker bumped on every deploy so stale caches are cleared.
-const BUILD_VERSION = '3';
+const BUILD_VERSION = '4';
 
 // Static assets (hashed by Vite, immutable) are pre-cached on install.
 // NOTE: we do NOT pre-cache the HTML shell so the app always loads fresh.
@@ -84,7 +84,27 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Static assets (hashed, immutable): CACHE-FIRST for speed, with background refresh.
+  // Non-hashed assets (favicons, icons, manifest): NETWORK-FIRST so
+  // updates are visible without a hard refresh.
+  const isNonHashedAsset =
+    url.pathname.startsWith('/favicon') ||
+    url.pathname.startsWith('/icon-') ||
+    url.pathname === '/manifest.json';
+
+  if (isNonHashedAsset) {
+    event.respondWith(
+      fetch(request).then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          const clone = networkResponse.clone();
+          caches.open(DYNAMIC_CACHE).then((cache) => cache.put(request, clone));
+        }
+        return networkResponse;
+      }).catch(() => caches.match(request))
+    );
+    return;
+  }
+
+  // Vite-hashed assets (immutable): CACHE-FIRST for speed, with background refresh.
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
       const fetchAndCache = fetch(request).then((networkResponse) => {
