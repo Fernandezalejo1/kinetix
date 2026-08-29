@@ -3,4 +3,4 @@ Allow: /
 Disallow: /assets/
 Disallow: /android/
 
-Sitemap: https://kinetix.app/sitemap.xml
+Sitemap: https://kinetix-science-based-hypertrophy-a.vercel.app/sitemap.xml

@@ -24,6 +24,15 @@ const NutritionVisionHub = React.lazy(() =>
 
 const TAB_ORDER: NavTab[] = ["workout", "programs", "exercises", "analytics", "nutrition"];
 
+/** Reads the PWA deep-link target (?tab=...) from the URL (manifest shortcuts). */
+const getTabFromURL = (): NavTab => {
+  if (typeof window === "undefined") return "workout";
+  const tab = new URLSearchParams(window.location.search).get("tab");
+  return (TAB_ORDER as readonly string[]).includes(tab ?? "")
+    ? (tab as NavTab)
+    : "workout";
+};
+
 /** Minimal loading skeleton shown while a chunk downloads */
 const TabLoader: React.FC = () => (
   <div className="flex items-center justify-center py-24 animate-fadeIn">
@@ -35,7 +44,7 @@ const TabLoader: React.FC = () => (
 );
 
 const AppContent: React.FC = () => {
-  const [currentTab, setCurrentTab] = useState<NavTab>("workout");
+  const [currentTab, setCurrentTab] = useState<NavTab>(getTabFromURL);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { selectedExerciseForDetail, setSelectedExerciseForDetail, isWorkoutModalOpen, setIsWorkoutModalOpen } = useWorkout();
 
@@ -65,6 +74,7 @@ const AppContent: React.FC = () => {
 
   useEffect(() => {
     const onPopState = () => {
+      setCurrentTab(getTabFromURL());
       const handled = handleBack();
       if (!handled) {
         if (window.history.length > 1) {

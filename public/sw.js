@@ -1,9 +1,9 @@
-const STATIC_CACHE = 'kinetix-static-v4';
-const DYNAMIC_CACHE = 'kinetix-dynamic-v4';
-const PAGE_CACHE = 'kinetix-pages-v4';
+const STATIC_CACHE = 'kinetix-static-v5';
+const DYNAMIC_CACHE = 'kinetix-dynamic-v5';
+const PAGE_CACHE = 'kinetix-pages-v5';
 
 // Version marker bumped on every deploy so stale caches are cleared.
-const BUILD_VERSION = '4';
+const BUILD_VERSION = '5';
 
 // Static assets (hashed by Vite, immutable) are pre-cached on install.
 // NOTE: we do NOT pre-cache the HTML shell so the app always loads fresh.
@@ -11,6 +11,8 @@ const PRECACHE_URLS = [
   '/manifest.json',
   '/favicon.ico',
   '/favicon.svg',
+  '/favicon-16x16.png',
+  '/favicon-32x32.png',
   '/icon-192.png',
   '/icon-512.png',
 ];

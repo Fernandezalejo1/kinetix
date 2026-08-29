@@ -84,6 +84,18 @@
   animation: shimmer 2s infinite;
 }
 
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(5px); }
+}
+
+@utility animate-shake {
+  animation: shake 0.4s ease-in-out;
+}
+
 @utility scrollbar-thin {
   scrollbar-width: thin;
   scrollbar-color: rgb(64 64 64) transparent;
