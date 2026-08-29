@@ -269,6 +269,8 @@ export interface MealItem {
   imageUrl?: string;
 }
 
+export type NutritionGoal = "cut" | "maintenance" | "lean_bulk" | "bulk";
+
 export interface NutritionLog {
   date: string;
   meals: MealItem[];

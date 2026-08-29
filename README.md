@@ -31,7 +31,9 @@ Desplegada en: **https://kinetix-science-based-hypertrophy-a.vercel.app/**
 - ✅ **Analytics** de volumen (MEV, MAV, MRV) y progreso de fuerza
 - ✅ **Calculadora de 1RM** con múltiples fórmulas (Brzycki, Epley, Wathan)
 - ✅ **Calculadora de placas**, metrónomo de tempo y generador de calentamiento
-- ✅ **Nutrición** con objetivos calculados según tu peso corporal, reseteo diario y tracking de macros
+- ✅ **Nutrición** con objetivos por meta (Volumen Magro, Bulk, Mantenimiento, Déficit), tracking de macros, agua, fibra y distribución calórica
+- ✅ **Platos rápidos filtrados por momento** (desayuno, comida, cena, snack, pre/post) + guía de suplementos basada en evidencia
+- ✅ **Plan de comidas** con horario normal o nocturno, reseteo diario y tracking de macros
 - ✅ **Biomecánica** con base de datos de ejercicios, anatomía, errores frecuentes y variaciones
 - ✅ **PWA instalable** con service worker y soporte offline
 - ✅ **Mobile-first** con navegación por pestañas y safe areas
@@ -46,10 +48,10 @@ src/
 │   ├── exercises/      # BiomechanicsHub, ExerciseDetail, Library, AnatomyVisualizer
 │   ├── programs/       # ProgramsExplorer, RoutineEditor
 │   ├── analytics/      # ScienceDashboard (MEV/MAV/MRV, PRs, progress)
-│   ├── nutrition/      # NutritionVisionHub (macros, comidas, objetivos)
+│   ├── nutrition/      # NutritionVisionHub, MealSchedulerPanel, WaterTracker, SupplementGuide
 │   └── Navigation.tsx  # Bottom/header navigation
 ├── context/            # WorkoutContext (estado global + localStorage)
-├── data/               # exercisesData, programsData
+├── data/               # exercisesData, programsData, nutritionData
 ├── utils/              # scienceCalculators, exerciseEnhancer
 ├── types.ts
 ├── App.tsx             # Root con lazy loading

@@ -157,15 +157,21 @@ export const Navigation: React.FC<NavigationProps> = ({
               <button
                 key={item.id}
                 onClick={() => onSelectTab(item.id as NavTab)}
-                className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2 min-h-[52px] relative transition-all touch-target ${
+                className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 min-h-[54px] relative transition-all touch-target ${
                   isActive ? "text-cyan-400" : "text-neutral-500 active:text-neutral-300"
                 }`}
               >
                 {isActive && (
-                  <span className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full bg-cyan-400" />
+                  <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
                 )}
-                <Icon className={`w-5 h-5 ${isActive ? "drop-shadow-[0_0_6px_rgba(34,211,238,0.6)]" : ""}`} />
-                <span className={`text-[9px] font-bold ${isActive ? "font-extrabold" : ""}`}>{item.shortLabel}</span>
+                <span
+                  className={`flex items-center justify-center w-11 h-7 rounded-full transition-all ${
+                    isActive ? "bg-cyan-500/12" : "bg-transparent"
+                  }`}
+                >
+                  <Icon className={`w-[22px] h-[22px] ${isActive ? "drop-shadow-[0_0_6px_rgba(34,211,238,0.6)]" : ""}`} />
+                </span>
+                <span className={`text-[9px] font-bold leading-none ${isActive ? "font-extrabold" : ""}`}>{item.shortLabel}</span>
               </button>
             );
           })}

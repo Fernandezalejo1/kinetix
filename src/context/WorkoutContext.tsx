@@ -14,8 +14,10 @@ import {
   ExerciseHistoryEntry,
   CustomRoutine,
   DifficultyLevel,
+  NutritionGoal,
 } from "../types";
 import { EXERCISES_DATABASE } from "../data/exercisesData";
+import { NUTRITION_GOALS } from "../data/nutritionData";
 import { calculate1RM, playRestTimerCompletedSound, playTickSound } from "../utils/scienceCalculators";
 import confetti from "canvas-confetti";
 
@@ -64,6 +66,10 @@ interface WorkoutContextType {
   removeMeal: (mealId: string) => void;
   updateMacroTargets: (targets: { calories: number; protein: number; carbs: number; fats: number }) => void;
   addBodyMetric: (entry: BodyMetricEntry) => void;
+  nutritionGoal: NutritionGoal;
+  setNutritionGoal: (goal: NutritionGoal) => void;
+  addWater: (ml: number) => void;
+  removeWater: (ml: number) => void;
   saveCustomRoutine: (routine: CustomRoutine) => void;
   deleteCustomRoutine: (routineId: string) => void;
   deleteWorkoutHistory: (workoutId: string) => void;
@@ -220,6 +226,17 @@ const computeTargetsFromWeight = (weightKg: number) => {
   return { calories, protein, carbs, fats };
 };
 
+const computeTargetsFromGoal = (weightKg: number, goal: NutritionGoal) => {
+  const cfg = NUTRITION_GOALS[goal];
+  const protein = Math.round(weightKg * cfg.proteinPerKg);
+  const fats = Math.round(weightKg * cfg.fatPerKg);
+  const calories = Math.round(weightKg * cfg.caloriePerKg);
+  const fatCalories = fats * 9;
+  const proteinCalories = protein * 4;
+  const carbs = Math.max(50, Math.round((calories - fatCalories - proteinCalories) / 4));
+  return { calories, protein, carbs, fats };
+};
+
 const INITIAL_BODY_METRICS: BodyMetricEntry[] = [
   {
     id: "bm-1",
@@ -331,6 +348,13 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
     return safeParse("kinetix_body_metrics", INITIAL_BODY_METRICS);
   });
 
+  const [nutritionGoal, setNutritionGoalState] = useState<NutritionGoal>(() => {
+    const saved = localStorage.getItem("kinetix_nutrition_goal");
+    return saved === "cut" || saved === "maintenance" || saved === "lean_bulk" || saved === "bulk"
+      ? saved
+      : "lean_bulk";
+  });
+
   const [personalRecords, setPersonalRecords] = useState<PersonalRecord[]>(() => {
     return safeParse("kinetix_prs", INITIAL_PRS);
   });
@@ -369,6 +393,10 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
   useEffect(() => {
     localStorage.setItem("kinetix_body_metrics", JSON.stringify(bodyMetrics));
   }, [bodyMetrics]);
+
+  useEffect(() => {
+    localStorage.setItem("kinetix_nutrition_goal", nutritionGoal);
+  }, [nutritionGoal]);
 
   useEffect(() => {
     localStorage.setItem("kinetix_prs", JSON.stringify(personalRecords));
@@ -903,6 +931,36 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
     setBodyMetrics((prev) => [entry, ...prev]);
   }, []);
 
+  const setNutritionGoal = useCallback((goal: NutritionGoal) => {
+    setNutritionGoalState(goal);
+    const savedMetrics = safeParse<BodyMetricEntry[] | null>("kinetix_body_metrics", null);
+    const list = savedMetrics && savedMetrics.length ? savedMetrics : INITIAL_BODY_METRICS;
+    const weightKg = list[list.length - 1]?.weightKg ?? 78;
+    setNutritionLog((prev) => ({ ...prev, ...computeTargetsFromGoal(weightKg, goal) }));
+  }, []);
+
+  const addWater = useCallback(
+    (ml: number) => {
+      setNutritionLog((prev) => {
+        const { today, targets } = ensureTodayLogic();
+        const base = prev.date === today ? prev : { ...INITIAL_NUTRITION, ...targets, date: today, meals: [], waterMl: 0 };
+        return { ...base, waterMl: Math.min(12000, base.waterMl + ml) };
+      });
+    },
+    [ensureTodayLogic]
+  );
+
+  const removeWater = useCallback(
+    (ml: number) => {
+      setNutritionLog((prev) => {
+        const { today, targets } = ensureTodayLogic();
+        const base = prev.date === today ? prev : { ...INITIAL_NUTRITION, ...targets, date: today, meals: [], waterMl: 0 };
+        return { ...base, waterMl: Math.max(0, base.waterMl - ml) };
+      });
+    },
+    [ensureTodayLogic]
+  );
+
   const saveCustomRoutine = useCallback((routine: CustomRoutine) => {
     setCustomRoutines((prev) => {
       const existing = prev.findIndex((r) => r.id === routine.id);
@@ -999,6 +1057,10 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
         removeMeal,
         updateMacroTargets,
         addBodyMetric,
+        nutritionGoal,
+        setNutritionGoal,
+        addWater,
+        removeWater,
         saveCustomRoutine,
         deleteCustomRoutine,
         deleteWorkoutHistory,

@@ -9,11 +9,23 @@ import {
   Edit3,
   Scale,
   X,
+  Target,
+  Salad,
 } from "lucide-react";
 import { useWorkout } from "../../context/WorkoutContext";
 import { useToast } from "../../context/ToastContext";
 import { MealItem } from "../../types";
 import { MealSchedulerPanel } from "./MealSchedulerPanel";
+import { WaterTracker } from "./WaterTracker";
+import { SupplementGuide } from "./SupplementGuide";
+import {
+  NUTRITION_GOALS,
+  NUTRITION_GOAL_KEYS,
+  QUICK_MEALS,
+  QUICK_MEAL_CATEGORIES,
+  computeFiberTarget,
+  QuickMealCategory,
+} from "../../data/nutritionData";
 
 export const NutritionVisionHub: React.FC = () => {
   const {
@@ -23,6 +35,8 @@ export const NutritionVisionHub: React.FC = () => {
     removeMeal,
     updateMacroTargets,
     addBodyMetric,
+    nutritionGoal,
+    setNutritionGoal,
   } = useWorkout();
   const { showToast } = useToast();
 
@@ -31,6 +45,7 @@ export const NutritionVisionHub: React.FC = () => {
   const [manualProtein, setManualProtein] = useState(35);
   const [manualCarbs, setManualCarbs] = useState(45);
   const [manualFats, setManualFats] = useState(10);
+  const [manualFiber, setManualFiber] = useState(4);
 
   const [editingTargets, setEditingTargets] = useState(false);
   const [editCalories, setEditCalories] = useState(nutritionLog.calorieTarget);
@@ -41,6 +56,8 @@ export const NutritionVisionHub: React.FC = () => {
   const [weightEditorOpen, setWeightEditorOpen] = useState(false);
   const [newWeight, setNewWeight] = useState(() => bodyMetrics[bodyMetrics.length - 1]?.weightKg ?? 80);
 
+  const [quickCategory, setQuickCategory] = useState<QuickMealCategory | "todos">("todos");
+
   const saveWeight = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newWeight || newWeight <= 0) return;
@@ -49,14 +66,15 @@ export const NutritionVisionHub: React.FC = () => {
       date: new Date().toISOString().split("T")[0],
       weightKg: newWeight,
     });
-    // Recompute macro targets from the new body weight (lean-bulk formula)
-    const protein = Math.round(newWeight * 2.2);
-    const fats = Math.round(newWeight * 0.9);
-    const calories = Math.round(newWeight * 34);
+    // Recompute macro targets using the active goal + new body weight
+    const cfg = NUTRITION_GOALS[nutritionGoal];
+    const protein = Math.round(newWeight * cfg.proteinPerKg);
+    const fats = Math.round(newWeight * cfg.fatPerKg);
+    const calories = Math.round(newWeight * cfg.caloriePerKg);
     const carbs = Math.max(50, Math.round((calories - fats * 9 - protein * 4) / 4));
     updateMacroTargets({ calories, protein, carbs, fats });
     setWeightEditorOpen(false);
-    showToast(`Peso actualizado a ${newWeight} kg. Objetivos recalculados.`, "success");
+    showToast(`Peso actualizado a ${newWeight} kg. Objetivos recalculados (${NUTRITION_GOALS[nutritionGoal].label}).`, "success");
   };
 
   // Targets
@@ -70,6 +88,19 @@ export const NutritionVisionHub: React.FC = () => {
   const currentProtein = nutritionLog.meals.reduce((acc, m) => acc + m.protein, 0);
   const currentCarbs = nutritionLog.meals.reduce((acc, m) => acc + m.carbs, 0);
   const currentFats = nutritionLog.meals.reduce((acc, m) => acc + m.fats, 0);
+  const currentFiber = nutritionLog.meals.reduce((acc, m) => acc + (m.fiber || 0), 0);
+  const fiberTarget = computeFiberTarget(targetCalories);
+
+  // Macro split (calorías aportadas por cada macronutriente)
+  const proteinKcal = currentProtein * 4;
+  const carbsKcal = currentCarbs * 4;
+  const fatsKcal = currentFats * 9;
+  const totalKcal = proteinKcal + carbsKcal + fatsKcal;
+  const split = [
+    { label: "Proteína", value: totalKcal > 0 ? Math.round((proteinKcal / totalKcal) * 100) : 0, color: "bg-cyan-400", text: "text-cyan-400" },
+    { label: "Carbs", value: totalKcal > 0 ? Math.round((carbsKcal / totalKcal) * 100) : 0, color: "bg-purple-400", text: "text-purple-400" },
+    { label: "Grasas", value: totalKcal > 0 ? Math.round((fatsKcal / totalKcal) * 100) : 0, color: "bg-emerald-400", text: "text-emerald-400" },
+  ];
 
   const lastMetric = bodyMetrics[bodyMetrics.length - 1];
   const currentWeight = lastMetric?.weightKg ?? null;
@@ -86,7 +117,7 @@ export const NutritionVisionHub: React.FC = () => {
       protein: manualProtein,
       carbs: manualCarbs,
       fats: manualFats,
-      fiber: 4,
+      fiber: manualFiber,
       mpsQuality: "Suficiente",
     };
     addMeal(meal);
@@ -106,11 +137,7 @@ export const NutritionVisionHub: React.FC = () => {
     showToast("Objetivos diarios actualizados", "success");
   };
 
-  const QuickMeals: { name: string; cal: number; pro: number; carb: number; fat: number }[] = [
-    { name: "Batido Whey + Plátano + Cacahuete", cal: 480, pro: 42, carb: 50, fat: 12 },
-    { name: "Pollo + Boniato + Espárragos", cal: 620, pro: 54, carb: 68, fat: 8 },
-    { name: "Salmón + Arroz + Aguacate", cal: 740, pro: 48, carb: 62, fat: 26 },
-  ];
+  const filteredQuickMeals = quickCategory === "todos" ? QUICK_MEALS : QUICK_MEALS.filter((m) => m.category === quickCategory);
 
   const macroCards = [
     {
@@ -123,7 +150,7 @@ export const NutritionVisionHub: React.FC = () => {
       icon: <Flame className="w-4 h-4 text-amber-400" />,
     },
     {
-      label: "Proteína (2.2g/kg)",
+      label: "Proteína",
       value: currentProtein,
       target: targetProtein,
       unit: "g",
@@ -152,18 +179,18 @@ export const NutritionVisionHub: React.FC = () => {
   ];
 
   return (
-    <div id="nutrition-vision-hub" className="space-y-6 animate-fadeIn pb-16">
+    <div id="nutrition-vision-hub" className="space-y-6 animate-fadeIn pb-16 min-w-0">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <h2 className="text-2xl font-black text-white tracking-tight">Nutrición</h2>
           <p className="text-xs text-neutral-400 mt-1">
             {lastMetric
-              ? `Objetivos calculados para ${currentWeight} kg de peso corporal`
+              ? `Objetivos para ${currentWeight} kg · ${NUTRITION_GOALS[nutritionGoal].label}`
               : "Registrá tu peso en Analytics para calcular objetivos exactos"}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => { setNewWeight(currentWeight ?? 80); setWeightEditorOpen(true); }}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-cyan-600/10 border border-cyan-500/30 text-xs font-bold text-cyan-300 hover:bg-cyan-600/20 transition-colors"
@@ -187,18 +214,59 @@ export const NutritionVisionHub: React.FC = () => {
         </div>
       </div>
 
+      {/* Goal selector */}
+      <div className="p-5 sm:p-6 rounded-3xl bg-neutral-900 border border-neutral-800 shadow-2xl space-y-4">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/25">
+            <Target className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-base font-black text-white tracking-tight">Objetivo Nutricional</h3>
+            <p className="text-[11px] text-neutral-400">Recalcula proteína, carbos y calorías según tu meta</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {NUTRITION_GOAL_KEYS.map((g) => {
+            const cfg = NUTRITION_GOALS[g];
+            const isActive = nutritionGoal === g;
+            return (
+              <button
+                key={g}
+                onClick={() => { setNutritionGoal(g); showToast(`Objetivo: ${cfg.label}`, "success"); }}
+                className={`p-3 rounded-xl border text-left transition-all ${
+                  isActive
+                    ? cfg.chipActive
+                    : "bg-neutral-950 border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-600"
+                }`}
+              >
+                <div className="text-xs font-black uppercase tracking-wider">{cfg.short}</div>
+                <div className={`text-[10px] mt-0.5 ${isActive ? cfg.accent : "text-neutral-500"}`}>
+                  {cfg.caloriePerKg} kcal/kg
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className={`p-3 rounded-2xl bg-neutral-950 border border-neutral-800 text-[11px] leading-relaxed ${NUTRITION_GOALS[nutritionGoal].accent}`}>
+          <strong>En {NUTRITION_GOALS[nutritionGoal].label}:</strong>{" "}
+          <span className="text-neutral-300">{NUTRITION_GOALS[nutritionGoal].description}</span>
+        </div>
+      </div>
+
       {/* Macro overview */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {macroCards.map((card) => {
           const pct = card.target > 0 ? Math.min(100, (card.value / card.target) * 100) : 0;
           const remaining = Math.max(0, card.target - card.value);
           return (
-            <div key={card.label} className="p-4 sm:p-5 rounded-3xl bg-neutral-900 border border-neutral-800 shadow-xl space-y-3">
-              <div className="flex justify-between items-center text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
-                <span>{card.label}</span>
+            <div key={card.label} className="p-4 sm:p-5 rounded-3xl bg-neutral-900 border border-neutral-800 shadow-xl space-y-3 min-w-0">
+              <div className="flex justify-between items-center text-[11px] font-bold text-neutral-400 uppercase tracking-wider gap-2">
+                <span className="truncate">{card.label}</span>
                 {card.icon}
               </div>
-              <div className={`text-2xl sm:text-3xl font-black ${card.color}`}>
+              <div className={`text-2xl sm:text-3xl font-black ${card.color} whitespace-nowrap`}>
                 {card.value} <span className="text-sm font-normal text-neutral-400">/ {card.target}{card.unit}</span>
               </div>
               <div className="h-2 bg-neutral-800 rounded-full overflow-hidden">
@@ -212,6 +280,57 @@ export const NutritionVisionHub: React.FC = () => {
           );
         })}
       </div>
+
+      {/* Day summary: fiber + macro split */}
+      <div className="p-5 sm:p-6 rounded-3xl bg-neutral-900/50 border border-neutral-800 space-y-4">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">
+            <Salad className="w-4 h-4" />
+          </div>
+          <h3 className="text-sm font-black text-white uppercase tracking-wider">Resumen del día</h3>
+        </div>
+
+        <div>
+          <div className="flex items-end justify-between text-xs font-mono mb-1.5">
+            <span className="text-white font-bold">
+              Fibra <span className="text-emerald-400">{currentFiber}g</span>
+            </span>
+            <span className="text-neutral-500">meta ~{fiberTarget}g</span>
+          </div>
+          <div className="h-2.5 bg-neutral-950 rounded-full overflow-hidden border border-neutral-800">
+            <div
+              className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+              style={{ width: `${Math.min(100, (currentFiber / fiberTarget) * 100)}%` }}
+            />
+          </div>
+          <p className="text-[10px] text-neutral-500 mt-1.5 leading-relaxed">
+            La fibra ralentiza la absorción, mejora la saciedad y alimenta el microbioma. Frutas, verduras, avena y legumbres son tus aliados.
+          </p>
+        </div>
+
+        {totalKcal > 0 && (
+          <div className="pt-3 border-t border-neutral-800 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Distribución calórica</span>
+              <span className="text-[11px] font-mono text-neutral-500">{totalKcal.toLocaleString("es-ES")} kcal registradas</span>
+            </div>
+            <div className="flex h-2.5 rounded-full overflow-hidden bg-neutral-950 border border-neutral-800">
+              {split.map((s) => (
+                <div key={s.label} className={s.color} style={{ width: `${s.value}%` }} />
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] font-bold">
+              {split.map((s) => (
+                <span key={s.label} className={s.text}>
+                  {s.label} {s.value}%
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <WaterTracker />
 
       {/* Edit targets modal */}
       {editingTargets && (
@@ -266,8 +385,8 @@ export const NutritionVisionHub: React.FC = () => {
               </button>
             </div>
             <p className="text-[11px] text-neutral-400 leading-relaxed">
-              Tu peso se guarda en el historial de métricas y los objetivos de macros se recalculan automáticamente
-              (proteína 2.2g/kg, grasas 0.9g/kg, ~34 kcal/kg).
+              Tu peso se guarda en el historial de métricas y los objetivos de macros se recalculan automáticamente según tu objetivo
+              ({NUTRITION_GOALS[nutritionGoal].label}: {NUTRITION_GOALS[nutritionGoal].proteinPerKg} g/kg de proteína, {NUTRITION_GOALS[nutritionGoal].caloriePerKg} kcal/kg).
             </p>
             <label className="block">
               <span className="text-[11px] font-bold text-cyan-400 uppercase tracking-wider">Peso (kg)</span>
@@ -307,10 +426,30 @@ export const NutritionVisionHub: React.FC = () => {
       </div>
 
       {/* Quick meals */}
-      <div className="p-6 rounded-3xl bg-gradient-to-br from-neutral-900 via-neutral-900 to-neutral-950 border border-neutral-800 shadow-2xl space-y-4">
-        <h3 className="text-base font-black text-white tracking-tight">Platos Rápidos</h3>
-        <div className="grid sm:grid-cols-3 gap-2">
-          {QuickMeals.map((meal) => (
+      <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-neutral-900 via-neutral-900 to-neutral-950 border border-neutral-800 shadow-2xl space-y-4">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <h3 className="text-base font-black text-white tracking-tight">Platos Rápidos</h3>
+          <span className="text-[11px] text-neutral-400 font-mono">{filteredQuickMeals.length} disponibles</span>
+        </div>
+
+        <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-thin text-[11px] font-bold">
+          {QUICK_MEAL_CATEGORIES.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => setQuickCategory(cat.id)}
+              className={`px-3 py-1.5 rounded-xl whitespace-nowrap transition-all shrink-0 ${
+                quickCategory === cat.id
+                  ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/20"
+                  : "bg-neutral-950 border border-neutral-800 text-neutral-400 hover:text-white"
+              }`}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          {filteredQuickMeals.map((meal) => (
             <button
               key={meal.name}
               onClick={() => {
@@ -323,22 +462,25 @@ export const NutritionVisionHub: React.FC = () => {
                   protein: meal.pro,
                   carbs: meal.carb,
                   fats: meal.fat,
-                  fiber: 6,
-                  mpsQuality: "Suficiente",
+                  fiber: meal.fiber,
+                  mpsQuality: meal.mpsQuality,
                 });
                 showToast("Plato rápido agregado", "success");
               }}
-              className="px-4 py-3 rounded-xl bg-neutral-950 hover:bg-neutral-800 border border-neutral-800 text-left text-xs text-neutral-300 hover:text-white transition-all space-y-1"
+              className="px-4 py-3 rounded-xl bg-neutral-950 hover:bg-neutral-800 border border-neutral-800 text-left text-xs text-neutral-300 hover:text-white transition-all space-y-1.5"
             >
-              <div className="flex items-center gap-1.5 font-bold">
-                <Plus className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                <span className="line-clamp-2">{meal.name}</span>
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center gap-1.5 font-bold min-w-0">
+                  <Plus className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                  <span className="line-clamp-2 leading-snug">{meal.name}</span>
+                </div>
               </div>
-              <div className="flex gap-2 font-mono text-[11px] text-neutral-500">
-                <span className="text-amber-400">{meal.cal} kcal</span>
+              <div className="flex flex-wrap gap-x-2.5 gap-y-0.5 font-mono text-[11px] text-neutral-500">
+                <span className="text-amber-400 font-bold">{meal.cal} kcal</span>
                 <span className="text-cyan-400">{meal.pro}g P</span>
                 <span className="text-purple-400">{meal.carb}g C</span>
                 <span className="text-emerald-400">{meal.fat}g G</span>
+                <span>{meal.fiber}g fibra</span>
               </div>
             </button>
           ))}
@@ -366,7 +508,7 @@ export const NutritionVisionHub: React.FC = () => {
                   key={meal.id}
                   className="p-5 rounded-2xl bg-neutral-900 border border-neutral-800 hover:border-neutral-700 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
                 >
-                  <div className="flex items-start gap-4">
+                  <div className="flex items-start gap-4 min-w-0">
                     {meal.imageUrl ? (
                       <img
                         src={meal.imageUrl}
@@ -380,9 +522,9 @@ export const NutritionVisionHub: React.FC = () => {
                       </div>
                     )}
 
-                    <div className="space-y-1">
-                      <h4 className="text-base font-bold text-white">{meal.dishName}</h4>
-                      <div className="flex flex-wrap items-center gap-3 text-xs">
+                    <div className="space-y-1 min-w-0">
+                      <h4 className="text-base font-bold text-white break-words">{meal.dishName}</h4>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
                         <span className="font-extrabold text-amber-400">{meal.calories} kcal</span>
                         <span>•</span>
                         <span className="font-bold text-cyan-400">{meal.protein}g Proteína</span>
@@ -390,6 +532,12 @@ export const NutritionVisionHub: React.FC = () => {
                         <span className="font-bold text-purple-400">{meal.carbs}g Carbs</span>
                         <span>•</span>
                         <span className="font-bold text-emerald-400">{meal.fats}g Grasas</span>
+                        {meal.fiber !== undefined && meal.fiber > 0 && (
+                          <>
+                            <span>•</span>
+                            <span className="font-bold text-emerald-300">{meal.fiber}g Fibra</span>
+                          </>
+                        )}
                         {meal.mpsQuality && (
                           <>
                             <span>•</span>
@@ -398,7 +546,7 @@ export const NutritionVisionHub: React.FC = () => {
                         )}
                       </div>
                       {meal.description && (
-                        <p className="text-[11px] text-neutral-400 mt-1 italic">"{meal.description}"</p>
+                        <p className="text-[11px] text-neutral-400 mt-1 italic break-words">"{meal.description}"</p>
                       )}
                     </div>
                   </div>
@@ -407,7 +555,7 @@ export const NutritionVisionHub: React.FC = () => {
                     <span className="text-[11px] text-neutral-500 font-mono">{meal.time}</span>
                     <button
                       onClick={() => { removeMeal(meal.id); showToast("Comida eliminada", "info"); }}
-                      className="p-2 rounded-lg text-neutral-500 hover:text-red-400 hover:bg-neutral-800 transition-colors"
+                      className="p-2 rounded-lg text-neutral-500 hover:text-red-400 hover:bg-neutral-800 transition-colors touch-target"
                       title="Eliminar comida"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -420,17 +568,17 @@ export const NutritionVisionHub: React.FC = () => {
       </div>
 
       {/* Manual add form */}
-      <div className="p-6 rounded-3xl bg-neutral-900 border border-neutral-800 space-y-4">
+      <div className="p-5 sm:p-6 rounded-3xl bg-neutral-900 border border-neutral-800 space-y-4">
         <h4 className="text-sm font-bold uppercase tracking-wider text-neutral-300">
           Entrada Manual Rápida
         </h4>
-        <form onSubmit={handleManualAdd} className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <form onSubmit={handleManualAdd} className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           <input
             type="text"
             placeholder="Nombre de la comida"
             value={manualName}
             onChange={(e) => setManualName(e.target.value)}
-            className="col-span-2 px-4 py-3 bg-neutral-950 border border-neutral-800 rounded-xl text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-cyan-500"
+            className="col-span-2 sm:col-span-5 px-4 py-3 bg-neutral-950 border border-neutral-800 rounded-xl text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-cyan-500 min-w-0"
           />
           <input
             type="number"
@@ -438,7 +586,7 @@ export const NutritionVisionHub: React.FC = () => {
             placeholder="Kcal"
             value={manualCalories}
             onChange={(e) => setManualCalories(parseInt(e.target.value, 10) || 0)}
-            className="px-3 py-3 bg-neutral-950 border border-neutral-800 rounded-xl text-xs text-white text-center focus:outline-none focus:border-amber-500"
+            className="px-3 py-3 bg-neutral-950 border border-neutral-800 rounded-xl text-xs text-white text-center focus:outline-none focus:border-amber-500 min-w-0"
           />
           <input
             type="number"
@@ -446,7 +594,7 @@ export const NutritionVisionHub: React.FC = () => {
             placeholder="Proteína (g)"
             value={manualProtein}
             onChange={(e) => setManualProtein(parseInt(e.target.value, 10) || 0)}
-            className="px-3 py-3 bg-neutral-950 border border-neutral-800 rounded-xl text-xs text-white text-center focus:outline-none focus:border-cyan-500"
+            className="px-3 py-3 bg-neutral-950 border border-neutral-800 rounded-xl text-xs text-white text-center focus:outline-none focus:border-cyan-500 min-w-0"
           />
           <input
             type="number"
@@ -454,7 +602,7 @@ export const NutritionVisionHub: React.FC = () => {
             placeholder="Carbs (g)"
             value={manualCarbs}
             onChange={(e) => setManualCarbs(parseInt(e.target.value, 10) || 0)}
-            className="px-3 py-3 bg-neutral-950 border border-neutral-800 rounded-xl text-xs text-white text-center focus:outline-none focus:border-purple-500"
+            className="px-3 py-3 bg-neutral-950 border border-neutral-800 rounded-xl text-xs text-white text-center focus:outline-none focus:border-purple-500 min-w-0"
           />
           <input
             type="number"
@@ -462,17 +610,27 @@ export const NutritionVisionHub: React.FC = () => {
             placeholder="Grasas (g)"
             value={manualFats}
             onChange={(e) => setManualFats(parseInt(e.target.value, 10) || 0)}
-            className="px-3 py-3 bg-neutral-950 border border-neutral-800 rounded-xl text-xs text-white text-center focus:outline-none focus:border-emerald-500"
+            className="px-3 py-3 bg-neutral-950 border border-neutral-800 rounded-xl text-xs text-white text-center focus:outline-none focus:border-emerald-500 min-w-0"
+          />
+          <input
+            type="number"
+            inputMode="numeric"
+            placeholder="Fibra (g)"
+            value={manualFiber}
+            onChange={(e) => setManualFiber(Math.max(0, parseInt(e.target.value, 10) || 0))}
+            className="px-3 py-3 bg-neutral-950 border border-neutral-800 rounded-xl text-xs text-white text-center focus:outline-none focus:border-emerald-300 min-w-0"
           />
           <button
             type="submit"
-            className="col-span-2 sm:col-span-4 px-4 py-3 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-md shadow-cyan-600/20"
+            className="col-span-2 sm:col-span-5 px-4 py-3 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-md shadow-cyan-600/20"
           >
             <Plus className="w-4 h-4" />
             Añadir comida
           </button>
         </form>
       </div>
+
+      <SupplementGuide />
     </div>
   );
 };
