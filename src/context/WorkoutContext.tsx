@@ -15,9 +15,10 @@ import {
   CustomRoutine,
   DifficultyLevel,
   NutritionGoal,
+  NutritionProfile,
 } from "../types";
 import { EXERCISES_DATABASE } from "../data/exercisesData";
-import { NUTRITION_GOALS } from "../data/nutritionData";
+import { DEFAULT_NUTRITION_PROFILE, computePersonalTargets } from "../data/nutritionData";
 import { calculate1RM, playRestTimerCompletedSound, playTickSound } from "../utils/scienceCalculators";
 import confetti from "canvas-confetti";
 
@@ -68,6 +69,8 @@ interface WorkoutContextType {
   addBodyMetric: (entry: BodyMetricEntry) => void;
   nutritionGoal: NutritionGoal;
   setNutritionGoal: (goal: NutritionGoal) => void;
+  nutritionProfile: NutritionProfile;
+  setNutritionProfile: (profile: NutritionProfile) => void;
   addWater: (ml: number) => void;
   removeWater: (ml: number) => void;
   saveCustomRoutine: (routine: CustomRoutine) => void;
@@ -211,31 +214,22 @@ const INITIAL_NUTRITION: NutritionLog = {
   meals: [],
 };
 
-// Science-based daily macro targets from body weight (used for a lean-bulk / hypertrophy goal).
-// - Protein: 2.2 g/kg  (upper end for muscle protein synthesis)
-// - Fats:    0.9 g/kg  (hormonal health floor)
-// - Calories: ~34 kcal/kg for a moderate surplus
-// - Carbs:   remainder of calories (4 kcal/g)
-const computeTargetsFromWeight = (weightKg: number) => {
-  const protein = Math.round(weightKg * 2.2);
-  const fats = Math.round(weightKg * 0.9);
-  const calories = Math.round(weightKg * 34);
-  const fatCalories = fats * 9;
-  const proteinCalories = protein * 4;
-  const carbs = Math.max(50, Math.round((calories - fatCalories - proteinCalories) / 4));
-  return { calories, protein, carbs, fats };
+// Perfil nutricional + objetivo leídos desde LocalStorage (compatibles con los
+// inicializadores de estado y con el reseteo diario).
+const readNutritionGoal = (): NutritionGoal => {
+  const saved = localStorage.getItem("kinetix_nutrition_goal");
+  return saved === "cut" || saved === "maintenance" || saved === "lean_bulk" || saved === "bulk"
+    ? saved
+    : "cut"; // default del usuario: déficit
 };
 
-const computeTargetsFromGoal = (weightKg: number, goal: NutritionGoal) => {
-  const cfg = NUTRITION_GOALS[goal];
-  const protein = Math.round(weightKg * cfg.proteinPerKg);
-  const fats = Math.round(weightKg * cfg.fatPerKg);
-  const calories = Math.round(weightKg * cfg.caloriePerKg);
-  const fatCalories = fats * 9;
-  const proteinCalories = protein * 4;
-  const carbs = Math.max(50, Math.round((calories - fatCalories - proteinCalories) / 4));
-  return { calories, protein, carbs, fats };
-};
+const readNutritionProfile = (): NutritionProfile => ({
+  ...DEFAULT_NUTRITION_PROFILE,
+  ...safeParse<Partial<NutritionProfile> | null>("kinetix_nutrition_profile", null),
+});
+
+const computeTargetsFromWeight = (weightKg: number) =>
+  computePersonalTargets(weightKg, readNutritionGoal(), readNutritionProfile());
 
 const INITIAL_BODY_METRICS: BodyMetricEntry[] = [
   {
@@ -348,12 +342,9 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
     return safeParse("kinetix_body_metrics", INITIAL_BODY_METRICS);
   });
 
-  const [nutritionGoal, setNutritionGoalState] = useState<NutritionGoal>(() => {
-    const saved = localStorage.getItem("kinetix_nutrition_goal");
-    return saved === "cut" || saved === "maintenance" || saved === "lean_bulk" || saved === "bulk"
-      ? saved
-      : "lean_bulk";
-  });
+  const [nutritionGoal, setNutritionGoalState] = useState<NutritionGoal>(readNutritionGoal);
+
+  const [nutritionProfile, setNutritionProfileState] = useState<NutritionProfile>(readNutritionProfile);
 
   const [personalRecords, setPersonalRecords] = useState<PersonalRecord[]>(() => {
     return safeParse("kinetix_prs", INITIAL_PRS);
@@ -397,6 +388,10 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
   useEffect(() => {
     localStorage.setItem("kinetix_nutrition_goal", nutritionGoal);
   }, [nutritionGoal]);
+
+  useEffect(() => {
+    localStorage.setItem("kinetix_nutrition_profile", JSON.stringify(nutritionProfile));
+  }, [nutritionProfile]);
 
   useEffect(() => {
     localStorage.setItem("kinetix_prs", JSON.stringify(personalRecords));
@@ -936,7 +931,17 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
     const savedMetrics = safeParse<BodyMetricEntry[] | null>("kinetix_body_metrics", null);
     const list = savedMetrics && savedMetrics.length ? savedMetrics : INITIAL_BODY_METRICS;
     const weightKg = list[list.length - 1]?.weightKg ?? 78;
-    setNutritionLog((prev) => ({ ...prev, ...computeTargetsFromGoal(weightKg, goal) }));
+    const profile = readNutritionProfile();
+    setNutritionLog((prev) => ({ ...prev, ...computePersonalTargets(weightKg, goal, profile) }));
+  }, []);
+
+  const setNutritionProfile = useCallback((profile: NutritionProfile) => {
+    setNutritionProfileState(profile);
+    const savedMetrics = safeParse<BodyMetricEntry[] | null>("kinetix_body_metrics", null);
+    const list = savedMetrics && savedMetrics.length ? savedMetrics : INITIAL_BODY_METRICS;
+    const weightKg = list[list.length - 1]?.weightKg ?? 78;
+    const goal = readNutritionGoal();
+    setNutritionLog((prev) => ({ ...prev, ...computePersonalTargets(weightKg, goal, profile) }));
   }, []);
 
   const addWater = useCallback(
@@ -1059,6 +1064,8 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
         addBodyMetric,
         nutritionGoal,
         setNutritionGoal,
+        nutritionProfile,
+        setNutritionProfile,
         addWater,
         removeWater,
         saveCustomRoutine,

@@ -1,4 +1,4 @@
-import { NutritionGoal } from "../types";
+import { ActivityLevel, NutritionGoal, NutritionProfile } from "../types";
 
 // Science-based macro multipliers per goal (relative to body weight in kg).
 // - Protein: higher during cuts to retain muscle mass.
@@ -63,6 +63,87 @@ export const NUTRITION_GOALS: Record<
 };
 
 export const NUTRITION_GOAL_KEYS = Object.keys(NUTRITION_GOALS) as NutritionGoal[];
+
+// ---------------------------------------------------------------------------
+// Perfil personal → metabolismo exacto (Mifflin-St Jeor) + factor de actividad
+// ---------------------------------------------------------------------------
+// Default adaptado al usuario: trabajo SEDENTARIO en PC de 17:00 a 02:00 con
+// objetivo de déficit (-15%). El perfil es editable en "Mi Perfil" (Nutrición).
+export const DEFAULT_NUTRITION_PROFILE: NutritionProfile = {
+  age: 28,
+  heightCm: 175,
+  sex: "masculino",
+  activityLevel: "sedentario",
+  workStart: "17:00",
+  workEnd: "02:00",
+  deficitPercent: 15,
+};
+
+export const ACTIVITY_FACTORS: Record<
+  ActivityLevel,
+  { label: string; short: string; factor: number; hint: string }
+> = {
+  sedentario: {
+    label: "Sedentario — sentado en PC / escritorio",
+    short: "Sedentario",
+    factor: 1.2,
+    hint: "Trabajo de escritorio + poca actividad diaria. Tu caso si estás 9h sentado en la PC.",
+  },
+  ligero: {
+    label: "Ligero — 1–3 entrenos/semana",
+    short: "Ligero",
+    factor: 1.375,
+    hint: "Entrenás 1–3 días por semana pero el resto del día es mayormente sentado.",
+  },
+  moderado: {
+    label: "Moderado — 3–5 entrenos/semana",
+    short: "Moderado",
+    factor: 1.55,
+    hint: "Entrenás 3–5 días por semana y tenés algo de actividad en el día.",
+  },
+};
+
+// Ecuación Mifflin-St Jeor (kcal/día, metabolismo basal).
+export const computeBMR = (profile: NutritionProfile, weightKg: number): number => {
+  const sexConst = profile.sex === "femenino" ? -161 : 5;
+  return Math.round(10 * weightKg + 6.25 * profile.heightCm - 5 * profile.age + sexConst);
+};
+
+// Gasto energético total: basal × factor de actividad.
+export const computeTDEE = (profile: NutritionProfile, weightKg: number): number =>
+  Math.round(computeBMR(profile, weightKg) * ACTIVITY_FACTORS[profile.activityLevel].factor);
+
+// Calorías según objetivo sobre el TDEE (déficit usa el % del perfil).
+export const computeGoalCalories = (
+  tdee: number,
+  goal: NutritionGoal,
+  deficitPercent: number
+): number => {
+  switch (goal) {
+    case "cut":
+      return Math.round(tdee * (1 - deficitPercent / 100));
+    case "maintenance":
+      return tdee;
+    case "lean_bulk":
+      return Math.round(tdee * 1.08);
+    case "bulk":
+      return Math.round(tdee * 1.12);
+  }
+};
+
+// Objetivos de macros basados en el perfil (proteína conserva masa muscular en déficit).
+export const computePersonalTargets = (
+  weightKg: number,
+  goal: NutritionGoal,
+  profile: NutritionProfile
+): { calories: number; protein: number; carbs: number; fats: number } => {
+  const tdee = computeTDEE(profile, weightKg);
+  const calories = computeGoalCalories(tdee, goal, profile.deficitPercent);
+  const protein = Math.round(weightKg * NUTRITION_GOALS[goal].proteinPerKg);
+  const fats = Math.round(weightKg * 0.8);
+  const carbs = Math.max(50, Math.round((calories - fats * 9 - protein * 4) / 4));
+  return { calories, protein, carbs, fats };
+};
 
 // Quick meal presets grouped by meal window.
 export type QuickMealCategory = "desayuno" | "comida" | "cena" | "snack" | "pre_post";

@@ -11,10 +11,14 @@ import {
   X,
   Target,
   Salad,
+  User,
+  Ruler,
+  Activity,
+  Clock,
 } from "lucide-react";
 import { useWorkout } from "../../context/WorkoutContext";
 import { useToast } from "../../context/ToastContext";
-import { MealItem } from "../../types";
+import { ActivityLevel, MealItem, NutritionGoal, NutritionProfile } from "../../types";
 import { MealSchedulerPanel } from "./MealSchedulerPanel";
 import { WaterTracker } from "./WaterTracker";
 import { SupplementGuide } from "./SupplementGuide";
@@ -24,6 +28,11 @@ import {
   QUICK_MEALS,
   QUICK_MEAL_CATEGORIES,
   computeFiberTarget,
+  computeBMR,
+  computeTDEE,
+  computeGoalCalories,
+  computePersonalTargets,
+  ACTIVITY_FACTORS,
   QuickMealCategory,
 } from "../../data/nutritionData";
 
@@ -37,8 +46,19 @@ export const NutritionVisionHub: React.FC = () => {
     addBodyMetric,
     nutritionGoal,
     setNutritionGoal,
+    nutritionProfile,
+    setNutritionProfile,
   } = useWorkout();
   const { showToast } = useToast();
+
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [pAge, setPAge] = useState(nutritionProfile.age);
+  const [pHeight, setPHeight] = useState(nutritionProfile.heightCm);
+  const [pSex, setPSex] = useState<NutritionProfile["sex"]>(nutritionProfile.sex);
+  const [pActivity, setPActivity] = useState<ActivityLevel>(nutritionProfile.activityLevel);
+  const [pWorkStart, setPWorkStart] = useState(nutritionProfile.workStart);
+  const [pWorkEnd, setPWorkEnd] = useState(nutritionProfile.workEnd);
+  const [pDeficit, setPDeficit] = useState(nutritionProfile.deficitPercent);
 
   const [manualName, setManualName] = useState("");
   const [manualCalories, setManualCalories] = useState(400);
@@ -66,13 +86,9 @@ export const NutritionVisionHub: React.FC = () => {
       date: new Date().toISOString().split("T")[0],
       weightKg: newWeight,
     });
-    // Recompute macro targets using the active goal + new body weight
-    const cfg = NUTRITION_GOALS[nutritionGoal];
-    const protein = Math.round(newWeight * cfg.proteinPerKg);
-    const fats = Math.round(newWeight * cfg.fatPerKg);
-    const calories = Math.round(newWeight * cfg.caloriePerKg);
-    const carbs = Math.max(50, Math.round((calories - fats * 9 - protein * 4) / 4));
-    updateMacroTargets({ calories, protein, carbs, fats });
+    // Recompute macro targets con el perfil personal (Mifflin-St Jeor + déficit)
+    const t = computePersonalTargets(newWeight, nutritionGoal, nutritionProfile);
+    updateMacroTargets({ calories: t.calories, protein: t.protein, carbs: t.carbs, fats: t.fats });
     setWeightEditorOpen(false);
     showToast(`Peso actualizado a ${newWeight} kg. Objetivos recalculados (${NUTRITION_GOALS[nutritionGoal].label}).`, "success");
   };
@@ -104,6 +120,40 @@ export const NutritionVisionHub: React.FC = () => {
 
   const lastMetric = bodyMetrics[bodyMetrics.length - 1];
   const currentWeight = lastMetric?.weightKg ?? null;
+
+  // Métricas metabólicas personalizadas (Mifflin-St Jeor + NEAT)
+  const profileWeight = currentWeight ?? 78;
+  const bmr = computeBMR(nutritionProfile, profileWeight);
+  const tdee = computeTDEE(nutritionProfile, profileWeight);
+  const goalCalories = Object.fromEntries(
+    NUTRITION_GOAL_KEYS.map((g) => [g, computeGoalCalories(tdee, g, nutritionProfile.deficitPercent)])
+  ) as Record<NutritionGoal, number>;
+
+  const openProfile = () => {
+    setPAge(nutritionProfile.age);
+    setPHeight(nutritionProfile.heightCm);
+    setPSex(nutritionProfile.sex);
+    setPActivity(nutritionProfile.activityLevel);
+    setPWorkStart(nutritionProfile.workStart);
+    setPWorkEnd(nutritionProfile.workEnd);
+    setPDeficit(nutritionProfile.deficitPercent);
+    setProfileOpen(true);
+  };
+
+  const saveProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    setNutritionProfile({
+      age: pAge,
+      heightCm: pHeight,
+      sex: pSex,
+      activityLevel: pActivity,
+      workStart: pWorkStart,
+      workEnd: pWorkEnd,
+      deficitPercent: pDeficit,
+    });
+    setProfileOpen(false);
+    showToast("Perfil actualizado · Objetivos recalculados con tu metabolismo", "success");
+  };
 
   const handleManualAdd = (e: React.FormEvent) => {
     e.preventDefault();
@@ -186,7 +236,7 @@ export const NutritionVisionHub: React.FC = () => {
           <h2 className="text-2xl font-black text-white tracking-tight">Nutrición</h2>
           <p className="text-xs text-neutral-400 mt-1">
             {lastMetric
-              ? `Objetivos para ${currentWeight} kg · ${NUTRITION_GOALS[nutritionGoal].label}`
+              ? `Objetivos para ${currentWeight} kg · ${NUTRITION_GOALS[nutritionGoal].label} · Déficit ${nutritionProfile.deficitPercent}% · Turno ${nutritionProfile.workStart}–${nutritionProfile.workEnd}`
               : "Registrá tu peso en Analytics para calcular objetivos exactos"}
           </p>
         </div>
@@ -212,6 +262,59 @@ export const NutritionVisionHub: React.FC = () => {
             Ajustar objetivos
           </button>
         </div>
+      </div>
+
+      {/* Mi Perfil: nutrición personalizada */}
+      <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-neutral-900 via-neutral-900 to-cyan-950/20 border border-cyan-500/20 shadow-2xl space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/25">
+              <User className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-base font-black text-white tracking-tight">Mi Perfil Nutricional</h3>
+              <p className="text-[11px] text-neutral-400">Metabolismo calculado con Mifflin-St Jeor + tu trabajo sedentario</p>
+            </div>
+          </div>
+          <button
+            onClick={openProfile}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-cyan-600/10 border border-cyan-500/30 text-xs font-bold text-cyan-300 hover:bg-cyan-600/20 transition-colors shrink-0"
+          >
+            <Edit3 className="w-3.5 h-3.5" />
+            Editar
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className="p-3 rounded-2xl bg-neutral-950 border border-neutral-800">
+            <div className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">BMR</div>
+            <div className="text-xl font-black text-amber-300 font-mono mt-0.5">{bmr} kcal</div>
+            <div className="text-[10px] text-neutral-500">basal / día</div>
+          </div>
+          <div className="p-3 rounded-2xl bg-neutral-950 border border-neutral-800">
+            <div className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Gasto (TDEE)</div>
+            <div className="text-xl font-black text-emerald-300 font-mono mt-0.5">{tdee} kcal</div>
+            <div className="text-[10px] text-neutral-500">{ACTIVITY_FACTORS[nutritionProfile.activityLevel].short}</div>
+          </div>
+          <div className="p-3 rounded-2xl bg-neutral-950 border border-neutral-800">
+            <div className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Objetivo hoy</div>
+            <div className="text-xl font-black text-cyan-300 font-mono mt-0.5">{targetCalories} kcal</div>
+            <div className="text-[10px] text-amber-400">déficit −{nutritionProfile.deficitPercent}%</div>
+          </div>
+          <div className="p-3 rounded-2xl bg-neutral-950 border border-neutral-800">
+            <div className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Turno de trabajo</div>
+            <div className="text-xl font-black text-white font-mono mt-0.5 whitespace-nowrap">{nutritionProfile.workStart}–{nutritionProfile.workEnd}</div>
+            <div className="text-[10px] text-neutral-500">sentado en PC</div>
+          </div>
+        </div>
+
+        <p className="text-[11px] text-neutral-400 leading-relaxed">
+          <strong className="text-amber-300">Estás en déficit (−{nutritionProfile.deficitPercent}%) y tu día es nocturno:</strong> trabajás
+          sentado de <strong className="text-white">{nutritionProfile.workStart}</strong> a <strong className="text-white">{nutritionProfile.workEnd}</strong>,
+          así que tus comidas se organizan en ese rango y tu hidratación va hasta antes de dormir. Mantené la{" "}
+          <strong className="text-white">proteína {NUTRITION_GOALS[nutritionGoal].proteinPerKg} g/kg</strong> para no perder músculo con el déficit,
+          y evitá cafeína después de las 00:00 para proteger tu sueño.
+        </p>
       </div>
 
       {/* Goal selector */}
@@ -242,7 +345,7 @@ export const NutritionVisionHub: React.FC = () => {
               >
                 <div className="text-xs font-black uppercase tracking-wider">{cfg.short}</div>
                 <div className={`text-[10px] mt-0.5 ${isActive ? cfg.accent : "text-neutral-500"}`}>
-                  {cfg.caloriePerKg} kcal/kg
+                  {goalCalories[g].toLocaleString("es-ES")} kcal
                 </div>
               </button>
             );
@@ -368,6 +471,151 @@ export const NutritionVisionHub: React.FC = () => {
                 className="flex-1 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold transition-colors"
               >
                 Guardar
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Profile editor modal */}
+      {profileOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-end sm:items-center justify-center p-4">
+          <form onSubmit={saveProfile} className="w-full max-w-lg rounded-3xl bg-neutral-900 border border-neutral-800 p-5 space-y-4 max-h-[88dvh] overflow-y-auto scrollbar-thin">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-black text-white uppercase tracking-wider">Mi Perfil Nutricional</h4>
+              <button type="button" onClick={() => setProfileOpen(false)} className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <label className="block">
+                <span className="text-[11px] font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1"><User className="w-3 h-3" /> Edad</span>
+                <input
+                  type="number"
+                  min={15}
+                  max={80}
+                  value={pAge}
+                  onChange={(e) => setPAge(Math.max(15, parseInt(e.target.value, 10) || 0))}
+                  className="mt-1 w-full px-3 py-2.5 bg-neutral-950 border border-neutral-800 rounded-xl text-base text-white text-center focus:outline-none focus:border-cyan-500"
+                />
+              </label>
+              <label className="block">
+                <span className="text-[11px] font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1"><Ruler className="w-3 h-3" /> Altura (cm)</span>
+                <input
+                  type="number"
+                  min={140}
+                  max={220}
+                  value={pHeight}
+                  onChange={(e) => setPHeight(Math.max(140, parseInt(e.target.value, 10) || 0))}
+                  className="mt-1 w-full px-3 py-2.5 bg-neutral-950 border border-neutral-800 rounded-xl text-base text-white text-center focus:outline-none focus:border-cyan-500"
+                />
+              </label>
+            </div>
+
+            <div>
+              <span className="text-[11px] font-bold text-cyan-400 uppercase tracking-wider">Género</span>
+              <div className="grid grid-cols-2 gap-2 mt-1">
+                {(["masculino", "femenino"] as const).map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setPSex(s)}
+                    className={`py-2.5 rounded-xl text-xs font-bold border transition-all ${
+                      pSex === s
+                        ? "bg-cyan-600 text-white border-cyan-500 shadow-lg shadow-cyan-600/20"
+                        : "bg-neutral-950 border-neutral-800 text-neutral-400 hover:text-white"
+                    }`}
+                  >
+                    {s === "masculino" ? "Masculino" : "Femenino"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <span className="text-[11px] font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1"><Activity className="w-3 h-3" /> Actividad diaria</span>
+              <div className="grid gap-2 mt-1">
+                {(Object.keys(ACTIVITY_FACTORS) as ActivityLevel[]).map((lvl) => (
+                  <button
+                    key={lvl}
+                    type="button"
+                    onClick={() => setPActivity(lvl)}
+                    className={`p-3 rounded-xl border text-left transition-all ${
+                      pActivity === lvl
+                        ? "bg-cyan-600/15 border-cyan-500/50"
+                        : "bg-neutral-950 border-neutral-800 hover:border-neutral-600"
+                    }`}
+                  >
+                    <div className={`text-xs font-bold ${pActivity === lvl ? "text-cyan-200" : "text-white"}`}>
+                      {ACTIVITY_FACTORS[lvl].label} <span className="text-neutral-500 font-mono">×{ACTIVITY_FACTORS[lvl].factor}</span>
+                    </div>
+                    <div className="text-[10px] text-neutral-500 mt-0.5">{ACTIVITY_FACTORS[lvl].hint}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <span className="text-[11px] font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1"><Clock className="w-3 h-3" /> Horario laboral (trabajás sentado)</span>
+              <div className="grid grid-cols-2 gap-2 mt-1">
+                <label className="block">
+                  <span className="text-[10px] text-neutral-500">Entrada</span>
+                  <input
+                    type="time"
+                    value={pWorkStart}
+                    onChange={(e) => setPWorkStart(e.target.value)}
+                    className="mt-1 w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-xl text-base text-white text-center focus:outline-none focus:border-cyan-500"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-[10px] text-neutral-500">Salida</span>
+                  <input
+                    type="time"
+                    value={pWorkEnd}
+                    onChange={(e) => setPWorkEnd(e.target.value)}
+                    className="mt-1 w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-xl text-base text-white text-center focus:outline-none focus:border-cyan-500"
+                  />
+                </label>
+              </div>
+            </div>
+
+            <div>
+              <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider">Déficit calórico (para reducción de grasa)</span>
+              <div className="grid grid-cols-4 gap-2 mt-1">
+                {[10, 15, 20, 25].map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => setPDeficit(d)}
+                    className={`py-2.5 rounded-xl text-xs font-black transition-all ${
+                      pDeficit === d
+                        ? "bg-amber-600 text-white shadow-lg shadow-amber-600/20"
+                        : "bg-neutral-950 border border-neutral-800 text-neutral-400 hover:text-white"
+                    }`}
+                  >
+                    −{d}%
+                  </button>
+                ))}
+              </div>
+              <p className="text-[10px] text-neutral-500 mt-1.5">
+                Moderado (−15%) es lo ideal en un trabajo sedentario: suficiente para perder grasa sin caerte de energía a las 02:00.
+              </p>
+            </div>
+
+            <div className="pt-1 flex gap-2 border-t border-neutral-800">
+              <button
+                type="button"
+                onClick={() => setProfileOpen(false)}
+                className="flex-1 py-2.5 rounded-xl bg-neutral-800 text-xs font-bold text-neutral-300 hover:bg-neutral-700 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="flex-1 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold transition-colors"
+              >
+                Guardar perfil
               </button>
             </div>
           </form>

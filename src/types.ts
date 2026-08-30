@@ -271,6 +271,21 @@ export interface MealItem {
 
 export type NutritionGoal = "cut" | "maintenance" | "lean_bulk" | "bulk";
 
+export type ActivityLevel = "sedentario" | "ligero" | "moderado";
+
+/** Perfil personal para cálculo nutricional exacto (Mifflin-St Jeor + NEAT del usuario). */
+export interface NutritionProfile {
+  age: number;
+  heightCm: number;
+  sex: "masculino" | "femenino";
+  activityLevel: ActivityLevel;
+  /** Horario laboral (ej. "17:00" – "02:00" = turno nocturno de escritorio). */
+  workStart: string;
+  workEnd: string;
+  /** Déficit calórico en % (15 = -15%). Solo aplica al objetivo "cut". */
+  deficitPercent: number;
+}
+
 export interface NutritionLog {
   date: string;
   meals: MealItem[];

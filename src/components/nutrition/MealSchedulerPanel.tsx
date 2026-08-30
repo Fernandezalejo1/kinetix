@@ -150,21 +150,32 @@ const SCHEDULES: Record<ScheduleType, { label: string; short: string; icon: Reac
 
 export const MealSchedulerPanel: React.FC = () => {
   const [schedule, setSchedule] = useState<ScheduleType>("nocturno");
-  const { addMeal, updateMacroTargets } = useWorkout();
+  const { addMeal, updateMacroTargets, nutritionLog, nutritionProfile } = useWorkout();
   const { showToast } = useToast();
 
   const config = SCHEDULES[schedule];
-  const totalCalories = config.meals.reduce((a, m) => a + m.calories, 0);
-  const totalProtein = config.meals.reduce((a, m) => a + m.protein, 0);
-  const totalCarbs = config.meals.reduce((a, m) => a + m.carbs, 0);
-  const totalFats = config.meals.reduce((a, m) => a + m.fats, 0);
+
+  // Auto-escala el plan al objetivo personal de déficit (perfil Mifflin-St Jeor)
+  const planTotal = config.meals.reduce((a, m) => a + m.calories, 0);
+  const scale = nutritionLog.calorieTarget > 0 && planTotal > 0 ? nutritionLog.calorieTarget / planTotal : 1;
+  const scaledMeals: ScheduledMeal[] = config.meals.map((m) => ({
+    ...m,
+    calories: Math.round(m.calories * scale),
+    protein: Math.round(m.protein * scale),
+    carbs: Math.round(m.carbs * scale),
+    fats: Math.round(m.fats * scale),
+  }));
+  const totalCalories = scaledMeals.reduce((a, m) => a + m.calories, 0);
+  const totalProtein = scaledMeals.reduce((a, m) => a + m.protein, 0);
+  const totalCarbs = scaledMeals.reduce((a, m) => a + m.carbs, 0);
+  const totalFats = scaledMeals.reduce((a, m) => a + m.fats, 0);
 
   const addScheduledMeal = (meal: ScheduledMeal) => {
     const item: MealItem = {
       id: `meal-sched-${Date.now()}-${meal.name.replace(/\s+/g, "-")}`,
       time: new Date().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }),
       dishName: `${meal.name} (${meal.time})`,
-      description: `${meal.foods} · Plan ${config.short}`,
+      description: `${meal.foods} · Plan ${config.short} · Escalado a tu déficit`,
       calories: meal.calories,
       protein: meal.protein,
       carbs: meal.carbs,
@@ -183,7 +194,7 @@ export const MealSchedulerPanel: React.FC = () => {
       carbs: totalCarbs,
       fats: totalFats,
     });
-    showToast(`Objetivos del plan ${config.short} aplicados (${totalCalories} kcal)`, "success");
+    showToast(`Plan ${config.short} aplicado a tu objetivo: ${totalCalories} kcal (déficit −${nutritionProfile.deficitPercent}%)`, "success");
   };
 
   return (
@@ -195,7 +206,7 @@ export const MealSchedulerPanel: React.FC = () => {
             Plan de Comidas Diario
           </h3>
           <p className="text-[11px] text-neutral-400 mt-0.5">
-            {totalCalories} kcal · P {totalProtein}g · C {totalCarbs}g · G {totalFats}g · Déficit moderado para perder grasa entrenando fuerte
+            {totalCalories} kcal · P {totalProtein}g · C {totalCarbs}g · G {totalFats}g · Plan escalado a tu déficit (−{nutritionProfile.deficitPercent}%)
           </p>
         </div>
         <button
@@ -237,7 +248,7 @@ export const MealSchedulerPanel: React.FC = () => {
 
       {/* Meal list */}
       <div className="space-y-2.5">
-        {config.meals.map((meal) => {
+        {scaledMeals.map((meal) => {
           const pct = Math.round((meal.calories / totalCalories) * 100);
           return (
             <div
@@ -297,14 +308,14 @@ export const MealSchedulerPanel: React.FC = () => {
           <h4 className="text-xs font-black text-white uppercase tracking-wider">Referencia del plan</h4>
         </div>
         <p className="text-[11px] text-neutral-400 leading-relaxed">
-          Entre <strong className="text-white">2500–2800 kcal</strong> para entrenar con intensidad y a la vez generar un
-          déficit suave que reduzca grasa. La proteína (~1.8–2 g/kg) preserva masa muscular, y los{" "}
-          <strong className="text-amber-300">carbos concentrados antes de entrenar</strong> garantizan rendimiento en el gimnasio.
-          Ajusta las porciones según tu peso y progreso semanal.
+          Este plan ya está <strong className="text-white">escalado a tu objetivo de hoy ({nutritionLog.calorieTarget} kcal, déficit −{nutritionProfile.deficitPercent}%)</strong>{" "}
+          para que entrenes con intensidad y a la vez reduzcas grasa. En tu turno {nutritionProfile.workStart}–{nutritionProfile.workEnd} comés dentro del rango laboral
+          y mantenés la <strong className="text-cyan-300">proteína alta</strong> para preservar masa muscular. No dejes pasar más de 4–5h sin comer estando despierto,
+          y la última comida hacela al menos 1h antes de dormir.
         </p>
         <div className="flex items-center gap-2 text-[11px] text-neutral-500">
           <Droplets className="w-3.5 h-3.5 text-cyan-400" />
-          Hidratación: 2.5–3 L de agua al día te ayuda con el déficit y el rendimiento.
+          Hidratación: repartí 2.5–3 L durante tus horas despiertas (incluida la madrugada) y moderá el agua 30 min antes de ir a dormir.
         </div>
       </div>
     </div>
