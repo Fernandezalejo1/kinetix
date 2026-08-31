@@ -1,9 +1,9 @@
-const STATIC_CACHE = 'kinetix-static-v5';
-const DYNAMIC_CACHE = 'kinetix-dynamic-v5';
-const PAGE_CACHE = 'kinetix-pages-v5';
+const STATIC_CACHE = 'kinetix-static-v6';
+const DYNAMIC_CACHE = 'kinetix-dynamic-v6';
+const PAGE_CACHE = 'kinetix-pages-v6';
 
 // Version marker bumped on every deploy so stale caches are cleared.
-const BUILD_VERSION = '5';
+const BUILD_VERSION = '6';
 
 // Static assets (hashed by Vite, immutable) are pre-cached on install.
 // NOTE: we do NOT pre-cache the HTML shell so the app always loads fresh.
@@ -17,15 +17,16 @@ const PRECACHE_URLS = [
   '/icon-512.png',
 ];
 
-// Install: pre-cache static assets
+// Install: pre-cache static assets. We deliberately do NOT skipWaiting() here:
+// the new SW stays in "waiting" so the UpdateBanner can reliably detect it and
+// ask the user to reload. skipWaiting() only happens via the SKIP_WAITING
+// message (sent when the user taps "Actualizar") or on the next navigation.
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(STATIC_CACHE).then((cache) => {
       return cache.addAll(PRECACHE_URLS);
     })
   );
-  // Do NOT skipWaiting here immediately; wait so the new page loads network-first.
-  self.skipWaiting();
 });
 
 // Allow the page to request skipWaiting (used by the "update available" banner).

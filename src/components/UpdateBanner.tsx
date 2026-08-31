@@ -1,53 +1,74 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { RefreshCw } from "lucide-react";
 
 /**
- * Detects a new version of the app (new service worker active / cache updated)
+ * Detects a new version of the app (new service worker installed/waiting)
  * and shows a banner so the user can reload to see the latest build.
+ *
+ * The service worker does NOT call skipWaiting() on install (see sw.js), so it
+ * reliably transitions to "installed"/"waiting", which we detect here. Only a
+ * tap on "Actualizar" triggers skipWaiting → controllerchange → reload.
  */
 export const UpdateBanner: React.FC = () => {
   const [updateAvailable, setUpdateAvailable] = useState(false);
+  const refreshingRef = useRef(false);
 
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
 
-    let refreshing = false;
+    let waitingWorker: ServiceWorker | null = null;
 
-    // Fire when a new service worker takes control (i.e. on next reload).
+    // Reload exactly once when the new SW (sent SKIP_WAITING) takes control.
     navigator.serviceWorker.addEventListener("controllerchange", () => {
-      if (refreshing) return;
-      refreshing = true;
+      if (refreshingRef.current) return;
+      refreshingRef.current = true;
       window.location.reload();
     });
 
-    const onUpdate = (registration: ServiceWorkerRegistration) => {
-      if (registration.waiting) {
+    const promptIfWaiting = () => {
+      if (navigator.serviceWorker.controller && waitingWorker) {
         setUpdateAvailable(true);
       }
     };
 
     navigator.serviceWorker.ready.then((registration) => {
-      onUpdate(registration);
+      // If a new SW is already installed/waiting, prompt immediately.
+      waitingWorker = registration.waiting;
+      promptIfWaiting();
+
       registration.addEventListener("updatefound", () => {
         const newWorker = registration.installing;
         if (!newWorker) return;
+        waitingWorker = newWorker;
         newWorker.addEventListener("statechange", () => {
-          if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-            setUpdateAvailable(true);
+          if (newWorker.state === "installed") {
+            // If the current page is controlled, wait for the SW to be waiting.
+            if (registration.waiting) waitingWorker = registration.waiting;
+            promptIfWaiting();
           }
         });
       });
     });
+
+    return () => {
+      navigator.serviceWorker.removeEventListener("controllerchange", () => {});
+    };
   }, []);
 
   const reload = () => {
-    // Skip waiting so the new SW activates, which triggers controllerchange → reload.
-    navigator.serviceWorker.getRegistration().then((reg) => {
-      if (reg?.waiting) {
-        reg.waiting.postMessage({ type: "SKIP_WAITING" });
-      }
-    });
-    window.location.reload();
+    // Order: send SKIP_WAITING (new SW activates → controllerchange), then the
+    // controllerchange handler reloads once. Do NOT reload here synchronously.
+    if (navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({ type: "SKIP_WAITING" });
+    } else {
+      navigator.serviceWorker.getRegistration().then((reg) => {
+        if (reg?.waiting) {
+          reg.waiting.postMessage({ type: "SKIP_WAITING" });
+        } else {
+          window.location.reload();
+        }
+      });
+    }
   };
 
   if (!updateAvailable) return null;
