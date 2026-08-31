@@ -140,7 +140,7 @@ export const computePersonalTargets = (
   const tdee = computeTDEE(profile, weightKg);
   const calories = computeGoalCalories(tdee, goal, profile.deficitPercent);
   const protein = Math.round(weightKg * NUTRITION_GOALS[goal].proteinPerKg);
-  const fats = Math.round(weightKg * 0.8);
+  const fats = Math.round(weightKg * NUTRITION_GOALS[goal].fatPerKg);
   const carbs = Math.max(50, Math.round((calories - fats * 9 - protein * 4) / 4));
   return { calories, protein, carbs, fats };
 };

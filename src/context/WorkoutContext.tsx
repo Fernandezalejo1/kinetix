@@ -776,8 +776,8 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
     const durationSeconds = Math.max(60, Math.floor((Date.now() - activeSession.startTime) / 1000));
     let totalVolumeKg = 0;
     let totalSets = 0;
-    let totalRir = 0;
-    let rirCount = 0;
+    let sessionRirTotal = 0;
+    let sessionRirCount = 0;
     const newPrs: PersonalRecord[] = [];
     const newHistoryEntries: ExerciseHistoryEntry[] = [];
 
@@ -786,6 +786,8 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
       let exerciseReps: number[] = [];
       let exerciseSets = 0;
       let maxWeight = 0;
+      let exerciseRirTotal = 0;
+      let exerciseRirCount = 0;
 
       wEx.sets.forEach((s) => {
         if (s.completed) {
@@ -798,15 +800,19 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
           maxWeight = Math.max(maxWeight, s.weight);
 
           if (s.rir !== undefined) {
-            totalRir += s.rir;
-            rirCount++;
+            exerciseRirTotal += s.rir;
+            exerciseRirCount++;
+            sessionRirTotal += s.rir;
+            sessionRirCount++;
           }
 
           const e1rmObj = calculate1RM(s.weight, s.reps);
           const current1RM = e1rmObj.average;
           const existingPR = personalRecords.find((p) => p.exerciseId === wEx.exerciseId && p.type === "1RM");
+          // Solo registrar un PR por ejercicio, usando el mejor e1RM de la sesión
+          const alreadyPRdThisSession = newPrs.some((np) => np.exerciseId === wEx.exerciseId && np.type === "1RM");
 
-          if (!existingPR || current1RM > existingPR.value) {
+          if (!alreadyPRdThisSession && (!existingPR || current1RM > existingPR.value)) {
             const prItem: PersonalRecord = {
               id: `pr-${Date.now()}-${wEx.exerciseId}`,
               exerciseId: wEx.exerciseId,
@@ -831,14 +837,15 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
           weight: maxWeight,
           sets: exerciseSets,
           reps: exerciseReps,
-          rpe: rirCount > 0 ? Math.round((10 - totalRir / rirCount) * 10) / 10 : undefined,
+          // RPE por ejercicio (no acumulado entre ejercicios)
+          rpe: exerciseRirCount > 0 ? Math.round((10 - exerciseRirTotal / exerciseRirCount) * 10) / 10 : undefined,
           difficulty: difficultyStr,
           volumeKg: exerciseVolume,
         });
       }
     });
 
-    const averageRir = rirCount > 0 ? Math.round((totalRir / rirCount) * 10) / 10 : 1.0;
+    const averageRir = sessionRirCount > 0 ? Math.round((sessionRirTotal / sessionRirCount) * 10) / 10 : 1.0;
 
     const completed: CompletedWorkout = {
       id: `completed-${Date.now()}`,
@@ -911,15 +918,19 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const updateMacroTargets = useCallback(
     (targets: { calories: number; protein: number; carbs: number; fats: number }) => {
-      setNutritionLog((prev) => ({
-        ...prev,
-        calorieTarget: targets.calories,
-        proteinTarget: targets.protein,
-        carbsTarget: targets.carbs,
-        fatsTarget: targets.fats,
-      }));
+      setNutritionLog((prev) => {
+        const { today, targets: freshTargets } = ensureTodayLogic();
+        const base = prev.date === today ? prev : { ...INITIAL_NUTRITION, ...freshTargets, date: today, meals: [], waterMl: 0 };
+        return {
+          ...base,
+          calorieTarget: targets.calories,
+          proteinTarget: targets.protein,
+          carbsTarget: targets.carbs,
+          fatsTarget: targets.fats,
+        };
+      });
     },
-    []
+    [ensureTodayLogic]
   );
 
   const addBodyMetric = useCallback((entry: BodyMetricEntry) => {
