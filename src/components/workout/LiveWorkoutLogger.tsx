@@ -357,7 +357,7 @@ export const LiveWorkoutLogger: React.FC = () => {
         <div className="flex items-center gap-1.5 sm:gap-2 mt-3">
           <button
             onClick={() => setSoundEnabled(!soundEnabled)}
-            className="p-2 rounded-xl bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-700"
+            className="p-2.5 rounded-xl bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-700 min-w-[44px] min-h-[44px] flex items-center justify-center"
             title="Sonido de Temporizador"
           >
             {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
@@ -365,7 +365,7 @@ export const LiveWorkoutLogger: React.FC = () => {
 
           <button
             onClick={() => setIsWorkoutModalOpen(false)}
-            className="p-2 sm:px-3 sm:py-2 rounded-xl bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-700 text-xs font-semibold"
+            className="px-4 min-h-[44px] rounded-xl bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-700 text-xs font-semibold flex items-center justify-center"
             title="Minimizar (sigue en segundo plano)"
           >
             <Minimize2 className="w-4 h-4 sm:hidden" />
@@ -422,19 +422,19 @@ export const LiveWorkoutLogger: React.FC = () => {
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => adjustRestTimer(-15)}
-              className="px-2 py-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-lg text-xs font-mono font-bold"
+              className="px-3 min-h-[44px] bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-xl text-xs font-mono font-bold"
             >
               -15s
             </button>
             <button
               onClick={() => adjustRestTimer(30)}
-              className="px-2 py-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-lg text-xs font-mono font-bold"
+              className="px-3 min-h-[44px] bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-xl text-xs font-mono font-bold"
             >
               +30s
             </button>
             <button
               onClick={stopRestTimer}
-              className="px-3 py-1 bg-cyan-600/20 text-cyan-400 hover:bg-cyan-600/30 border border-cyan-500/30 rounded-lg text-xs font-bold"
+              className="px-3 min-h-[44px] bg-cyan-600/20 text-cyan-400 hover:bg-cyan-600/30 border border-cyan-500/30 rounded-xl text-xs font-bold"
             >
               Saltar
             </button>
@@ -495,7 +495,7 @@ export const LiveWorkoutLogger: React.FC = () => {
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <button
                       onClick={() => setSelectedExForPlate({ name: wEx.exercise.nameEs, weight: currentWorkingWeight })}
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white text-xs font-semibold border border-neutral-700 transition-colors"
+                      className="flex items-center gap-1 px-3 min-h-[44px] rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white text-xs font-semibold border border-neutral-700 transition-colors"
                       title="Calculadora de Discos en Barra"
                     >
                       <Disc className="w-3.5 h-3.5 text-blue-400" />
@@ -504,7 +504,7 @@ export const LiveWorkoutLogger: React.FC = () => {
 
                     <button
                       onClick={() => setSelectedExForWarmup({ name: wEx.exercise.nameEs, weight: currentWorkingWeight })}
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white text-xs font-semibold border border-neutral-700 transition-colors"
+                      className="flex items-center gap-1 px-3 min-h-[44px] rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white text-xs font-semibold border border-neutral-700 transition-colors"
                       title="Pirámide de Calentamiento Científica"
                     >
                       <Flame className="w-3.5 h-3.5 text-amber-400" />
@@ -513,7 +513,7 @@ export const LiveWorkoutLogger: React.FC = () => {
 
                     <button
                       onClick={() => setSelectedExForTempo({ name: wEx.exercise.nameEs, tempo: wEx.exercise.defaultTempo })}
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white text-xs font-semibold border border-neutral-700 transition-colors"
+                      className="flex items-center gap-1 px-3 min-h-[44px] rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white text-xs font-semibold border border-neutral-700 transition-colors"
                       title="Metrónomo de Tempo en Vivo"
                     >
                       <Activity className="w-3.5 h-3.5 text-purple-400" />
@@ -522,7 +522,7 @@ export const LiveWorkoutLogger: React.FC = () => {
 
                     <button
                       onClick={() => setSelectedExerciseForDetail(wEx.exercise)}
-                      className="p-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-cyan-400 border border-neutral-700 transition-colors"
+                      className="p-2.5 min-w-[44px] min-h-[44px] rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-cyan-400 border border-neutral-700 transition-colors flex items-center justify-center"
                       title="Ver Biomecánica y Anatomía"
                     >
                       <Info className="w-4 h-4" />
@@ -533,7 +533,7 @@ export const LiveWorkoutLogger: React.FC = () => {
                         setReplacingWExId(wEx.id);
                         setIsLibraryOpen(true);
                       }}
-                      className="p-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white border border-neutral-700 transition-colors"
+                      className="p-2.5 min-w-[44px] min-h-[44px] rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white border border-neutral-700 transition-colors flex items-center justify-center"
                       title="Sustituir Ejercicio"
                     >
                       <ArrowRightLeft className="w-4 h-4" />
@@ -541,7 +541,7 @@ export const LiveWorkoutLogger: React.FC = () => {
 
                     <button
                       onClick={() => removeExerciseFromActiveWorkout(wEx.id)}
-                      className="p-1.5 rounded-lg bg-neutral-800 hover:bg-red-900/40 text-neutral-400 hover:text-red-400 border border-neutral-700 transition-colors"
+                      className="p-2.5 min-w-[44px] min-h-[44px] rounded-xl bg-neutral-800 hover:bg-red-900/40 text-neutral-400 hover:text-red-400 border border-neutral-700 transition-colors flex items-center justify-center"
                       title="Eliminar del entrenamiento"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -782,7 +782,7 @@ export const LiveWorkoutLogger: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => removeSet(wEx.id, set.id)}
-                            className="text-neutral-600 hover:text-red-400 transition-colors p-1.5 shrink-0"
+                            className="text-neutral-600 hover:text-red-400 transition-colors p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg shrink-0"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -873,7 +873,7 @@ export const LiveWorkoutLogger: React.FC = () => {
                                   key={r}
                                   type="button"
                                   onClick={() => updateSet(wEx.id, set.id, { rir: r })}
-                                  className={`h-10 rounded-xl text-xs font-bold transition-all ${
+                                  className={`min-h-[44px] rounded-xl text-xs font-bold transition-all ${
                                     (set.rir ?? 1) === r
                                       ? r === 0
                                         ? "bg-red-500/20 border border-red-500/40 text-red-400"
@@ -909,13 +909,13 @@ export const LiveWorkoutLogger: React.FC = () => {
                 {/* Add Set Options Bar */}
                 {!wEx.notes?.startsWith("cardio:") && (
                 <div className="px-4 pb-4 sm:px-5 sm:pb-5 flex items-center gap-2 pt-4 flex-wrap">
-                  <button type="button" onClick={() => addSet(wEx.id, "normal")} className="px-3 py-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-bold border border-neutral-700 flex items-center gap-1.5 transition-colors">
+                  <button type="button" onClick={() => addSet(wEx.id, "normal")} className="px-3 min-h-[44px] rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-bold border border-neutral-700 flex items-center gap-1.5 transition-colors">
                     <Plus className="w-3.5 h-3.5 text-cyan-400" />Serie Normal
                   </button>
-                  <button type="button" onClick={() => addSet(wEx.id, "dropset")} className="px-3 py-1.5 rounded-xl bg-purple-950/30 hover:bg-purple-900/40 text-purple-300 text-xs font-bold border border-purple-500/30 flex items-center gap-1.5 transition-colors">
+                  <button type="button" onClick={() => addSet(wEx.id, "dropset")} className="px-3 min-h-[44px] rounded-xl bg-purple-950/30 hover:bg-purple-900/40 text-purple-300 text-xs font-bold border border-purple-500/30 flex items-center gap-1.5 transition-colors">
                     <Sparkles className="w-3.5 h-3.5 text-purple-400" />Drop Set
                   </button>
-                  <button type="button" onClick={() => addSet(wEx.id, "myorep")} className="px-3 py-1.5 rounded-xl bg-blue-950/30 hover:bg-blue-900/40 text-blue-300 text-xs font-bold border border-blue-500/30 flex items-center gap-1.5 transition-colors">
+                  <button type="button" onClick={() => addSet(wEx.id, "myorep")} className="px-3 min-h-[44px] rounded-xl bg-blue-950/30 hover:bg-blue-900/40 text-blue-300 text-xs font-bold border border-blue-500/30 flex items-center gap-1.5 transition-colors">
                     <Activity className="w-3.5 h-3.5 text-blue-400" />Myo-Reps
                   </button>
                 </div>

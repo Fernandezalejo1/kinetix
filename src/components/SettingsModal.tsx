@@ -181,7 +181,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
         {/* Header */}
         <div className="p-5 border-b border-neutral-800 bg-neutral-950/50 shrink-0 flex items-center justify-between">
           <h3 className="text-lg font-black text-white">Configuración</h3>
-          <button onClick={onClose} className="p-2 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors">
+          <button onClick={onClose} className="p-2.5 min-w-[44px] min-h-[44px] rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors flex items-center justify-center">
             <X className="w-5 h-5" />
           </button>
         </div>

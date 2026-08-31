@@ -54,7 +54,7 @@ export const WarmupGeneratorModal: React.FC<WarmupGeneratorModalProps> = ({
           <button
             id="close-warmup-btn"
             onClick={onClose}
-            className="p-2 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors shrink-0"
+            className="p-2.5 min-w-[44px] min-h-[44px] rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors shrink-0 flex items-center justify-center"
           >
             <X className="w-5 h-5" />
           </button>

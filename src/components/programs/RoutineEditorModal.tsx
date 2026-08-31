@@ -145,7 +145,7 @@ export const RoutineEditorModal: React.FC<RoutineEditorModalProps> = ({
               <p className="text-[11px] text-neutral-400">Personaliza tu entrenamiento completo</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 rounded-xl hover:bg-neutral-800 text-neutral-400 hover:text-white transition-colors">
+          <button onClick={onClose} className="p-2.5 min-w-[44px] min-h-[44px] rounded-xl hover:bg-neutral-800 text-neutral-400 hover:text-white transition-colors flex items-center justify-center">
             <X className="w-5 h-5" />
           </button>
         </div>

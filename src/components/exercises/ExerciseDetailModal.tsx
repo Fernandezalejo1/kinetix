@@ -118,7 +118,7 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
 
             <button
               onClick={onClose}
-              className="p-2 rounded-2xl text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors shrink-0"
+              className="p-2.5 min-w-[44px] min-h-[44px] rounded-2xl text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors shrink-0 flex items-center justify-center"
               title="Cerrar Ficha"
             >
               <X className="w-5 h-5" />

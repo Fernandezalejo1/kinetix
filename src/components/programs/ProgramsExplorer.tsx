@@ -26,8 +26,26 @@ import { RoutineEditorModal } from "./RoutineEditorModal";
 export const ProgramsExplorer: React.FC = () => {
   const { startWorkoutFromRoutine, setSelectedExerciseForDetail, customRoutines, deleteCustomRoutine } = useWorkout();
   const { showToast } = useToast();
-  const [selectedProgram, setSelectedProgram] = useState<Program>(PREBUILT_PROGRAMS[0]);
-  const [selectedRoutine, setSelectedRoutine] = useState<Routine>(PREBUILT_PROGRAMS[0].routines[0]);
+  // Persist the selected program + routine so the choice survives tab switches
+  // and reloads (previously it always reset to the first program on remount).
+  const [selectedProgram, setSelectedProgram] = useState<Program>(() => {
+    try {
+      const savedId = localStorage.getItem("kinetix_selected_program");
+      return PREBUILT_PROGRAMS.find((p) => p.id === savedId) || PREBUILT_PROGRAMS[0];
+    } catch {
+      return PREBUILT_PROGRAMS[0];
+    }
+  });
+  const [selectedRoutine, setSelectedRoutine] = useState<Routine>(() => {
+    try {
+      const savedRoutineId = localStorage.getItem("kinetix_selected_routine");
+      const savedProgId = localStorage.getItem("kinetix_selected_program");
+      const program = PREBUILT_PROGRAMS.find((p) => p.id === savedProgId) || PREBUILT_PROGRAMS[0];
+      return program.routines.find((r) => r.id === savedRoutineId) || program.routines[0];
+    } catch {
+      return PREBUILT_PROGRAMS[0].routines[0];
+    }
+  });
 
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingRoutine, setEditingRoutine] = useState<CustomRoutine | undefined>(undefined);
@@ -45,6 +63,10 @@ export const ProgramsExplorer: React.FC = () => {
   const handleSelectProgram = (program: Program) => {
     setSelectedProgram(program);
     setSelectedRoutine(program.routines[0]);
+    try {
+      localStorage.setItem("kinetix_selected_program", program.id);
+      localStorage.setItem("kinetix_selected_routine", program.routines[0].id);
+    } catch {}
   };
 
   const handleStartWorkout = (routine: Routine) => {
@@ -240,6 +262,7 @@ export const ProgramsExplorer: React.FC = () => {
                 key={routine.id}
                 onClick={() => {
                   setSelectedRoutine(routine);
+                  try { localStorage.setItem("kinetix_selected_routine", routine.id); } catch {}
                 }}
                 className={`py-3 px-4 font-bold border-b-2 whitespace-nowrap transition-all flex items-center gap-2 shrink-0 ${
                   isCur
