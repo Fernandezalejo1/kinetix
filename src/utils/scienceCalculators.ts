@@ -230,10 +230,25 @@ function getAudioContext(): AudioContext | null {
       audioCtx = new AudioContextClass();
     }
   }
-  if (audioCtx && audioCtx.state === "suspended") {
-    audioCtx.resume();
-  }
   return audioCtx;
+}
+
+/**
+ * MUST be called from a user gesture (button tap/click) so iOS/Android allow
+ * audio to play (autoplay policies suspend the AudioContext otherwise).
+ * Returns true if audio is ready to play after the call.
+ */
+export function unlockAudio(): boolean {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return false;
+    if (ctx.state === "suspended") {
+      ctx.resume().catch(() => {});
+    }
+    return ctx.state === "running" || ctx.state === "suspended";
+  } catch (_) {
+    return false;
+  }
 }
 
 export function playRestTimerCompletedSound() {
@@ -287,13 +302,14 @@ export function playTickSound() {
 
     osc.type = "sine";
     osc.frequency.setValueAtTime(880, now); // A5
-    gain.gain.setValueAtTime(0.05, now);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.05);
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.3, now + 0.005);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.09);
 
     osc.connect(gain);
     gain.connect(ctx.destination);
     osc.start(now);
-    osc.stop(now + 0.06);
+    osc.stop(now + 0.1);
   } catch (_) {}
 }
 

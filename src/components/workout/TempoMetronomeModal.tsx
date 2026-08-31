@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { X, Play, Pause, RotateCcw, Volume2, VolumeX, Activity } from "lucide-react";
-import { playTickSound } from "../../utils/scienceCalculators";
+import { playTickSound, unlockAudio } from "../../utils/scienceCalculators";
+import { useWorkout } from "../../context/WorkoutContext";
 
 interface TempoMetronomeModalProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ export const TempoMetronomeModal: React.FC<TempoMetronomeModalProps> = ({
   const [phaseSecond, setPhaseSecond] = useState(1);
   const [repCount, setRepCount] = useState(0);
   const [soundActive, setSoundActive] = useState(true);
+  const { soundEnabled } = useWorkout();
 
   // Parse tempo: e.g. "3-1-0-1" => [3, 1, 0, 1]
   const parsedPhases = tempoString.split("-").map((v) => parseInt(v, 10) || 0);
@@ -39,8 +41,14 @@ export const TempoMetronomeModal: React.FC<TempoMetronomeModalProps> = ({
   useEffect(() => {
     let timer: any = null;
     if (isRunning && phases.length > 0) {
+      unlockAudio();
       timer = setInterval(() => {
-        if (soundActive) playTickSound();
+        if (soundActive && soundEnabled) {
+          playTickSound();
+          if (typeof navigator !== "undefined" && navigator.vibrate) {
+            navigator.vibrate(15);
+          }
+        }
 
         setPhaseSecond((prevSec) => {
           const activePhase = phases[currentPhaseIndex];
@@ -61,7 +69,14 @@ export const TempoMetronomeModal: React.FC<TempoMetronomeModalProps> = ({
     return () => {
       if (timer) clearInterval(timer);
     };
-  }, [isRunning, currentPhaseIndex, phases, soundActive]);
+  }, [isRunning, currentPhaseIndex, phases, soundActive, soundEnabled]);
+
+  // Prevent phase drift if the tempo string changes while running
+  useEffect(() => {
+    if (!isOpen && isRunning) {
+      setIsRunning(false);
+    }
+  }, [isOpen, isRunning, setIsRunning]);
 
   if (!isOpen) return null;
 
@@ -197,7 +212,10 @@ export const TempoMetronomeModal: React.FC<TempoMetronomeModalProps> = ({
             </button>
 
             <button
-              onClick={() => setIsRunning(!isRunning)}
+              onClick={() => {
+                unlockAudio();
+                setIsRunning(!isRunning);
+              }}
               className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold shadow-lg transition-all ${
                 isRunning
                   ? "bg-amber-600 hover:bg-amber-500 text-white shadow-amber-600/20"
