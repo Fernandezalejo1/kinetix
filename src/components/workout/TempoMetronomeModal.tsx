@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { X, Play, Pause, RotateCcw, Volume2, VolumeX, Activity } from "lucide-react";
 import { playTickSound, unlockAudio } from "../../utils/scienceCalculators";
 import { useWorkout } from "../../context/WorkoutContext";
@@ -31,13 +31,30 @@ export const TempoMetronomeModal: React.FC<TempoMetronomeModalProps> = ({
   const concentric = Math.max(1, parsedPhases[2] ?? 1);
   const topPause = parsedPhases[3] ?? 0;
 
-  const phases = [
-    { name: "Excéntrico (Bajar / Estirar)", duration: eccentric, color: "text-blue-400", bg: "bg-blue-500", desc: "Máxima tensión mecánica en elongación" },
-    { name: "Pausa en Estiramiento", duration: bottomPause, color: "text-purple-400", bg: "bg-purple-500", desc: "Disipa energía elástica para reclutamiento puro" },
-    { name: "Concéntrico (Subir / Empujar)", duration: concentric, color: "text-emerald-400", bg: "bg-emerald-500", desc: "Máxima intención de aceleración voluntaria" },
-    { name: "Contracción Pico", duration: topPause, color: "text-amber-400", bg: "bg-amber-500", desc: "Estabilidad y control articular" },
-  ].filter((p) => p.duration > 0);
+  // Memoize so the phases array reference stays stable between renders. Without
+  // this, the run effect below would tear down and set up a new interval on
+  // every second (each render produced a fresh array), causing timing jitter.
+  const phases = useMemo(
+    () =>
+      [
+        { name: "Excéntrico (Bajar / Estirar)", duration: eccentric, color: "text-blue-400", bg: "bg-blue-500", desc: "Máxima tensión mecánica en elongación" },
+        { name: "Pausa en Estiramiento", duration: bottomPause, color: "text-purple-400", bg: "bg-purple-500", desc: "Disipa energía elástica para reclutamiento puro" },
+        { name: "Concéntrico (Subir / Empujar)", duration: concentric, color: "text-emerald-400", bg: "bg-emerald-500", desc: "Máxima intención de aceleración voluntaria" },
+        { name: "Contracción Pico", duration: topPause, color: "text-amber-400", bg: "bg-amber-500", desc: "Estabilidad y control articular" },
+      ].filter((p) => p.duration > 0),
+    [eccentric, bottomPause, concentric, topPause]
+  );
 
+  // Refs that always hold the latest phase/second so the interval closure never
+  // reads stale state (fixes the metronome getting stuck on phase 0).
+  const phaseRef = useRef(currentPhaseIndex);
+  const secondRef = useRef(phaseSecond);
+  phaseRef.current = currentPhaseIndex;
+  secondRef.current = phaseSecond;
+
+  // The run effect depends ONLY on isRunning/phases toggles, not on the phase
+  // index or second, so the interval is created once and never recreated each
+  // second while running.
   useEffect(() => {
     let timer: any = null;
     if (isRunning && phases.length > 0) {
@@ -46,30 +63,36 @@ export const TempoMetronomeModal: React.FC<TempoMetronomeModalProps> = ({
         if (soundActive && soundEnabled) {
           playTickSound();
           if (typeof navigator !== "undefined" && navigator.vibrate) {
-            navigator.vibrate(15);
+            navigator.vibrate(30);
           }
         }
 
+        const idx = phaseRef.current;
+        const activePhase = phases[idx];
         setPhaseSecond((prevSec) => {
-          const activePhase = phases[currentPhaseIndex];
           if (prevSec < activePhase.duration) {
             return prevSec + 1;
-          } else {
-            // Next phase
-            const nextIdx = (currentPhaseIndex + 1) % phases.length;
-            if (nextIdx === 0) {
-              setRepCount((r) => r + 1);
-            }
-            setCurrentPhaseIndex(nextIdx);
-            return 1;
           }
+          const nextIdx = (idx + 1) % phases.length;
+          if (nextIdx === 0) {
+            setRepCount((r) => r + 1);
+          }
+          setCurrentPhaseIndex(nextIdx);
+          phaseRef.current = nextIdx;
+          return 1;
         });
       }, 1000);
     }
     return () => {
       if (timer) clearInterval(timer);
     };
-  }, [isRunning, currentPhaseIndex, phases, soundActive, soundEnabled]);
+  }, [isRunning, phases, soundActive, soundEnabled]);
+
+  // Reset refs back to state so they stay in sync.
+  useEffect(() => {
+    phaseRef.current = currentPhaseIndex;
+    secondRef.current = phaseSecond;
+  }, [currentPhaseIndex, phaseSecond]);
 
   // Prevent phase drift if the tempo string changes while running
   useEffect(() => {

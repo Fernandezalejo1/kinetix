@@ -56,19 +56,18 @@ export const UpdateBanner: React.FC = () => {
   }, []);
 
   const reload = () => {
-    // Order: send SKIP_WAITING (new SW activates → controllerchange), then the
-    // controllerchange handler reloads once. Do NOT reload here synchronously.
-    if (navigator.serviceWorker.controller) {
-      navigator.serviceWorker.controller.postMessage({ type: "SKIP_WAITING" });
-    } else {
-      navigator.serviceWorker.getRegistration().then((reg) => {
-        if (reg?.waiting) {
-          reg.waiting.postMessage({ type: "SKIP_WAITING" });
-        } else {
-          window.location.reload();
-        }
-      });
-    }
+    // Ask the WAITING service worker (the new version) to skipWaiting so it
+    // activates, which fires controllerchange → reloads once. We must message
+    // the *waiting* worker, not the currently active (old) controller.
+    navigator.serviceWorker.getRegistration().then((reg) => {
+      if (reg?.waiting) {
+        reg.waiting.postMessage({ type: "SKIP_WAITING" });
+      } else if (navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({ type: "SKIP_WAITING" });
+      } else {
+        window.location.reload();
+      }
+    });
   };
 
   if (!updateAvailable) return null;

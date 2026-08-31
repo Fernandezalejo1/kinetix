@@ -36,32 +36,56 @@ import { TempoMetronomeModal } from "./TempoMetronomeModal";
 import { ExerciseDetailModal } from "../exercises/ExerciseDetailModal";
 import { ExerciseLibraryModal } from "../exercises/ExerciseLibraryModal";
 
-/** Cardio Timer — 20 minute countdown for treadmill/cardio exercises */
+/** Cardio Timer — 20 minute countdown for treadmill/cardio exercises.
+ *  Uses a target END timestamp (not tick-counting) so the countdown keeps
+ *  correct time even if the phone screen locks or the app is backgrounded and
+ *  the browser throttles setInterval. */
+const CARDIO_SECONDS = 20 * 60;
 const CardioTimer: React.FC<{ exercise: WorkoutExercise }> = ({ exercise }) => {
-  const [remaining, setRemaining] = useState(20 * 60);
+  const [remaining, setRemaining] = useState(CARDIO_SECONDS);
   const [isRunning, setIsRunning] = useState(false);
   const [started, setStarted] = useState(false);
+  const [endAt, setEndAt] = useState<number | null>(null);
   const { completeSetAndTriggerTimer } = useWorkout();
 
   useEffect(() => {
-    if (!isRunning || remaining <= 0) return;
-    const interval = setInterval(() => {
-      setRemaining((prev) => {
-        if (prev <= 1) {
-          setIsRunning(false);
-          completeSetAndTriggerTimer(exercise.id, exercise.sets[0]?.id);
-          if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200]);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+    if (!isRunning || endAt === null) return;
+    const tick = () => {
+      const left = Math.max(0, Math.ceil((endAt - Date.now()) / 1000));
+      setRemaining(left);
+      if (left <= 0) {
+        setIsRunning(false);
+        completeSetAndTriggerTimer(exercise.id, exercise.sets[0]?.id);
+        if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200]);
+      }
+    };
+    tick();
+    const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [isRunning, remaining, exercise.id, exercise.sets, completeSetAndTriggerTimer]);
+  }, [isRunning, endAt, exercise.id, exercise.sets, completeSetAndTriggerTimer]);
+
+  const toggle = () => {
+    if (!started || remaining <= 0) {
+      setEndAt(Date.now() + CARDIO_SECONDS * 1000);
+    } else if (isRunning) {
+      setEndAt(null);
+    } else {
+      setEndAt(Date.now() + remaining * 1000);
+    }
+    setStarted(true);
+    setIsRunning(!isRunning);
+  };
+
+  const reset = () => {
+    setRemaining(CARDIO_SECONDS);
+    setIsRunning(false);
+    setStarted(false);
+    setEndAt(null);
+  };
 
   const mins = Math.floor(remaining / 60);
   const secs = remaining % 60;
-  const progress = ((20 * 60 - remaining) / (20 * 60)) * 100;
+  const progress = ((CARDIO_SECONDS - remaining) / CARDIO_SECONDS) * 100;
   const done = remaining === 0 && started;
 
   return (
@@ -85,7 +109,7 @@ const CardioTimer: React.FC<{ exercise: WorkoutExercise }> = ({ exercise }) => {
           {!done ? (
             <>
               <button
-                onClick={() => { setIsRunning(!isRunning); setStarted(true); }}
+                onClick={toggle}
                 className={`px-8 py-3 rounded-xl font-bold text-sm flex items-center gap-2 transition-all shadow-lg ${
                   isRunning ? "bg-amber-600 hover:bg-amber-500 text-white shadow-amber-600/20" : "bg-cyan-600 hover:bg-cyan-500 text-white shadow-cyan-600/20"
                 }`}
@@ -94,7 +118,7 @@ const CardioTimer: React.FC<{ exercise: WorkoutExercise }> = ({ exercise }) => {
               </button>
               {started && (
                 <button
-                  onClick={() => { setRemaining(20 * 60); setIsRunning(false); setStarted(false); }}
+                  onClick={reset}
                   className="px-4 py-3 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-bold text-sm border border-neutral-700 transition-all"
                 >
                   <RotateCcw className="w-4 h-4" />
@@ -299,32 +323,38 @@ export const LiveWorkoutLogger: React.FC = () => {
       className="fixed inset-0 z-50 text-neutral-100 flex flex-col overflow-hidden"
       style={{ backgroundColor: '#0a0a0a' }}
     >
-      {/* DEBUG BANNER - remove after testing */}
-      <div style={{ backgroundColor: '#ff0000', color: 'white', padding: '8px', textAlign: 'center', fontSize: '14px', fontWeight: 'bold', zIndex: 999 }}>
-        KINETIX WORKOUT ACTIVE - Exercises: {activeSession.exercises.length} - Timer: {formatStopwatch(elapsedSeconds)}
-      </div>
-      {/* Top Session Sticky Bar */}        <div className="px-3 sm:px-8 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-3 sm:py-3.5 border-b border-neutral-700 flex flex-wrap items-center justify-between gap-y-2 gap-x-3 z-10 shrink-0" style={{ backgroundColor: '#1a1a1a' }}>
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981] shrink-0" />
-          <div className="min-w-0">
-            <h2 className="text-sm sm:text-lg font-black text-white tracking-tight truncate">
-              {activeSession.routineName}
-            </h2>
-            <div className="flex items-center gap-2 sm:gap-3 text-xs text-neutral-400 font-mono flex-wrap">
-              <span className="flex items-center gap-1 text-cyan-400 font-bold">
-                <Clock className="w-3.5 h-3.5" />
-                {formatStopwatch(elapsedSeconds)}
-              </span>
-              <span>•</span>
-              <span>{completedSetsCount} series</span>
-              <span>•</span>
-              <span className="text-purple-400 font-bold">{currentVolume.toLocaleString()} {weightUnit}</span>
+      {/* Floating Session Timer Header — a lightweight stopwatch that stays fixed
+          at the top so it never takes over the center of the screen. Uses
+          responsive (vw/clamp) sizing to stay legible from 4" to 7" screens. */}
+      <div className="sticky top-0 z-20 shrink-0 px-3 sm:px-8 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-3 border-b border-neutral-700"
+           style={{ backgroundColor: '#1a1a1a' }}>
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          {/* Active badge + routine name (compact) */}
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981] shrink-0" />
+            <div className="min-w-0">
+              <h2 className="text-sm sm:text-lg font-black text-white tracking-tight truncate">
+                {activeSession.routineName}
+              </h2>
+              <div className="flex items-center gap-2 text-xs text-neutral-400 font-mono">
+                <span>{completedSetsCount} series</span>
+                <span>•</span>
+                <span className="text-purple-400 font-bold">{currentVolume.toLocaleString()} {weightUnit}</span>
+              </div>
             </div>
+          </div>
+
+          {/* Floating stopwatch pill — the session time, prominent & responsive */}
+          <div className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-2xl bg-neutral-950/80 border border-cyan-500/40 shadow-lg shadow-cyan-900/20 ml-auto shrink-0">
+            <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
+            <span className="font-black text-white font-mono tabular-nums text-[clamp(1.1rem,5.5vw,1.75rem)] leading-none">
+              {formatStopwatch(elapsedSeconds)}
+            </span>
           </div>
         </div>
 
         {/* Action buttons */}
-        <div className="flex items-center gap-1.5 sm:gap-2 ml-auto">
+        <div className="flex items-center gap-1.5 sm:gap-2 mt-3">
           <button
             onClick={() => setSoundEnabled(!soundEnabled)}
             className="p-2 rounded-xl bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-700"

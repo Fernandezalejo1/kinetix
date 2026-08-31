@@ -19,7 +19,7 @@ import {
 } from "../types";
 import { EXERCISES_DATABASE } from "../data/exercisesData";
 import { DEFAULT_NUTRITION_PROFILE, computePersonalTargets } from "../data/nutritionData";
-import { calculate1RM, playRestTimerCompletedSound, playTickSound } from "../utils/scienceCalculators";
+import { calculate1RM, unlockAudio, playRestTimerCompletedSound, playTickSound } from "../utils/scienceCalculators";
 import confetti from "canvas-confetti";
 
 interface RestTimerState {
@@ -27,6 +27,7 @@ interface RestTimerState {
   totalSeconds: number;
   remainingSeconds: number;
   exerciseName: string;
+  endAt: number | null;
 }
 
 interface WorkoutContextType {
@@ -311,6 +312,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
     totalSeconds: 90,
     remainingSeconds: 90,
     exerciseName: "",
+    endAt: null,
   });
 
   const [workoutHistory, setWorkoutHistory] = useState<CompletedWorkout[]>(() => {
@@ -405,48 +407,54 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
     localStorage.setItem("kinetix_custom_routines", JSON.stringify(customRoutines));
   }, [customRoutines]);
 
-  // Rest Timer Interval
+  // Rest Timer Interval — timestamp-based so it keeps correct time even if the
+  // phone screen locks / the app is backgrounded and setInterval is throttled.
   useEffect(() => {
     let interval: any = null;
-    if (restTimer.active && restTimer.remainingSeconds > 0) {
-      interval = setInterval(() => {
+    if (restTimer.active && restTimer.endAt !== null) {
+      const tick = () => {
         setRestTimer((prev) => {
-          if (prev.remainingSeconds <= 1) {
-            if (soundEnabled) {
-              playRestTimerCompletedSound();
-            }
+          if (prev.endAt === null) return prev;
+          const left = Math.max(0, Math.ceil((prev.endAt - Date.now()) / 1000));
+          if (left <= 0) {
+            if (soundEnabled) playRestTimerCompletedSound();
             return { ...prev, remainingSeconds: 0, active: false };
           }
-          if (soundEnabled && prev.remainingSeconds <= 4 && prev.remainingSeconds > 1) {
+          if (soundEnabled && left <= 4 && left > 1 && prev.remainingSeconds > left) {
             playTickSound();
           }
-          return { ...prev, remainingSeconds: prev.remainingSeconds - 1 };
+          return { ...prev, remainingSeconds: left };
         });
-      }, 1000);
+      };
+      tick();
+      interval = setInterval(tick, 1000);
     }
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [restTimer.active, restTimer.remainingSeconds, soundEnabled]);
+  }, [restTimer.active, restTimer.endAt, soundEnabled]);
 
   const startRestTimer = useCallback(
     (seconds: number, exerciseName = "") => {
+      unlockAudio();
       setRestTimer({
         active: true,
         totalSeconds: seconds,
         remainingSeconds: seconds,
         exerciseName,
+        endAt: Date.now() + seconds * 1000,
       });
     },
     []
   );
 
   const stopRestTimer = useCallback(() => {
-    setRestTimer((prev) => ({ ...prev, active: false, remainingSeconds: 0 }));
+    setRestTimer((prev) => ({ ...prev, active: false, remainingSeconds: 0, endAt: null }));
   }, []);
 
   const adjustRestTimer = useCallback((deltaSeconds: number) => {
     setRestTimer((prev) => {
+      if (prev.endAt === null) return prev;
       const nextRemaining = Math.max(0, prev.remainingSeconds + deltaSeconds);
       const nextTotal = Math.max(nextRemaining, prev.totalSeconds + deltaSeconds);
       return {
@@ -454,6 +462,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
         remainingSeconds: nextRemaining,
         totalSeconds: nextTotal,
         active: nextRemaining > 0,
+        endAt: nextRemaining > 0 ? Date.now() + nextRemaining * 1000 : null,
       };
     });
   }, []);

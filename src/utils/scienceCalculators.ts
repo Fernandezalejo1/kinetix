@@ -241,7 +241,7 @@ function getAudioContext(): AudioContext | null {
 export function unlockAudio(): boolean {
   try {
     const ctx = getAudioContext();
-    if (!ctx) return false;
+    if (!ctx || ctx.state === "closed") return false;
     if (ctx.state === "suspended") {
       ctx.resume().catch(() => {});
     }
@@ -295,7 +295,13 @@ export function playRestTimerCompletedSound() {
 export function playTickSound() {
   try {
     const ctx = getAudioContext();
-    if (!ctx) return;
+    if (!ctx || ctx.state === "closed") return;
+    // Ensure the context is running (autoplay policies may have suspended it).
+    if (ctx.state === "suspended") {
+      ctx.resume().catch(() => {});
+      // resume() is async; do not attempt to schedule on a still-suspended ctx.
+      if (ctx.state === "suspended") return;
+    }
     const now = ctx.currentTime;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
