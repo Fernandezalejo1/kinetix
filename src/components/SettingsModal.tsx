@@ -188,7 +188,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-5 space-y-5 scrollbar-thin">
+        <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-5 scrollbar-thin">
           {/* Backup section */}
           <section className="space-y-3">
             <div className="flex items-center gap-2">

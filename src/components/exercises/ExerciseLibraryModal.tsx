@@ -137,7 +137,7 @@ export const ExerciseLibraryModal: React.FC<ExerciseLibraryModalProps> = ({
         </div>
 
         {/* Exercise Cards Grid */}
-        <div className="p-4 sm:p-6 overflow-y-auto scrollbar-thin flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+        <div className="p-4 sm:p-6 overflow-y-auto scrollbar-thin flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 gap-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
           {filteredExercises.length === 0 ? (
             <div className="col-span-2 text-center py-12 text-neutral-400">
               <Dumbbell className="w-10 h-10 mx-auto text-neutral-600 mb-2" />

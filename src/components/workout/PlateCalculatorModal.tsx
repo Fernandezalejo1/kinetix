@@ -53,7 +53,7 @@ export const PlateCalculatorModal: React.FC<PlateCalculatorModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-4 sm:p-6 space-y-6 overflow-y-auto scrollbar-thin flex-1 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+        <div className="p-4 sm:p-6 space-y-6 overflow-y-auto scrollbar-thin flex-1 min-h-0 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
           {/* Target Weight Slider & Input */}
           <div className="space-y-3">
             <div className="flex justify-between items-center">

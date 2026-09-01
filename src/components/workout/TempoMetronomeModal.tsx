@@ -135,7 +135,7 @@ export const TempoMetronomeModal: React.FC<TempoMetronomeModalProps> = ({
         </div>
 
         {/* Metronome Center Visualizer */}
-        <div className="p-4 sm:p-6 space-y-6 text-center overflow-y-auto scrollbar-thin flex-1 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+        <div className="p-4 sm:p-6 space-y-6 text-center overflow-y-auto scrollbar-thin flex-1 min-h-0 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
           {/* Reps Counter Banner */}
           <div className="flex items-center justify-between px-4 py-2 bg-neutral-950 rounded-xl border border-neutral-800">
             <span className="text-xs uppercase tracking-wider text-neutral-400 font-semibold">Repeticiones Completadas</span>

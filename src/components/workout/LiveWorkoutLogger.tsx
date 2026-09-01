@@ -443,7 +443,7 @@ export const LiveWorkoutLogger: React.FC = () => {
       )}
 
       {/* Main Exercises Workout Area */}
-      <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-6 max-w-4xl w-full mx-auto pb-[calc(7rem+env(safe-area-inset-bottom))]" style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
+      <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-6 space-y-6 max-w-4xl w-full mx-auto pb-[calc(7rem+env(safe-area-inset-bottom))]" style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
         {activeSession.exercises.length === 0 ? (
           <div className="text-center py-16 bg-neutral-900/50 rounded-3xl border border-neutral-800 p-8 space-y-4">
             <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 flex items-center justify-center mx-auto">

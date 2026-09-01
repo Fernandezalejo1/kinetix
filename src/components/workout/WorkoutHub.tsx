@@ -511,7 +511,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
             </div>
 
             {/* Exercises List */}
-            <div className="flex-1 overflow-y-auto p-5 space-y-4 scrollbar-thin">
+            <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-4 scrollbar-thin">
               {selectedSession.exercises?.map((wEx: any, idx: number) => (
                 <div key={wEx.id || idx} className="rounded-2xl bg-neutral-950 border border-neutral-800 overflow-hidden">
                   <div className="px-4 py-3 bg-neutral-900/50 border-b border-neutral-800 flex items-center justify-between cursor-pointer hover:bg-neutral-800/50 transition-colors" onClick={() => wEx.exerciseId && setSelectedExHistory({ id: wEx.exerciseId, name: wEx.exercise?.nameEs || wEx.exerciseId })}>
@@ -580,7 +580,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
                   </button>
                 </div>
               </div>
-              <div className="flex-1 overflow-y-auto p-5 space-y-3 scrollbar-thin">
+              <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-3 scrollbar-thin">
                 {history.length === 0 ? (
                   <p className="text-xs text-neutral-500 text-center py-8">Sin historial para este ejercicio</p>
                 ) : (
