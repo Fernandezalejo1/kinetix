@@ -26,52 +26,56 @@ interface ScheduledMeal {
   preWorkout?: boolean;
 }
 
+// Horario adaptado a tu día real (turno nocturno pero despertás ~10:00,
+// entrenás a media mañana y trabajás de noche):
+//   10:30 Pre-Entreno · 13:00 Almuerzo (post-gym) · 17:00 Merienda (pre-trabajo)
+//   21:00 Cena (trabajando) · 00:00 Síntesis (comida nocturna)
 const NIGHT_SCHEDULE: ScheduledMeal[] = [
   {
-    time: "17:00",
-    name: "Comida 1 · Apertura",
-    foods: "Arroz + pollo + verduras",
-    calories: 650,
-    protein: 45,
-    carbs: 85,
-    fats: 12,
-  },
-  {
-    time: "19:00",
-    name: "Pre-Entreno · Combustible",
-    foods: "Banana + pan con miel + whey (carbos rápidos)",
-    calories: 400,
-    protein: 25,
-    carbs: 70,
-    fats: 3,
+    time: "10:30",
+    name: "Pre-Entreno · Despertar + Perro",
+    foods: "Banana + avena + whey + miel (carbos rápidos)",
+    calories: 350,
+    protein: 35,
+    carbs: 45,
+    fats: 4,
     preWorkout: true,
   },
   {
-    time: "21:00",
-    name: "Post-Entreno · Recuperación",
-    foods: "Boniato + pechuga + verduras",
-    calories: 550,
-    protein: 40,
-    carbs: 80,
-    fats: 8,
+    time: "13:00",
+    name: "Almuerzo · Post-Gym",
+    foods: "Arroz + pollo/pechuga + verduras + aguacate",
+    calories: 800,
+    protein: 85,
+    carbs: 55,
+    fats: 22,
   },
   {
-    time: "23:30",
-    name: "Comida 4 · Cena principal",
-    foods: "Carne magra + arroz integral + aguacate",
-    calories: 650,
+    time: "17:00",
+    name: "Merienda · Pre-Trabajo",
+    foods: "Yogur griego + frutos secos + banana",
+    calories: 420,
     protein: 45,
-    carbs: 75,
-    fats: 18,
+    carbs: 25,
+    fats: 16,
   },
   {
-    time: "01:30",
+    time: "21:00",
+    name: "Cena · En el Trabajo",
+    foods: "Carne magra + arroz integral + verduras + aceite de oliva",
+    calories: 600,
+    protein: 65,
+    carbs: 35,
+    fats: 22,
+  },
+  {
+    time: "00:00",
     name: "Última comida · Síntesis",
-    foods: "Pescado blanco + ensalada + aceite de oliva",
-    calories: 550,
-    protein: 42,
-    carbs: 20,
-    fats: 30,
+    foods: "Pescado blanco + claras + ensalada + aceite de oliva",
+    calories: 400,
+    protein: 50,
+    carbs: 4,
+    fats: 27,
   },
 ];
 
@@ -135,7 +139,7 @@ const NORMAL_SCHEDULE: ScheduledMeal[] = [
 
 const SCHEDULES: Record<ScheduleType, { label: string; short: string; icon: React.ReactNode; meals: ScheduledMeal[] }> = {
   nocturno: {
-    label: "Horario Nocturno (17:00 – 02:00)",
+    label: "Horario Nocturno (despierto 10:00 → trabajo de noche)",
     short: "Nocturno",
     icon: <Moon className="w-4 h-4" />,
     meals: NIGHT_SCHEDULE,
