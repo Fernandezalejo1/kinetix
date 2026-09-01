@@ -273,5 +273,77 @@ export const PREBUILT_PROGRAMS: Program[] = [
         ]
       }
     ]
+  },
+  {
+    id: "definition-abs-4d",
+    title: "DEFINICIÓN + ABDOMINALES (4 Días)",
+    subtitle: "Fase de Definición con Bloque de Construcción Abdominal Progresiva en cada día + Cardio + Guía de Déficit",
+    scienceBasis: "Programa de fase de definición: déficit calórico moderado (−15%) con volumen de hipertrofia reducido (~60−70% del de volumen) para RETENER masa magra mientras el cuerpo usa grasa como energía. La CLAVE de los abdominales: se construyen igual que cualquier músculo (progresión de carga, tensión mecánica y estiramiento − cf. Schoenfeld) pero SOLO se VEN cuando baja el % de grasa corporal (≈12% hombres / ≈20% mujeres para un six-pack visible). Cada día incluye un BLOQUE DE ABDOMINALES PROGRESIVO (fases: activación → hipertrofia con peso → resistencia isométrica) más cardio para acelerar el déficit. Complementar con la guía de Definición en la pestaña Nutrición.",
+    level: "Intermedio",
+    daysPerWeek: 4,
+    durationWeeks: 6,
+    focus: "Definición (pérdida de grasa) + Construcción Progresiva de Abdominales",
+    routines: [
+      {
+        id: "def-push-abs",
+        name: "Día 1 · Push (Pecho) + Bloque Abdominal Superior",
+        description: "PASO 1 del abdominal: activación y flexión de recto abdominal con carga progresiva. Press compuestos a déficit moderado para retener masa.",
+        targetSplit: "Push (Empuje)",
+        estimatedDurationMin: 50,
+        exercises: [
+          { exerciseId: "smith-incline-bench-press", targetSets: 3, targetReps: "8-10", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 120 },
+          { exerciseId: "cable-chest-flye", targetSets: 3, targetReps: "12-15", targetRir: 1, targetTempo: "3-0-1-2", restSeconds: 90 },
+          { exerciseId: "overhead-cable-triceps-extension", targetSets: 3, targetReps: "10-12", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 90 },
+          { exerciseId: "cable-crunch", targetSets: 4, targetReps: "12-15", targetRir: 0, targetTempo: "3-1-1-1", restSeconds: 45 },
+          { exerciseId: "decline-crunch", targetSets: 3, targetReps: "12-15", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 45 },
+          { exerciseId: "front-plank", targetSets: 3, targetReps: "45-60s", targetRir: 1, targetTempo: "Sostén isométrico", restSeconds: 45 }
+        ]
+      },
+      {
+        id: "def-pull-abs",
+        name: "Día 2 · Pull (Espalda) + Oblicuos",
+        description: "PASO 2 del abdominal: trabajo de flexión lateral y rotación (oblicuos) con peso progresivo. Mantiene la espalda densa en déficit.",
+        targetSplit: "Pull (Tracción)",
+        estimatedDurationMin: 50,
+        exercises: [
+          { exerciseId: "neutral-grip-lat-pulldown", targetSets: 3, targetReps: "10-12", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 120 },
+          { exerciseId: "chest-supported-t-bar-row", targetSets: 3, targetReps: "10-12", targetRir: 1, targetTempo: "2-1-1-1", restSeconds: 120 },
+          { exerciseId: "incline-dumbbell-curl", targetSets: 3, targetReps: "12-15", targetRir: 0, targetTempo: "3-1-1-0", restSeconds: 90 },
+          { exerciseId: "weighted-russian-twist", targetSets: 4, targetReps: "12-15/side", targetRir: 1, targetTempo: "2-0-1-1", restSeconds: 45 },
+          { exerciseId: "air-bike", targetSets: 3, targetReps: "20/side", targetRir: 1, targetTempo: "2-0-1-0", restSeconds: 45 },
+          { exerciseId: "front-plank", targetSets: 3, targetReps: "45-60s", targetRir: 1, targetTempo: "Sostén isométrico", restSeconds: 45 }
+        ]
+      },
+      {
+        id: "def-legs-abs",
+        name: "Día 3 · Piernas + Core Integrado",
+        description: "PASO 3 del abdominal: integración de core con estímulo metabólico (bisagras + marcha con lastre). Quema calórica alta para el déficit.",
+        targetSplit: "Legs (Pierna)",
+        estimatedDurationMin: 50,
+        exercises: [
+          { exerciseId: "barbell-hack-or-squat", targetSets: 3, targetReps: "8-10", targetRir: 1, targetTempo: "3-1-0-1", restSeconds: 150 },
+          { exerciseId: "romanian-deadlift", targetSets: 3, targetReps: "10-12", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 150 },
+          { exerciseId: "standing-calf-raise", targetSets: 4, targetReps: "15-20", targetRir: 0, targetTempo: "3-2-1-1", restSeconds: 60 },
+          { exerciseId: "medicine-ball-slam", targetSets: 3, targetReps: "12", targetRir: 1, targetTempo: "Explosivo", restSeconds: 45 },
+          { exerciseId: "lying-scissors-cross", targetSets: 3, targetReps: "15/side", targetRir: 1, targetTempo: "2-1-1-0", restSeconds: 45 },
+          { exerciseId: "front-plank", targetSets: 3, targetReps: "60s", targetRir: 1, targetTempo: "Sostén isométrico", restSeconds: 45 }
+        ]
+      },
+      {
+        id: "def-cardio-abs",
+        name: "Día 4 · Cardio Definición + Bloque Abdominal Denso",
+        description: "PASO FINAL del abdominal: bloque denso de definición (recto + oblicuos + lumbar) y cardio para maximizar el déficit y revelar el six-pack.",
+        targetSplit: "Cardio + Core",
+        estimatedDurationMin: 45,
+        exercises: [
+          { exerciseId: "elliptical-machine-walk", targetSets: 1, targetReps: "25 min", targetRir: 3, targetTempo: "Cardio LISS 65-70% FC", restSeconds: 60 },
+          { exerciseId: "floor-crunch", targetSets: 3, targetReps: "20", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 30 },
+          { exerciseId: "air-bike", targetSets: 3, targetReps: "20/side", targetRir: 1, targetTempo: "2-0-1-0", restSeconds: 30 },
+          { exerciseId: "weighted-russian-twist", targetSets: 3, targetReps: "15/side", targetRir: 1, targetTempo: "2-0-1-1", restSeconds: 30 },
+          { exerciseId: "front-plank", targetSets: 3, targetReps: "60s", targetRir: 1, targetTempo: "Sostén isométrico", restSeconds: 30 },
+          { exerciseId: "superman-hold", targetSets: 3, targetReps: "20-30s", targetRir: 1, targetTempo: "Sostén isométrico", restSeconds: 30 }
+        ]
+      }
+    ]
   }
 ];

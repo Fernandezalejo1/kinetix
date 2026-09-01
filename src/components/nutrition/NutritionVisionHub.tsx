@@ -358,6 +358,63 @@ export const NutritionVisionHub: React.FC = () => {
         </div>
       </div>
 
+      {/* Guía paso a paso de la FASE DE DEFINICIÓN */}
+      <div className={`p-5 sm:p-6 rounded-3xl border shadow-2xl space-y-4 ${
+        nutritionGoal === "cut"
+          ? "bg-gradient-to-br from-neutral-900 via-neutral-900 to-amber-950/20 border-amber-500/20"
+          : "bg-neutral-900 border-neutral-800"
+      }`}>
+        <div className="flex items-center gap-2.5">
+          <div className={`p-2.5 rounded-xl border flex items-center justify-center ${
+            nutritionGoal === "cut" ? "bg-amber-500/10 text-amber-400 border-amber-500/25" : "bg-neutral-800 text-neutral-400 border-neutral-700"
+          }`}>
+            <Zap className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-base font-black text-white tracking-tight">
+              Guía de Fase de Definición {nutritionGoal === "cut" && <span className="text-amber-300">(activa)</span>}
+            </h3>
+            <p className="text-[11px] text-neutral-400">Paso a paso para quemar grasa y REVELAR los abdominales sin perder músculo</p>
+          </div>
+        </div>
+
+        <p className="text-[11px] text-neutral-300 leading-relaxed">
+          La <strong className="text-white">definición</strong> es un déficit calórico controlado combinado con entrenamiento y proteína
+          alta. Los abdominales se <strong className="text-white">construyen con sobrecarga progresiva</strong> (como cualquier músculo) pero
+          solo se <strong className="text-white">VEN</strong> cuando el % de grasa baja (target: ~12% hombres / ~20% mujeres para six-pack).
+          Seguí estos pasos:
+        </p>
+
+        <ol className="space-y-3">
+          {[
+            { t: "1 · Déficit moderado (−15%)", d: "Tu objetivo activo ya lo tiene. Comé ~300 kcal menos que tu TDEE (Mifflin-St Jeor) para perder 0.4–0.8% de peso corporal por semana, no más rápido (protege masa y metabolismo)." },
+            { t: "2 · Proteína alta para retener músculo", d: `Mantené ${NUTRITION_GOALS[nutritionGoal].proteinPerKg} g/kg de peso corporal (ej. ${Math.round(currentWeight * NUTRITION_GOALS[nutritionGoal].proteinPerKg)} g/día para ${currentWeight} kg). Distribuida en 3–5 comidas, priorizando después del entreno.` },
+            { t: "3 · Construí los abdominales con progresión", d: "Usá el programa DEDICADO 'Definición + Abdominales' en Programas: cable-crunch y Russian Twist con peso PROGRESIVO (aumentá carga o reps cada semana), plancha isométrica para resistencia, y no recortes repeticiones." },
+            { t: "4 · Cardio para acelerar el déficit", d: "Día 4 del programa: LISS 65-70% FC máxima (cinta/elíptica 25 min) + pasos diarios (8–10k). El cardio suma a tu déficit sin comprometer el entrenamiento de fuerza." },
+            { t: "5 · Mantené la fuerza en el gimnasio", d: "Entrená igual de fuerte (los compuestos protegen masa muscular). Si el rendimiento cae más de un 10%, el déficit es demasiado agresivo: subí 100–150 kcal." },
+            { t: "6 · Hidratación y sueño (clave en turno nocturno)", d: "Agua según tu objetivo (Water Tracker) hasta antes de dormir, y cafeína nunca después de las 00:00. Dormir mal sabotea la pérdida de grasa y la recuperación abdominal." },
+          ].map((s) => (
+            <li key={s.t} className="flex gap-3 p-3 rounded-2xl bg-neutral-950 border border-neutral-800">
+              <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${
+                nutritionGoal === "cut" ? "bg-amber-500/15 text-amber-300 border border-amber-500/20" : "bg-neutral-800 text-neutral-300 border border-neutral-700"
+              }`}>
+                <Dna className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-xs font-bold text-white">{s.t}</div>
+                <div className="text-[11px] text-neutral-400 mt-0.5 leading-relaxed">{s.d}</div>
+              </div>
+            </li>
+          ))}
+        </ol>
+
+        <div className="p-3 rounded-2xl bg-amber-500/5 border border-amber-500/15 text-[11px] text-neutral-300 leading-relaxed">
+          <strong className="text-amber-300">Timeline realista:</strong> con un déficit de ~0.5 kg/semana, en{" "}
+          <strong className="text-white">6–8 semanas</strong> perdés ~3–4 kg de grasa y los abdominales empiezan a definirse
+          (si ya los construís con carga). Cada ~1% menos de grasa corporal → el six-pack se hace más visible.
+        </div>
+      </div>
+
       {/* Macro overview */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {macroCards.map((card) => {
