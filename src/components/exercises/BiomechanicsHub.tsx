@@ -7,7 +7,8 @@ import {
   Info,
   Layers,
   ChevronRight,
-  ShieldCheck
+  ShieldCheck,
+  Bone
 } from "lucide-react";
 import { EXERCISES_DATABASE } from "../../data/exercisesData";
 import { Exercise } from "../../types";
@@ -60,6 +61,100 @@ export const BiomechanicsHub: React.FC = () => {
           <span>
             Modelado con principios de <strong>Chris Beardsley & Kassem Hanson</strong>.
           </span>
+        </div>
+      </div>
+
+      {/* Sección independiente: SALUD CERVICAL & POSTURA (fuera de los planes) */}
+      <div className="p-5 sm:p-7 rounded-3xl bg-gradient-to-br from-neutral-900 via-neutral-900 to-indigo-950/20 border border-indigo-500/20 shadow-2xl space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/25">
+              <Bone className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-black text-white tracking-tight">Salud Cervical & Postura (la "joroba")</h2>
+              <p className="text-[11px] text-neutral-400">Guía aparte para corregir la cabeza/proyección cervical y ganar ~1cm</p>
+            </div>
+          </div>
+          <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+            Fuera de los planes · 10 min/día
+          </span>
+        </div>
+
+        <p className="text-xs text-neutral-300 leading-relaxed">
+          La <strong className="text-white">"joroba"</strong> es una <strong className="text-white">cabeza adelantada (forward head posture)</strong>: los
+          músculos flexores del cuello están débiles y estirados, y el trapecio superior/torácico rígido tira de la cabeza hacia adelante y abajo.
+          Corregirla (cuello más erguido, trapecios engrosados y masaje de los flexores) puede devolverte <strong className="text-amber-300">~1 cm de altura percibida</strong>:
+          es postura + masa muscular, no hueso. Hacela <strong className="text-white">2–3 veces por semana</strong> (máximo 10 min) y combiná con estiramiento cervical diario.
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Paso 1: Reeducación postural */}
+          <div className="p-4 rounded-2xl bg-neutral-950 border border-indigo-500/15 space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="w-6 h-6 rounded-lg bg-indigo-500/15 text-indigo-300 border border-indigo-500/20 flex items-center justify-center text-xs font-black">1</span>
+              <h4 className="text-xs font-black text-white uppercase tracking-wider">Retracción escapular (Postura)</h4>
+            </div>
+            <p className="text-[11px] text-neutral-400 leading-relaxed">
+              Sentado, llevá los hombros atrás y abajo ("pecho orgulloso") y meté el mentón suavemente hacia atrás sin mirar para abajo
+              (<strong className="text-neutral-200">chin-tuck</strong>). Mantené 5 s × 10; 3–4 veces al día (sobre todo en la PC).
+            </p>
+          </div>
+
+          {/* Paso 2: Band Pull Apart */}
+          <div className="p-4 rounded-2xl bg-neutral-950 border border-indigo-500/15 space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="w-6 h-6 rounded-lg bg-indigo-500/15 text-indigo-300 border border-indigo-500/20 flex items-center justify-center text-xs font-black">2</span>
+              <h4 className="text-xs font-black text-white uppercase tracking-wider">Band Pull Apart & Face Pull</h4>
+            </div>
+            <p className="text-[11px] text-neutral-400 leading-relaxed">
+              <strong className="text-neutral-200">Pull Apart</strong> (banda): separá las manos abriendo hasta el pecho, hombros abajo · 15–20 reps.
+              <strong className="text-neutral-200">Face Pull</strong> (polea): jala a la cara girando externamente el hombro · 12–15 reps × 3.
+              Fortalecen la espalda alta y trapecio que sostienen la cabeza.
+            </p>
+          </div>
+
+          {/* Paso 3: Flexión cervical con lastre */}
+          <div className="p-4 rounded-2xl bg-neutral-950 border border-indigo-500/15 sm:col-span-2 space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="w-6 h-6 rounded-lg bg-indigo-500/15 text-indigo-300 border border-indigo-500/20 flex items-center justify-center text-xs font-black">3</span>
+              <h4 className="text-xs font-black text-white uppercase tracking-wider">Flexión Cervical Lastrada (engrosá el cuello)</h4>
+            </div>
+            <p className="text-[11px] text-neutral-400 leading-relaxed">
+              Tumbado en el banco con la cabeza fuera del borde y un disco ligero en la frente (usá las manos de apoyo al inicio), flexioná el cuello
+              llevando el mentón al pecho y descendé controlado · <strong className="text-neutral-200">3 series × 10–12 · tempo 3-1-2-1 · poco peso</strong>.
+              Los flexores cervicales se hipertrofian como cualquier músculo; sumá peso en incrementos de 1–2 kg <strong className="text-amber-300">muy gradual</strong>
+              (la cervical es frágil). Este es el ejercicio que más "engruesa" la zona del cuello/joroba.
+            </p>
+          </div>
+
+          {/* Estiramiento */}
+          <div className="p-4 rounded-2xl bg-neutral-950 border border-indigo-500/15 space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="w-6 h-6 rounded-lg bg-indigo-500/15 text-indigo-300 border border-indigo-500/20 flex items-center justify-center text-xs font-black">4</span>
+              <h4 className="text-xs font-black text-white uppercase tracking-wider">Trabajo móvil con la máquina de tracción</h4>
+            </div>
+            <p className="text-[11px] text-neutral-400 leading-relaxed">
+              Máquina militar/remolón con apoyo de nuca (el que usás en prensa de hombros) puede servir de soporte; si no, usá band-pull-apart diario.
+              Estiramiento cervical suave (rotaciones y flexiones laterales lentas, mentón al pecho 20 s) cada noche. Evitá café 6 h antes de dormir en turno nocturno.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2 pt-1">
+          <span className="text-[11px] font-bold text-white">Incluido en tu biblioteca:</span>
+          <button
+            onClick={() => { setSelectedCategory("all"); setSearchTerm("cervical"); }}
+            className="px-3 py-1.5 rounded-xl bg-neutral-950 border border-neutral-700 text-[11px] font-bold text-neutral-300 hover:text-indigo-300 hover:border-indigo-500 transition-all"
+          >
+            Ver "Flexión Cervical" en la biblioteca
+          </button>
+          <button
+            onClick={() => { setSelectedCategory("pull"); setSearchTerm("face pull"); }}
+            className="px-3 py-1.5 rounded-xl bg-neutral-950 border border-neutral-700 text-[11px] font-bold text-neutral-300 hover:text-indigo-300 hover:border-indigo-500 transition-all"
+          >
+            Ver "Face Pull" / "Band Pull Apart"
+          </button>
         </div>
       </div>
 
