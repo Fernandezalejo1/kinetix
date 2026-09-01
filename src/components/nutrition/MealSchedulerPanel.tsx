@@ -13,7 +13,7 @@ import { useWorkout } from "../../context/WorkoutContext";
 import { useToast } from "../../context/ToastContext";
 import { MealItem } from "../../types";
 
-type ScheduleType = "nocturno" | "normal";
+type ScheduleType = "nocturno" | "normal" | "keto";
 
 interface ScheduledMeal {
   time: string;
@@ -137,6 +137,57 @@ const NORMAL_SCHEDULE: ScheduledMeal[] = [
   },
 ];
 
+// Plan KETO adaptado a tu día real (despierto 10:00, turno nocturno): alta grasa,
+// carbos mínimos (~20-35 g) y proteína moderada. El app lo escala a tu déficit.
+const KETO_SCHEDULE: ScheduledMeal[] = [
+  {
+    time: "10:30",
+    name: "Pre-Entreno · Café con Crema + Whey",
+    foods: "Whey + mantequilla de maní + café con crema (grasa primero, nada de azúcar)",
+    calories: 400,
+    protein: 30,
+    carbs: 8,
+    fats: 28,
+    preWorkout: true,
+  },
+  {
+    time: "13:00",
+    name: "Almuerzo · Carnes + Grasa + Verduras",
+    foods: "Carne picada/cerdo + palta + espinaca + aceite de oliva",
+    calories: 700,
+    protein: 50,
+    carbs: 10,
+    fats: 52,
+  },
+  {
+    time: "17:00",
+    name: "Merienda · Queso + Frutos Secos",
+    foods: "Queso + almendras + aceitunas (grasa de calidad, llenadora)",
+    calories: 450,
+    protein: 22,
+    carbs: 8,
+    fats: 38,
+  },
+  {
+    time: "21:00",
+    name: "Cena · Pescado + Mantequilla",
+    foods: "Salmón/carne + brócoli + mantequilla (Omega-3 + saciedad)",
+    calories: 600,
+    protein: 44,
+    carbs: 8,
+    fats: 44,
+  },
+  {
+    time: "00:00",
+    name: "Última comida · Síntesis Proteica",
+    foods: "Cottage + nueces + aceite de oliva (caseína nocturna)",
+    calories: 350,
+    protein: 30,
+    carbs: 5,
+    fats: 24,
+  },
+];
+
 const SCHEDULES: Record<ScheduleType, { label: string; short: string; icon: React.ReactNode; meals: ScheduledMeal[] }> = {
   nocturno: {
     label: "Horario Nocturno (despierto 10:00 → trabajo de noche)",
@@ -149,6 +200,12 @@ const SCHEDULES: Record<ScheduleType, { label: string; short: string; icon: Reac
     short: "Normal",
     icon: <Sun className="w-4 h-4" />,
     meals: NORMAL_SCHEDULE,
+  },
+  keto: {
+    label: "Keto Cetogénico (bajo en carbos, alto en grasa)",
+    short: "Keto",
+    icon: <Flame className="w-4 h-4" />,
+    meals: KETO_SCHEDULE,
   },
 };
 
@@ -223,7 +280,7 @@ export const MealSchedulerPanel: React.FC = () => {
       </div>
 
       {/* Schedule selector */}
-      <div className="grid grid-cols-2 gap-2 p-1 bg-neutral-900 rounded-2xl border border-neutral-800">
+      <div className="grid grid-cols-3 gap-2 p-1 bg-neutral-900 rounded-2xl border border-neutral-800">
         {(Object.keys(SCHEDULES) as ScheduleType[]).map((key) => {
           const s = SCHEDULES[key];
           const isActive = schedule === key;

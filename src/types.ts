@@ -269,7 +269,7 @@ export interface MealItem {
   imageUrl?: string;
 }
 
-export type NutritionGoal = "cut" | "maintenance" | "lean_bulk" | "bulk";
+export type NutritionGoal = "cut" | "maintenance" | "lean_bulk" | "bulk" | "keto";
 
 export type ActivityLevel = "sedentario" | "ligero" | "moderado";
 

@@ -388,6 +388,64 @@ export const NutritionVisionHub: React.FC = () => {
         </div>
       </div>
 
+      {/* Guía KETO / Cetogénica */}
+      <div className={`p-5 sm:p-7 rounded-3xl border shadow-2xl space-y-4 ${
+        nutritionGoal === "keto"
+          ? "bg-gradient-to-br from-neutral-900 via-neutral-900 to-rose-950/20 border-rose-500/25"
+          : "bg-neutral-900 border-neutral-800"
+      }`}>
+        <div className="flex items-center gap-2.5">
+          <div className={`p-2.5 rounded-xl border flex items-center justify-center ${
+            nutritionGoal === "keto" ? "bg-rose-500/10 text-rose-400 border-rose-500/25" : "bg-neutral-800 text-neutral-400 border-neutral-700"
+          }`}>
+            <Flame className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-base font-black text-white tracking-tight">
+              Guía Keto Cetogénica {nutritionGoal === "keto" && <span className="text-rose-300">(activa)</span>}
+            </h3>
+            <p className="text-[11px] text-neutral-400">Alta grasa · carbos mínimos · cuerpos cetónicos como combustible</p>
+          </div>
+        </div>
+
+        <p className="text-[11px] text-neutral-300 leading-relaxed">
+          En keto reducís los carbos a <strong className="text-white">&lt;30 g/día</strong> y subís la grasa (~65–70% de las calorías): el
+          hígado produce <strong className="text-white">cuerpos cetónicos</strong> que el cuerpo y el cerebro usan en lugar de glucosa.
+          Para tu déficit (definición) es muy efectivo porque <strong className="text-rose-300">controla el apetito</strong> con grasa saciante y
+          mantiene masa muscular con proteína moderada (1.8 g/kg, sin pasarte porque el exceso de proteína puede salir de cetosis).
+        </p>
+
+        <ol className="space-y-3">
+          {[
+            { t: "1 · Macros keto (tu objetivo activo ya los calcula)", d: `Calorías de déficit (${nutritionLog.calorieTarget} kcal), carbos ≈ ${nutritionLog.carbsTarget} g, proteína ${nutritionLog.proteinTarget} g y grasa ${nutritionLog.fatsTarget} g. Quedás en cetosis al mantener los carbos muy bajos.` },
+            { t: "2 · Qué comer (grasa + proteína + verdura baja en carbo)", d: "Carnes, pescado graso (salmón), huevos, palta, aceite de oliva, mantequilla, quesos, frutos secos y verduras de hoja. Evitá pan, arroz, papa, boniato, fruta dulce, azúcar y ultraprocesados." },
+            { t: "3 · Adaptación (la 'gripe keto' es normal)", d: "Los primeros 3–7 días podés sentir fatiga, niebla mental o dolores de cabeza mientras el cuerpo cambia de combustible. Tomá mucha agua y sumá sal/electrolitos (sodio, potasio, magnesio)." },
+            { t: "4 · Electrolitos CLAVE (más que en cualquier dieta)", d: `En keto el cuerpo elimina más sodio y agua: sin reponerlos caés en calambres y niebla. Agregá sal a las comidas, consomé de hueso, y magnesio. Hidratación ${((nutritionLog.calorieTarget / 1000) * 14).toFixed(0)} g de fibra + 2.5–3 L de agua.` },
+            { t: "5 · Rendimiento en el gym", d: "Las primeras 1–2 semanas el rendimiento en series de alta intensidad puede bajar (el músculo aún se adapta a la grasa). Mantené los compuestos con buena técnica; la explosividad ligera se recupera con la adaptación. Café/Cafeína sí entra (sin azúcar)." },
+            { t: "6 · Cuánto tiempo", d: "Keto cíclica: mantenela 8–12 semanas para definición, luego considerá reintroducir carbos de calidad (targeted keto) para el entreno. Monitoreá cómo te sentís; si el rendimiento se desploma &gt;10%, ajustá." },
+          ].map((s) => (
+            <li key={s.t} className="flex gap-3 p-3 rounded-2xl bg-neutral-950 border border-neutral-800">
+              <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${
+                nutritionGoal === "keto" ? "bg-rose-500/15 text-rose-300 border border-rose-500/20" : "bg-neutral-800 text-neutral-300 border border-neutral-700"
+              }`}>
+                <Flame className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-xs font-bold text-white">{s.t}</div>
+                <div className="text-[11px] text-neutral-400 mt-0.5 leading-relaxed">{s.d}</div>
+              </div>
+            </li>
+          ))}
+        </ol>
+
+        <div className="p-3 rounded-2xl bg-rose-500/5 border border-rose-500/15 text-[11px] text-neutral-300 leading-relaxed">
+          <strong className="text-rose-300">Importante para tu caso:</strong> usá el plan de comidas <strong className="text-white">Keto</strong> en el
+          selector de horarios (3° opción) — mantiene tu rutina real (10:30 pre-gym, 13:00 almuerzo, 17:00 merienda, 21:00 cena, 00:00 síntesis)
+          con comidas altas en grasa y sin carbos. Activá el objetivo <strong className="text-white">Keto</strong> arriba y "Aplicar a objetivos"
+          para fijar tus macros. Tu perfil (114 kg, definición −15%) ya quedó calculado.
+        </div>
+      </div>
+
       {/* Macro overview */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {macroCards.map((card) => {

@@ -60,6 +60,17 @@ export const NUTRITION_GOALS: Record<
     accent: "text-purple-300",
     chipActive: "bg-purple-500/20 text-purple-200 border-purple-500/50 shadow-md shadow-purple-500/10",
   },
+  keto: {
+    label: "Keto / Cetogénica",
+    short: "Keto",
+    description:
+      "Alta grasa, carbos muy bajos (<30 g) y proteína moderada: el cuerpo usa cuerpos cetónicos como combustible. Controla el apetito y es ideal para definición.",
+    caloriePerKg: 26,
+    proteinPerKg: 1.8,
+    fatPerKg: 1.2,
+    accent: "text-rose-300",
+    chipActive: "bg-rose-500/20 text-rose-200 border-rose-500/50 shadow-md shadow-rose-500/10",
+  },
 };
 
 export const NUTRITION_GOAL_KEYS = Object.keys(NUTRITION_GOALS) as NutritionGoal[];
@@ -123,6 +134,9 @@ export const computeGoalCalories = (
   switch (goal) {
     case "cut":
       return Math.round(tdee * (1 - deficitPercent / 100));
+    case "keto":
+      // Keto para definición: mismo déficit que "cut", pero con split alto en grasa.
+      return Math.round(tdee * (1 - deficitPercent / 100));
     case "maintenance":
       return tdee;
     case "lean_bulk":
@@ -140,6 +154,15 @@ export const computePersonalTargets = (
 ): { calories: number; protein: number; carbs: number; fats: number } => {
   const tdee = computeTDEE(profile, weightKg);
   const calories = computeGoalCalories(tdee, goal, profile.deficitPercent);
+
+  // Keto: carbos mínimos fijos, proteína moderada y la GRASA llena el resto de calorías.
+  if (goal === "keto") {
+    const carbs = 25;
+    const protein = Math.round(weightKg * NUTRITION_GOALS.keto.proteinPerKg);
+    const fats = Math.max(40, Math.round((calories - protein * 4 - carbs * 4) / 9));
+    return { calories, protein, carbs, fats };
+  }
+
   const protein = Math.round(weightKg * NUTRITION_GOALS[goal].proteinPerKg);
   const fats = Math.round(weightKg * NUTRITION_GOALS[goal].fatPerKg);
   const carbs = Math.max(50, Math.round((calories - fats * 9 - protein * 4) / 4));
@@ -182,6 +205,13 @@ export const QUICK_MEALS: QuickMealPreset[] = [
   { name: "Banana + Pan con Miel + Whey", category: "pre_post", cal: 420, pro: 28, carb: 72, fat: 4, fiber: 3, mpsQuality: "Alta" },
   { name: "Pescado Blanco + Ensalada + Aceite de Oliva", category: "cena", cal: 460, pro: 44, carb: 18, fat: 26, fiber: 5, mpsQuality: "Suficiente" },
   { name: "Requesón + Arroz Integral + Huevo", category: "snack", cal: 560, pro: 42, carb: 60, fat: 16, fiber: 6, mpsQuality: "Alta" },
+  // Presets KETO (bajos en carbos, altos en grasa)
+  { name: "Omelette + Palta + Espinaca (Keto)", category: "desayuno", cal: 520, pro: 34, carb: 8, fat: 40, fiber: 6, mpsQuality: "Suficiente" },
+  { name: "Costillas de Cerdo + Brócoli en Mantequilla (Keto)", category: "comida", cal: 720, pro: 52, carb: 10, fat: 52, fiber: 7, mpsQuality: "Suficiente" },
+  { name: "Salmón + Espárragos + Mantequilla (Keto)", category: "cena", cal: 640, pro: 46, carb: 8, fat: 46, fiber: 6, mpsQuality: "Suficiente" },
+  { name: "Almendras + Queso + Aceitunas (Keto)", category: "snack", cal: 380, pro: 18, carb: 6, fat: 34, fiber: 5, mpsQuality: "Suficiente" },
+  { name: "Carne Picada + Palta + Huevo (Keto)", category: "comida", cal: 680, pro: 48, carb: 9, fat: 50, fiber: 6, mpsQuality: "Suficiente" },
+  { name: "Whey + Mantequilla de Maní + Leche de Almendras (Keto)", category: "pre_post", cal: 340, pro: 32, carb: 8, fat: 22, fiber: 3, mpsQuality: "Alta" },
 ];
 
 // Evidence-based supplement guide (educational reference, 100% offline).
