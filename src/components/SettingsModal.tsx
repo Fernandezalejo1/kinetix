@@ -7,7 +7,9 @@ import {
   BellOff,
   ShieldAlert,
   Database,
+  Footprints,
 } from "lucide-react";
+import { StepsPanel } from "./nutrition/StepsPanel";
 import { useToast } from "../context/ToastContext";
 
 interface SettingsModalProps {
@@ -285,6 +287,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
                 Se mostrará una notificación local a la hora elegida.
               </p>
             )}
+          </section>
+
+          {/* Health Connect / Steps section */}
+          <section className="space-y-3 pt-4 border-t border-neutral-800">
+            <div className="flex items-center gap-2">
+              <Footprints className="w-4 h-4 text-emerald-400" />
+              <h4 className="text-sm font-black text-white uppercase tracking-wider">Salud & Pasos (Health Connect)</h4>
+            </div>
+            <p className="text-[11px] text-neutral-400 leading-relaxed">
+              Conectá la app a Health Connect para leer tus pasos diarios y ajustar automáticamente la
+              dieta según las reglas del plan (sin IA). Disponible en la versión instalada (APK de
+              Capacitor/Capacitor Android).
+            </p>
+            <StepsPanel />
           </section>
         </div>
       </div>

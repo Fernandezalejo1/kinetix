@@ -4,6 +4,7 @@ import { Navigation, NavTab } from "./components/Navigation";
 import { LiveWorkoutLogger } from "./components/workout/LiveWorkoutLogger";
 import { PinLock } from "./components/PinLock";
 import { SettingsModal } from "./components/SettingsModal";
+import { StepsEngine } from "./components/nutrition/StepsEngine";
 
 // Eagerly load the first screen (workout hub) for instant display
 import { WorkoutHub } from "./components/workout/WorkoutHub";
@@ -145,6 +146,7 @@ function AppWithPin() {
 export default function App() {
   return (
     <WorkoutProvider>
+      <StepsEngine />
       <AppWithPin />
     </WorkoutProvider>
   );

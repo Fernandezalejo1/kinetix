@@ -20,6 +20,7 @@ import { useWorkout } from "../../context/WorkoutContext";
 import { useToast } from "../../context/ToastContext";
 import { ActivityLevel, MealItem, NutritionGoal, NutritionProfile } from "../../types";
 import { MealSchedulerPanel } from "./MealSchedulerPanel";
+import { StepsPanel } from "./StepsPanel";
 import { WaterTracker } from "./WaterTracker";
 import { SupplementGuide } from "./SupplementGuide";
 import {
@@ -759,6 +760,11 @@ export const NutritionVisionHub: React.FC = () => {
       {/* Daily Meal Scheduler Plan */}
       <div className="p-5 rounded-3xl bg-neutral-900/50 border border-neutral-800">
         <MealSchedulerPanel />
+      </div>
+
+      {/* Ajuste por pasos (Health Connect) */}
+      <div>
+        <StepsPanel compact />
       </div>
 
       {/* Quick meals */}
