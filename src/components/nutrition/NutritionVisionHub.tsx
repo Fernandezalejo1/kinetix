@@ -60,13 +60,6 @@ export const NutritionVisionHub: React.FC = () => {
   const [pWorkEnd, setPWorkEnd] = useState(nutritionProfile.workEnd);
   const [pDeficit, setPDeficit] = useState(nutritionProfile.deficitPercent);
 
-  const [manualName, setManualName] = useState("");
-  const [manualCalories, setManualCalories] = useState(400);
-  const [manualProtein, setManualProtein] = useState(35);
-  const [manualCarbs, setManualCarbs] = useState(45);
-  const [manualFats, setManualFats] = useState(10);
-  const [manualFiber, setManualFiber] = useState(4);
-
   const [editingTargets, setEditingTargets] = useState(false);
   const [editCalories, setEditCalories] = useState(nutritionLog.calorieTarget);
   const [editProtein, setEditProtein] = useState(nutritionLog.proteinTarget);
@@ -153,26 +146,6 @@ export const NutritionVisionHub: React.FC = () => {
     });
     setProfileOpen(false);
     showToast("Perfil actualizado · Objetivos recalculados con tu metabolismo", "success");
-  };
-
-  const handleManualAdd = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!manualName) return;
-    const meal: MealItem = {
-      id: `meal-${Date.now()}`,
-      time: new Date().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }),
-      dishName: manualName,
-      description: "Entrada manual de macronutrientes",
-      calories: manualCalories,
-      protein: manualProtein,
-      carbs: manualCarbs,
-      fats: manualFats,
-      fiber: manualFiber,
-      mpsQuality: "Suficiente",
-    };
-    addMeal(meal);
-    setManualName("");
-    showToast("Comida añadida al registro", "success");
   };
 
   const saveTargets = (e: React.FormEvent) => {
@@ -801,7 +774,7 @@ export const NutritionVisionHub: React.FC = () => {
 
         {nutritionLog.meals.length === 0 ? (
           <div className="p-8 text-center bg-neutral-900/50 rounded-3xl border border-neutral-800 text-neutral-400 text-xs">
-            No registraste comidas hoy. Agregá una usando la entrada manual o los platos rápidos.
+            No registraste comidas hoy. Agregá una usando los platos rápidos o el Plan de Comidas.
           </div>
         ) : (
           <div className="space-y-3">
@@ -872,68 +845,7 @@ export const NutritionVisionHub: React.FC = () => {
         )}
       </div>
 
-      {/* Manual add form */}
-      <div className="p-5 sm:p-6 rounded-3xl bg-neutral-900 border border-neutral-800 space-y-4">
-        <h4 className="text-sm font-bold uppercase tracking-wider text-neutral-300">
-          Entrada Manual Rápida
-        </h4>
-        <form onSubmit={handleManualAdd} className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-          <input
-            type="text"
-            placeholder="Nombre de la comida"
-            value={manualName}
-            onChange={(e) => setManualName(e.target.value)}
-            className="col-span-2 sm:col-span-5 px-4 py-3 bg-neutral-950 border border-neutral-800 rounded-xl text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-cyan-500 min-w-0"
-          />
-          <input
-            type="number"
-            inputMode="numeric"
-            placeholder="Kcal"
-            value={manualCalories}
-            onChange={(e) => setManualCalories(parseInt(e.target.value, 10) || 0)}
-            className="px-3 py-3 bg-neutral-950 border border-neutral-800 rounded-xl text-xs text-white text-center focus:outline-none focus:border-amber-500 min-w-0"
-          />
-          <input
-            type="number"
-            inputMode="numeric"
-            placeholder="Proteína (g)"
-            value={manualProtein}
-            onChange={(e) => setManualProtein(parseInt(e.target.value, 10) || 0)}
-            className="px-3 py-3 bg-neutral-950 border border-neutral-800 rounded-xl text-xs text-white text-center focus:outline-none focus:border-cyan-500 min-w-0"
-          />
-          <input
-            type="number"
-            inputMode="numeric"
-            placeholder="Carbs (g)"
-            value={manualCarbs}
-            onChange={(e) => setManualCarbs(parseInt(e.target.value, 10) || 0)}
-            className="px-3 py-3 bg-neutral-950 border border-neutral-800 rounded-xl text-xs text-white text-center focus:outline-none focus:border-purple-500 min-w-0"
-          />
-          <input
-            type="number"
-            inputMode="numeric"
-            placeholder="Grasas (g)"
-            value={manualFats}
-            onChange={(e) => setManualFats(parseInt(e.target.value, 10) || 0)}
-            className="px-3 py-3 bg-neutral-950 border border-neutral-800 rounded-xl text-xs text-white text-center focus:outline-none focus:border-emerald-500 min-w-0"
-          />
-          <input
-            type="number"
-            inputMode="numeric"
-            placeholder="Fibra (g)"
-            value={manualFiber}
-            onChange={(e) => setManualFiber(Math.max(0, parseInt(e.target.value, 10) || 0))}
-            className="px-3 py-3 bg-neutral-950 border border-neutral-800 rounded-xl text-xs text-white text-center focus:outline-none focus:border-emerald-300 min-w-0"
-          />
-          <button
-            type="submit"
-            className="col-span-2 sm:col-span-5 px-4 py-3 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-md shadow-cyan-600/20"
-          >
-            <Plus className="w-4 h-4" />
-            Añadir comida
-          </button>
-        </form>
-      </div>
+      {/* Manual add form - REMOVED (ya no se usa la entrada manual rápida) */}
 
       <SupplementGuide />
     </div>

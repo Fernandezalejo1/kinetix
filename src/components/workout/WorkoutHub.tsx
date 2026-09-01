@@ -27,7 +27,7 @@ import { EXERCISES_DATABASE } from "../../data/exercisesData";
 import { PlateCalculatorModal } from "./PlateCalculatorModal";
 import { WarmupGeneratorModal } from "./WarmupGeneratorModal";
 import { TempoMetronomeModal } from "./TempoMetronomeModal";
-import { Routine } from "../../types";
+import { Program, Routine } from "../../types";
 
 interface WorkoutHubProps {
   onGoToPrograms: () => void;
@@ -79,8 +79,28 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
     setConfirmAction(null);
   };
 
-  const featuredProgram = PREBUILT_PROGRAMS[0]; // NIGHTWING (7 días)
-  const nextRoutine = featuredProgram.routines[0];
+  // Use the program/routine the user selected in Programas (persisted) so the
+  // home "today" recommendation and the day list NEVER jump back to nightwing.
+  const featuredProgram: Program =
+    (() => {
+      try {
+        const savedId = localStorage.getItem("kinetix_selected_program");
+        return PREBUILT_PROGRAMS.find((p) => p.id === savedId) || PREBUILT_PROGRAMS[0];
+      } catch {
+        return PREBUILT_PROGRAMS[0];
+      }
+    })();
+  const nextRoutine: Routine =
+    (() => {
+      try {
+        const savedProgramId = localStorage.getItem("kinetix_selected_program");
+        const savedRoutineId = localStorage.getItem("kinetix_selected_routine");
+        const program = PREBUILT_PROGRAMS.find((p) => p.id === savedProgramId) || featuredProgram;
+        return program.routines.find((r) => r.id === savedRoutineId) || program.routines[0];
+      } catch {
+        return featuredProgram.routines[0];
+      }
+    })();
 
   // FASE 6: Weekly summary stats
   const weekStats = useMemo(() => {
@@ -310,7 +330,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {featuredProgram.routines.slice(0, 4).map((routine, idx) => (
+          {featuredProgram.routines.map((routine, idx) => (
             <div
               key={routine.id}
               className="p-5 rounded-3xl bg-neutral-900 border border-neutral-800 hover:border-neutral-700 transition-all flex flex-col justify-between space-y-4"
