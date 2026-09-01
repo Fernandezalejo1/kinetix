@@ -61,15 +61,40 @@ const MEAL_WEIGHTS: Record<string, number> = {
   cena: 0.5,
 };
 
-/** Detecta la ventana de una comida por su descripción/nombre. */
+/** Detecta la ventana de una comida por su nombre/descripción. */
 function mealWindow(name: string): string {
   const n = String(name || "").toLowerCase();
-  if (n.includes("desayuno") || n.includes("breakfast")) return "desayuno";
-  if (n.includes("almuerzo") || n.includes("comida") || n.includes("lunch")) return "almuerzo";
-  if (n.includes("merienda") || n.includes("snack") || n.includes("mid-morning") || n.includes("tarde")) return "merienda";
+  if (n.includes("desayuno") || n.includes("breakfast") || n.includes("huevos") || n.includes("avena") || n.includes("tostada")) return "desayuno";
+  if (n.includes("almuerzo") || n.includes("comida") || n.includes("lunch") || n.includes("arroz") || n.includes("fideos") || n.includes("pasta") || n.includes("pollo") || n.includes("carne") || n.includes("pescado") || n.includes("atun") || n.includes("ensalada completa")) return "almuerzo";
+  if (n.includes("merienda") || n.includes("snack") || n.includes("tarde") || n.includes("yogur") || n.includes("batido") || n.includes("frutas")) return "merienda";
   if (n.includes("cena") || n.includes("dinner")) return "cena";
   // Por defecto asumimos merienda (lo más flexible).
   return "merienda";
+}
+
+const MEAL_WINDOWS: { window: string; fromHour: number; toHour: number }[] = [
+  { window: "desayuno", fromHour: 0, toHour: 11 },
+  { window: "almuerzo", fromHour: 11, toHour: 15 },
+  { window: "merienda", fromHour: 15, toHour: 18.5 },
+  { window: "cena", fromHour: 18.5, toHour: 24 },
+];
+
+/** Ventana por hora (HH:MM) cuando el nombre no alcanza. */
+function windowByHour(time?: string): string | null {
+  if (!time) return null;
+  const [h, m] = time.split(":").map(Number);
+  if (isNaN(h)) return null;
+  const hour = h + (isNaN(m) ? 0 : m / 60);
+  const w = MEAL_WINDOWS.find((x) => hour >= x.fromHour && hour < x.toHour);
+  return w ? w.window : null;
+}
+
+/** Ventana de una comida: prioriza nombre > hora. */
+function mealWindowOf(meal: { time?: string; dishName?: string; description?: string }): string {
+  const byName = mealWindow(`${meal.dishName || ""} ${meal.description || ""}`);
+  if (byName !== "merienda") return byName;
+  const byHour = windowByHour(meal.time);
+  return byHour ?? "merienda";
 }
 
 /**
@@ -181,9 +206,9 @@ export function isLunchPassed(now: Date, workStart: string): boolean {
 }
 
 /** Verifica si el usuario YA registró su almuerzo/comida principal en el log de hoy. */
-export function lunchAlreadyLogged(meals: { dishName?: string; description?: string; calories: number }[]): boolean {
+export function lunchAlreadyLogged(meals: { time?: string; dishName?: string; description?: string; calories: number }[]): boolean {
   return meals.some((m) => {
-    const w = mealWindow(`${m.dishName || ""} ${m.description || ""}`);
+    const w = mealWindowOf(m);
     return (w === "almuerzo" || w === "cena") && m.calories > 0;
   });
 }
