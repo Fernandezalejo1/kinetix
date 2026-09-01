@@ -177,18 +177,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
       onClick={onClose}
     >
       <div
-        className="bg-neutral-900 border border-neutral-800 rounded-t-3xl sm:rounded-3xl w-full max-w-lg max-h-[90dvh] flex flex-col overflow-hidden shadow-2xl"
+        className="bg-neutral-900 border border-neutral-800 rounded-t-3xl sm:rounded-3xl w-full max-w-lg max-h-[90dvh] overflow-y-auto overscroll-contain scrollbar-thin shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="p-5 border-b border-neutral-800 bg-neutral-950/50 shrink-0 flex items-center justify-between">
+        <div className="sticky top-0 z-10 p-5 border-b border-neutral-800 bg-neutral-950/95 backdrop-blur-sm flex items-center justify-between">
           <h3 className="text-lg font-black text-white">Configuración</h3>
           <button onClick={onClose} className="p-2.5 min-w-[44px] min-h-[44px] rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors flex items-center justify-center">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-5 scrollbar-thin">
+        <div className="p-5 space-y-5">
           {/* Backup section */}
           <section className="space-y-3">
             <div className="flex items-center gap-2">

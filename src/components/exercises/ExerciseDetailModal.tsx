@@ -176,7 +176,7 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
         </div>
 
         {/* Content Body Container */}
-        <div className="p-4 sm:p-6 overflow-y-auto scrollbar-thin flex-1 min-h-0 space-y-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+        <div className="p-4 sm:p-6 overflow-y-auto scrollbar-thin flex-1 min-h-0 overscroll-contain space-y-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
           {/* TAB: MEDIA & VIDEOS */}
           {activeTab === "media" && (
             <div className="space-y-6">

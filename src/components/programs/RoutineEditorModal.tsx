@@ -133,9 +133,9 @@ export const RoutineEditorModal: React.FC<RoutineEditorModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-md animate-fadeIn">
-      <div className="bg-neutral-900 border border-neutral-800 rounded-t-3xl sm:rounded-3xl w-full max-w-2xl max-h-[92dvh] overflow-hidden flex flex-col safe-area-bottom">
+      <div className="bg-neutral-900 border border-neutral-800 rounded-t-3xl sm:rounded-3xl w-full max-w-2xl max-h-[92dvh] overflow-y-auto overscroll-contain scrollbar-thin safe-area-bottom">
         {/* Header */}
-        <div className="px-4 sm:px-6 py-4 border-b border-neutral-800 flex items-center justify-between shrink-0">
+        <div className="sticky top-0 z-10 px-4 sm:px-6 py-4 border-b border-neutral-800 bg-neutral-950/95 backdrop-blur-sm flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
               <Layers className="w-5 h-5" />
@@ -151,7 +151,7 @@ export const RoutineEditorModal: React.FC<RoutineEditorModalProps> = ({
         </div>
 
         {/* Scrollable Content */}
-        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin p-4 sm:p-6 space-y-5">
+        <div className="p-4 sm:p-6 space-y-5">
           {/* Basic Info */}
           <div className="space-y-3">
             <div>

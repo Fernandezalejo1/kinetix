@@ -61,7 +61,7 @@ export const WarmupGeneratorModal: React.FC<WarmupGeneratorModalProps> = ({
         </div>
 
         {/* Body */}
-        <div className="p-4 sm:p-6 space-y-6 overflow-y-auto scrollbar-thin flex-1 min-h-0 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+        <div className="p-4 sm:p-6 space-y-6 overflow-y-auto scrollbar-thin flex-1 min-h-0 overscroll-contain pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
           {/* Target Working Weight */}
           <div className="p-4 rounded-xl bg-neutral-950 border border-neutral-800 flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0">

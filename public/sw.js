@@ -1,9 +1,9 @@
-const STATIC_CACHE = 'kinetix-static-v7';
-const DYNAMIC_CACHE = 'kinetix-dynamic-v7';
-const PAGE_CACHE = 'kinetix-pages-v7';
+const STATIC_CACHE = 'kinetix-static-v8';
+const DYNAMIC_CACHE = 'kinetix-dynamic-v8';
+const PAGE_CACHE = 'kinetix-pages-v8';
 
 // Version marker bumped on every deploy so stale caches are cleared.
-const BUILD_VERSION = '7';
+const BUILD_VERSION = '8';
 
 // Static assets (hashed by Vite, immutable) are pre-cached on install.
 // NOTE: we do NOT pre-cache the HTML shell so the app always loads fresh.
