@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   X,
   Plus,
@@ -24,7 +24,9 @@ import {
   Frown,
   Meh,
   Smile,
-  Zap
+  Zap,
+  Target,
+  TrendingUp
 } from "lucide-react";
 import { useWorkout } from "../../context/WorkoutContext";
 import { useToast } from "../../context/ToastContext";
@@ -35,6 +37,7 @@ import { WarmupGeneratorModal } from "./WarmupGeneratorModal";
 import { TempoMetronomeModal } from "./TempoMetronomeModal";
 import { ExerciseDetailModal } from "../exercises/ExerciseDetailModal";
 import { ExerciseLibraryModal } from "../exercises/ExerciseLibraryModal";
+import { analyzeDoubleProgression } from "../../utils/doubleProgression";
 
 /** Cardio Timer — 20 minute countdown for treadmill/cardio exercises.
  *  Uses a target END timestamp (not tick-counting) so the countdown keeps
@@ -132,6 +135,59 @@ const CardioTimer: React.FC<{ exercise: WorkoutExercise }> = ({ exercise }) => {
             </div>
           )}
         </div>
+      </div>
+    </div>
+  );
+};
+
+/** Double Progression Banner — live guidance per exercise.
+ *  Regla: primero progresar reps dentro del rango objetivo y SOLO al llegar al
+ *  tope con el RIR objetivo ejecutado (o más duro), autorizar subir el peso. */
+const DoubleProgressionBanner: React.FC<{ wEx: WorkoutExercise }> = ({ wEx }) => {
+  const { updateSet } = useWorkout();
+  const { showToast } = useToast();
+  const a = useMemo(() => analyzeDoubleProgression(wEx), [wEx]);
+
+  const applyIncrease = useCallback(() => {
+    const delta = a.deltaWeight;
+    let applied = 0;
+    wEx.sets.forEach((s) => {
+      if (!s.completed && s.type !== "warmup") {
+        updateSet(wEx.id, s.id, { weight: Math.round((s.weight + delta) * 4) / 4 });
+        applied += 1;
+      }
+    });
+    showToast(applied > 0 ? `Sobrecarga +${delta} kg aplicada a ${applied} serie(s) restantes` : "No hay series restantes para sobrecargar");
+  }, [wEx, a.deltaWeight, updateSet, showToast]);
+
+  if (!a.range) return null;
+
+  if (a.status === "target_reached") {
+    return (
+      <div className="px-4 sm:px-5 pt-3">
+        <div className="flex items-center gap-2 flex-wrap text-[11px] bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-3 py-2.5 text-emerald-300">
+          <TrendingUp className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span className="min-w-0 flex-1"><strong className="font-black">{a.message}</strong></span>
+          <button
+            onClick={applyIncrease}
+            className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-black shadow-lg shadow-emerald-600/20 transition-colors"
+          >
+            Aplicar +{a.deltaWeight} kg a las series restantes
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="px-4 sm:px-5 pt-3">
+      <div className="flex items-center gap-2 flex-wrap text-[11px] bg-neutral-950/50 border border-neutral-800 rounded-xl px-3 py-2.5 text-neutral-400">
+        <Target className="w-4 h-4 text-cyan-400 shrink-0" />
+        <span className="min-w-0 flex-1">
+          <strong className="text-white">{a.targetSets ? `${a.targetSets}×` : ""}{a.range.min}–{a.range.max} reps</strong>
+          <span className="text-neutral-500"> · RIR {a.targetRir ?? "—"} · hoy {a.maxReps}/{a.range.max}</span>
+          <span className="block text-neutral-500 mt-0.5">{a.message}</span>
+        </span>
       </div>
     </div>
   );
@@ -548,6 +604,9 @@ export const LiveWorkoutLogger: React.FC = () => {
                     </button>
                   </div>
                 </div>
+
+                {/* Double Progression — live objective guidance */}
+                <DoubleProgressionBanner wEx={wEx} />
 
                 {/* Cardio Timer — special rendering for cardio:20min */}
                 {wEx.notes?.startsWith("cardio:") && (

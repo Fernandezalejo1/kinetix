@@ -173,6 +173,10 @@ export interface WorkoutExercise {
   notes?: string;
   targetRestSeconds: number;
   supersetGroupId?: string; // if grouped into superset
+  targetSets?: number; // plan objective (e.g. 4)
+  targetReps?: string; // plan objective (e.g. "8-10")
+  targetRir?: number; // plan objective (e.g. 1)
+  targetTempo?: string; // plan objective (e.g. "3-1-0-1")
 }
 
 export interface ActiveWorkoutSession {

@@ -500,6 +500,10 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
           exercise: exDef,
           targetRestSeconds: item.restSeconds || 120,
           supersetGroupId: item.supersetGroupId,
+          targetSets: item.targetSets,
+          targetReps: item.targetReps,
+          targetRir: item.targetRir,
+          targetTempo: item.targetTempo,
           sets,
         };
       });
