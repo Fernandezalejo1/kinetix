@@ -13,6 +13,14 @@ export const RANK_THRESHOLDS: Record<Rank, number> = {
   challenger: 20000,
 };
 
+/** Official League of Legends rank emblem images (bundled locally). */
+export const RANK_EMBLEM_SRC: Record<Rank, string> = {
+  bronze: "/assets/ranks/bronze.png",
+  gold: "/assets/ranks/gold.png",
+  master: "/assets/ranks/master.png",
+  challenger: "/assets/ranks/challenger.png",
+};
+
 export const RANK_LABELS: Record<Rank, string> = {
   bronze: "Bronce",
   gold: "Oro",

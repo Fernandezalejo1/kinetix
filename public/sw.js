@@ -1,9 +1,9 @@
-const STATIC_CACHE = 'kinetix-static-v8';
-const DYNAMIC_CACHE = 'kinetix-dynamic-v8';
-const PAGE_CACHE = 'kinetix-pages-v8';
+const STATIC_CACHE = 'kinetix-static-v9';
+const DYNAMIC_CACHE = 'kinetix-dynamic-v9';
+const PAGE_CACHE = 'kinetix-pages-v9';
 
 // Version marker bumped on every deploy so stale caches are cleared.
-const BUILD_VERSION = '8';
+const BUILD_VERSION = '9';
 
 // Static assets (hashed by Vite, immutable) are pre-cached on install.
 // NOTE: we do NOT pre-cache the HTML shell so the app always loads fresh.
@@ -15,6 +15,10 @@ const PRECACHE_URLS = [
   '/favicon-32x32.png',
   '/icon-192.png',
   '/icon-512.png',
+  '/assets/ranks/bronze.png',
+  '/assets/ranks/gold.png',
+  '/assets/ranks/master.png',
+  '/assets/ranks/challenger.png',
 ];
 
 // Install: pre-cache static assets. We deliberately do NOT skipWaiting() here:
