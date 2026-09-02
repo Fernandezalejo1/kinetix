@@ -20,6 +20,7 @@ import {
 import { EXERCISES_DATABASE } from "../data/exercisesData";
 import { DEFAULT_NUTRITION_PROFILE, computePersonalTargets } from "../data/nutritionData";
 import { calculate1RM, unlockAudio, playRestTimerCompletedSound, playTickSound } from "../utils/scienceCalculators";
+import { detectExecutionMode, isTimeBased, parseTargetSeconds } from "../utils/exerciseMode";
 import confetti from "canvas-confetti";
 
 interface RestTimerState {
@@ -57,7 +58,7 @@ interface WorkoutContextType {
   updateSet: (workoutExerciseId: string, setId: string, updates: Partial<WorkoutSet>) => void;
   addSet: (workoutExerciseId: string, type?: SetType) => void;
   removeSet: (workoutExerciseId: string, setId: string) => void;
-  completeSetAndTriggerTimer: (workoutExerciseId: string, setId: string) => void;
+  completeSetAndTriggerTimer: (workoutExerciseId: string, setId: string, opts?: { durationSeconds?: number }) => void;
   recordExerciseDifficulty: (workoutExerciseId: string, difficulty: DifficultyLevel) => void;
   finishWorkout: () => { prsAchieved: PersonalRecord[]; totalVolumeKg: number };
   cancelWorkout: () => void;
@@ -471,25 +472,32 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
     try {
       const workoutExercises: WorkoutExercise[] = routine.exercises.map((item: any, idx: number) => {
         const exDef = EXERCISES_DATABASE.find((e) => e.id === item.exerciseId) || EXERCISES_DATABASE[0];
-        const parsedReps = parseInt(item.targetReps.split("-")[0], 10) || 10;
+        const execMode = detectExecutionMode(exDef, item.targetReps);
+        const isTime = execMode === "time";
+        const targetDuration = isTime ? (parseTargetSeconds(item.targetReps) ?? 30) : null;
+        const parsedReps = isTime ? 1 : (parseInt(item.targetReps.split("-")[0], 10) || 10);
 
         const lastHistory = exerciseHistory
           .filter((h) => h.exerciseId === item.exerciseId)
           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
 
-        const prevWeight = lastHistory ? lastHistory.weight : (exDef.category === "legs" ? 80 : 40);
+        // Medicine ball = 3kg default; legs = 80kg; else = 40kg
+        const isMedicineBall = item.exerciseId === "medicine-ball-slam";
+        const defaultWeight = isMedicineBall ? 3 : (exDef.category === "legs" ? 80 : 40);
+        const prevWeight = lastHistory ? lastHistory.weight : defaultWeight;
         const prevReps = lastHistory ? Math.round(lastHistory.reps.reduce((a, b) => a + b, 0) / lastHistory.reps.length) : parsedReps;
 
         const sets: WorkoutSet[] = Array.from({ length: item.targetSets }).map((_, sIdx) => ({
           id: `set-${idx}-${sIdx}-${Date.now()}`,
           setNumber: sIdx + 1,
           type: "normal",
-          weight: prevWeight,
+          weight: isTime ? 0 : prevWeight,
           reps: parsedReps,
+          durationSeconds: targetDuration ?? undefined,
           rir: item.targetRir ?? 1,
           tempo: item.targetTempo || exDef.defaultTempo,
           completed: false,
-          previousWeight: prevWeight,
+          previousWeight: isTime ? 0 : prevWeight,
           previousReps: prevReps,
           previousRir: 1,
         }));
@@ -735,7 +743,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
   }, []);
 
   const completeSetAndTriggerTimer = useCallback(
-    (workoutExerciseId: string, setId: string) => {
+    (workoutExerciseId: string, setId: string, opts?: { durationSeconds?: number }) => {
       setActiveSession((prev) => {
         if (!prev) return prev;
         let restTarget = 90;
@@ -753,7 +761,12 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
                   if (isNowCompleted && autoStartTimer) {
                     startRestTimer(restTarget, exName);
                   }
-                  return { ...s, completed: isNowCompleted, completedAt: isNowCompleted ? Date.now() : undefined };
+                  return {
+                    ...s,
+                    completed: isNowCompleted,
+                    completedAt: isNowCompleted ? Date.now() : undefined,
+                    durationSeconds: opts?.durationSeconds ?? s.durationSeconds,
+                  };
                 }
                 return s;
               }),
@@ -801,16 +814,25 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
       let maxWeight = 0;
       let exerciseRirTotal = 0;
       let exerciseRirCount = 0;
+      const timeBased = isTimeBased(wEx.exercise, wEx.targetReps);
 
       wEx.sets.forEach((s) => {
         if (s.completed) {
           totalSets++;
           exerciseSets++;
-          const setVolume = s.weight * s.reps;
-          totalVolumeKg += setVolume;
-          exerciseVolume += setVolume;
-          exerciseReps.push(s.reps);
-          maxWeight = Math.max(maxWeight, s.weight);
+          if (timeBased) {
+            // Time-based exercise: volume = total seconds sustained; reps = seconds per set
+            const secs = s.durationSeconds ?? 0;
+            totalVolumeKg += secs;
+            exerciseVolume += secs;
+            exerciseReps.push(secs);
+          } else {
+            const setVolume = s.weight * s.reps;
+            totalVolumeKg += setVolume;
+            exerciseVolume += setVolume;
+            exerciseReps.push(s.reps);
+            maxWeight = Math.max(maxWeight, s.weight);
+          }
 
           if (s.rir !== undefined) {
             exerciseRirTotal += s.rir;

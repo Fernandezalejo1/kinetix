@@ -22,8 +22,11 @@ const ScienceDashboard = React.lazy(() =>
 const NutritionVisionHub = React.lazy(() =>
   import("./components/nutrition/NutritionVisionHub").then((m) => ({ default: m.NutritionVisionHub }))
 );
+const ChallengeHub = React.lazy(() =>
+  import("./components/challenge/ChallengeHub").then((m) => ({ default: m.ChallengeHub }))
+);
 
-const TAB_ORDER: NavTab[] = ["workout", "programs", "exercises", "analytics", "nutrition"];
+const TAB_ORDER: NavTab[] = ["workout", "programs", "exercises", "analytics", "nutrition", "reto"];
 
 /** Reads the PWA deep-link target (?tab=...) from the URL (manifest shortcuts). */
 const getTabFromURL = (): NavTab => {
@@ -121,6 +124,7 @@ const AppContent: React.FC = () => {
           {currentTab === "exercises" && <BiomechanicsHub />}
           {currentTab === "analytics" && <ScienceDashboard />}
           {currentTab === "nutrition" && <NutritionVisionHub />}
+          {currentTab === "reto" && <ChallengeHub />}
         </Suspense>
       </main>
 

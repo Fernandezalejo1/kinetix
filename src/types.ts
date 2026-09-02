@@ -123,6 +123,7 @@ export interface Exercise {
   regressions: string[];
   defaultTempo: string; // e.g. "3-1-0-1" (eccentric, pause at stretch, concentric, pause at contraction)
   defaultRir: number; // e.g. 1-2
+  executionMode?: "reps" | "time" | "explosive"; // NEW: how the exercise is performed
   videoUrl?: string;
   videoPosterUrl?: string;
   gifUrl?: string;
@@ -155,6 +156,7 @@ export interface WorkoutSet {
   type: SetType;
   weight: number; // in kg (or user unit)
   reps: number;
+  durationSeconds?: number; // NEW: for time-based exercises, actual seconds held
   rir?: number; // Reps in reserve (0 = failure, 1 = 1 rep left, etc.)
   rpe?: number; // 6 to 10
   tempo?: string; // e.g. "3-1-0-1"

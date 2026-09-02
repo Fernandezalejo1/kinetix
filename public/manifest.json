@@ -37,6 +37,12 @@
       "short_name": "Programas",
       "url": "/?tab=programs",
       "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Reto 21 Días",
+      "short_name": "Reto",
+      "url": "/?tab=reto",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }

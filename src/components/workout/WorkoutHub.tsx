@@ -28,6 +28,7 @@ import { PlateCalculatorModal } from "./PlateCalculatorModal";
 import { WarmupGeneratorModal } from "./WarmupGeneratorModal";
 import { TempoMetronomeModal } from "./TempoMetronomeModal";
 import { Program, Routine } from "../../types";
+import { isTimeBased } from "../../utils/exerciseMode";
 
 interface WorkoutHubProps {
   onGoToPrograms: () => void;
@@ -512,7 +513,9 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
 
             {/* Exercises List */}
             <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-4 overscroll-contain scrollbar-thin">
-              {selectedSession.exercises?.map((wEx: any, idx: number) => (
+              {selectedSession.exercises?.map((wEx: any, idx: number) => {
+                const isTime = isTimeBased(wEx.exercise, wEx.targetReps);
+                return (
                 <div key={wEx.id || idx} className="rounded-2xl bg-neutral-950 border border-neutral-800 overflow-hidden">
                   <div className="px-4 py-3 bg-neutral-900/50 border-b border-neutral-800 flex items-center justify-between cursor-pointer hover:bg-neutral-800/50 transition-colors" onClick={() => wEx.exerciseId && setSelectedExHistory({ id: wEx.exerciseId, name: wEx.exercise?.nameEs || wEx.exerciseId })}>
                     <div className="flex items-center gap-3">
@@ -531,8 +534,8 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
                         <tr className="text-[10px] text-neutral-500 uppercase">
                           <th className="text-center py-1 w-10">#</th>
                           <th className="text-center py-1">Tipo</th>
-                          <th className="text-center py-1">{weightUnit.toUpperCase()}</th>
-                          <th className="text-center py-1">Reps</th>
+                          {!isTime && <th className="text-center py-1">{weightUnit.toUpperCase()}</th>}
+                          <th className="text-center py-1">{isTime ? "Duración" : "Reps"}</th>
                           <th className="text-center py-1">RIR</th>
                         </tr>
                       </thead>
@@ -548,8 +551,10 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
                                 'bg-neutral-800 text-neutral-400'
                               }`}>{set.type === 'normal' ? 'W' : set.type.slice(0, 4)}</span>
                             </td>
-                            <td className={`text-center py-1.5 font-bold ${set.completed ? 'text-cyan-400' : 'text-neutral-500'}`}>{set.weight || 0}</td>
-                            <td className={`text-center py-1.5 font-bold ${set.completed ? 'text-white' : 'text-neutral-500'}`}>{set.reps}</td>
+                            {!isTime && <td className={`text-center py-1.5 font-bold ${set.completed ? 'text-cyan-400' : 'text-neutral-500'}`}>{set.weight || 0}</td>}
+                            <td className={`text-center py-1.5 font-bold ${set.completed ? 'text-white' : 'text-neutral-500'}`}>
+                              {isTime ? `${set.durationSeconds ?? set.reps}s` : set.reps}
+                            </td>
                             <td className="text-center py-1.5 text-neutral-400">{set.rir ?? '-'}</td>
                           </tr>
                         ))}
@@ -557,7 +562,8 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
                     </table>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>

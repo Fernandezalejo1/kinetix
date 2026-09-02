@@ -2403,6 +2403,7 @@ export const EXERCISES_DATABASE: Exercise[] = [
     regressions: ["Plancha con rodillas apoyadas"],
     defaultTempo: "Isométrico",
     defaultRir: 2,
+    executionMode: "time",
     videoUrl: "/assets/exercises/front-plank.mp4",
     videoPosterUrl: "/assets/exercises/front-plank-poster.jpg"
   },
@@ -2493,6 +2494,7 @@ export const EXERCISES_DATABASE: Exercise[] = [
     regressions: ["Slam de rodillas con balón ligero"],
     defaultTempo: "Explosivo",
     defaultRir: 2,
+    executionMode: "explosive",
     videoUrl: "/assets/exercises/medicine-ball-slam.mp4",
     videoPosterUrl: "/assets/exercises/medicine-ball-slam-poster.jpg"
   },
@@ -2746,7 +2748,8 @@ export const EXERCISES_DATABASE: Exercise[] = [
     progressions: ["Cajón más alto o saltos laterales"],
     regressions: ["Step-ups explosivos"],
     defaultTempo: "Explosivo",
-    defaultRir: 2
+    defaultRir: 2,
+    executionMode: "explosive"
   },
   {
     id: "handstand-hold",
@@ -2774,7 +2777,8 @@ export const EXERCISES_DATABASE: Exercise[] = [
     progressions: ["Segundos extra o parada libre"],
     regressions: ["Pike hold (pica estática)"],
     defaultTempo: "Sostén isométrico",
-    defaultRir: 2
+    defaultRir: 2,
+    executionMode: "time"
   },
   {
     id: "l-sit-hold",
@@ -2802,7 +2806,8 @@ export const EXERCISES_DATABASE: Exercise[] = [
     progressions: ["Más segundos o piernas extendidas"],
     regressions: ["Tuck L-sit (rodillas juntas)"],
     defaultTempo: "Sostén isométrico",
-    defaultRir: 2
+    defaultRir: 2,
+    executionMode: "time"
   },
   {
     id: "windshield-wipers",
@@ -2886,7 +2891,8 @@ export const EXERCISES_DATABASE: Exercise[] = [
     progressions: ["Salto más alto o con carga ligera"],
     regressions: ["Step-up controlado (sin salto)"],
     defaultTempo: "Explosivo",
-    defaultRir: 2
+    defaultRir: 2,
+    executionMode: "explosive"
   },
   {
     id: "pike-push-up",
@@ -3054,6 +3060,7 @@ export const EXERCISES_DATABASE: Exercise[] = [
     progressions: ["Más duración o peso en manos"],
     regressions: ["Superman de piernas o torso por separado"],
     defaultTempo: "Sostén isométrico",
-    defaultRir: 2
+    defaultRir: 2,
+    executionMode: "time"
   }
 ];

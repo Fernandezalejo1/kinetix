@@ -106,6 +106,33 @@ export async function readTodaySteps(): Promise<StepsOfDay> {
 }
 
 /**
+ * Lee los pasos de UN DÍA ESPECÍFICO desde Health Connect.
+ * Útil para el reto 21 días (verificar días históricos).
+ * En fallback web devuelve 0.
+ */
+export async function readStepsForDate(date: Date): Promise<number> {
+  if (!isNativePlatform()) return 0;
+  try {
+    const start = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
+    const end = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+    const res = await Health.queryAggregated({
+      dataType: "steps",
+      startDate: start.toISOString(),
+      endDate: end.toISOString(),
+      bucket: "day",
+      aggregation: "sum",
+    });
+    const bucket = res.samples.find((s) => {
+      const d = new Date(s.startDate).toDateString();
+      return d === start.toDateString();
+    });
+    return Math.round(bucket?.value ?? 0);
+  } catch {
+    return 0;
+  }
+}
+
+/**
  * Abre la pantalla de ajustes de Health Connect (Android).
  * No-op en web.
  */

@@ -38,6 +38,7 @@ import { TempoMetronomeModal } from "./TempoMetronomeModal";
 import { ExerciseDetailModal } from "../exercises/ExerciseDetailModal";
 import { ExerciseLibraryModal } from "../exercises/ExerciseLibraryModal";
 import { analyzeDoubleProgression } from "../../utils/doubleProgression";
+import { isTimeBased, getTargetSeconds } from "../../utils/exerciseMode";
 
 /** Cardio Timer — 20 minute countdown for treadmill/cardio exercises.
  *  Uses a target END timestamp (not tick-counting) so the countdown keeps
@@ -135,6 +136,157 @@ const CardioTimer: React.FC<{ exercise: WorkoutExercise }> = ({ exercise }) => {
             </div>
           )}
         </div>
+      </div>
+    </div>
+  );
+};
+
+/** Isometric Timer — countdown for time-based exercises (planks, holds, etc.).
+ *  Manages sets sequentially: each set has its own target duration from the plan.
+ *  Uses endAt timestamp to survive backgrounding. */
+const IsometricTimer: React.FC<{ exercise: WorkoutExercise }> = ({ exercise }) => {
+  const { completeSetAndTriggerTimer } = useWorkout();
+
+  const currentSetIdx = exercise.sets.findIndex((s) => !s.completed);
+  const currentSet = currentSetIdx >= 0 ? exercise.sets[currentSetIdx] : null;
+  const targetSeconds = getTargetSeconds(exercise);
+
+  const [remaining, setRemaining] = useState(targetSeconds);
+  const [isRunning, setIsRunning] = useState(false);
+  const [started, setStarted] = useState(false);
+  const [endAt, setEndAt] = useState<number | null>(null);
+
+  // Reset timer when moving to next set
+  useEffect(() => {
+    if (currentSet) {
+      setRemaining(currentSet.durationSeconds ?? targetSeconds);
+      setIsRunning(false);
+      setStarted(false);
+      setEndAt(null);
+    }
+  }, [currentSet?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!isRunning || endAt === null) return;
+    const tick = () => {
+      const left = Math.max(0, Math.ceil((endAt - Date.now()) / 1000));
+      setRemaining(left);
+      if (left <= 0) {
+        setIsRunning(false);
+        if (currentSet) completeSetAndTriggerTimer(exercise.id, currentSet.id, { durationSeconds: currentSet.durationSeconds ?? targetSeconds });
+        if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200]);
+      }
+    };
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [isRunning, endAt, exercise.id, currentSet, completeSetAndTriggerTimer]);
+
+  const toggle = () => {
+    const dur = currentSet?.durationSeconds ?? targetSeconds;
+    if (!started || remaining <= 0) {
+      setEndAt(Date.now() + dur * 1000);
+    } else if (isRunning) {
+      setEndAt(null);
+    } else {
+      setEndAt(Date.now() + remaining * 1000);
+    }
+    setStarted(true);
+    setIsRunning(!isRunning);
+  };
+
+  const reset = () => {
+    setRemaining(currentSet?.durationSeconds ?? targetSeconds);
+    setIsRunning(false);
+    setStarted(false);
+    setEndAt(null);
+  };
+
+  const mins = Math.floor(remaining / 60);
+  const secs = remaining % 60;
+  const dur = currentSet?.durationSeconds ?? targetSeconds;
+  const progress = ((dur - remaining) / dur) * 100;
+  const done = remaining === 0 && started;
+  const allDone = exercise.sets.every((s) => s.completed);
+  const completedCount = exercise.sets.filter((s) => s.completed).length;
+
+  return (
+    <div className="p-4 sm:p-6">
+      <div className="rounded-2xl bg-gradient-to-br from-amber-950/40 via-neutral-900 to-neutral-950 border border-amber-500/20 p-6 text-center space-y-4">
+        <div className="text-xs font-bold uppercase tracking-wider text-amber-400">
+          {exercise.exercise.nameEs} — Serie {completedCount + (done ? 0 : 1)} de {exercise.sets.length}
+        </div>
+
+        {!allDone && currentSet ? (
+          <>
+            <div className="relative w-40 h-40 mx-auto">
+              <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="54" fill="none" stroke="rgb(23 23 23)" strokeWidth="8" />
+                <circle cx="60" cy="60" r="54" fill="none" stroke="#f59e0b" strokeWidth="8"
+                  strokeDasharray={`${2 * Math.PI * 54}`}
+                  strokeDashoffset={`${2 * Math.PI * 54 * (1 - progress / 100)}`}
+                  strokeLinecap="round" className="transition-all duration-1000" />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-3xl font-black text-white font-mono">
+                  {String(mins).padStart(2, "0")}:{String(secs).padStart(2, "0")}
+                </span>
+                <span className="text-[10px] text-neutral-400 font-bold">
+                  {done ? "¡COMPLETADO!" : isRunning ? "MANTENÉ LA POSICIÓN" : `${dur}s`}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-center gap-3">
+              {!done ? (
+                <>
+                  <button onClick={toggle}
+                    className={`px-8 py-3 rounded-xl font-bold text-sm flex items-center gap-2 transition-all shadow-lg ${
+                      isRunning
+                        ? "bg-amber-600 hover:bg-amber-500 text-white shadow-amber-600/20"
+                        : "bg-cyan-600 hover:bg-cyan-500 text-white shadow-cyan-600/20"
+                    }`}
+                  >
+                    {isRunning
+                      ? <><Pause className="w-4 h-4 fill-white" />Pausar</>
+                      : <><Play className="w-4 h-4 fill-white" />{started ? "Reanudar" : "Iniciar"}</>}
+                  </button>
+                  {started && (
+                    <button onClick={reset}
+                      className="px-4 py-3 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-bold text-sm border border-neutral-700 transition-all"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                    </button>
+                  )}
+                </>
+              ) : (
+                <div className="flex items-center gap-2 text-emerald-400">
+                  <CheckCircle2 className="w-5 h-5" />
+                  <span className="text-sm font-bold">Serie completada — {dur}s</span>
+                </div>
+              )}
+            </div>
+          </>
+        ) : (
+          <div className="flex items-center justify-center gap-2 text-emerald-400 py-4">
+            <CheckCircle2 className="w-6 h-6" />
+            <span className="text-sm font-bold">Todas las series completadas</span>
+          </div>
+        )}
+
+        {completedCount > 0 && (
+          <div className="flex justify-center gap-2 pt-2">
+            {exercise.sets.map((s, i) => (
+              <div key={s.id} className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                s.completed
+                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                  : "bg-neutral-800 text-neutral-500 border border-neutral-700"
+              }`}>
+                {s.completed ? "✓" : i + 1}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -606,15 +758,22 @@ export const LiveWorkoutLogger: React.FC = () => {
                 </div>
 
                 {/* Double Progression — live objective guidance */}
-                <DoubleProgressionBanner wEx={wEx} />
+                {!isTimeBased(wEx.exercise, wEx.targetReps) && (
+                  <DoubleProgressionBanner wEx={wEx} />
+                )}
 
                 {/* Cardio Timer — special rendering for cardio:20min */}
                 {wEx.notes?.startsWith("cardio:") && (
                   <CardioTimer exercise={wEx} />
                 )}
 
-                {/* Sets Table — Desktop (hidden for cardio) */}
-                {!wEx.notes?.startsWith("cardio:") && (
+                {/* Isometric Timer — time-based exercises (planks/holds) */}
+                {!wEx.notes?.startsWith("cardio:") && isTimeBased(wEx.exercise, wEx.targetReps) && (
+                  <IsometricTimer exercise={wEx} />
+                )}
+
+                {/* Sets Table — Desktop (hidden for cardio & time-based) */}
+                {!wEx.notes?.startsWith("cardio:") && !isTimeBased(wEx.exercise, wEx.targetReps) && (
                 <div className="p-4 sm:p-5 overflow-x-auto hidden md:block">
                   <table className="w-full text-left text-xs min-w-[540px]">
                     <thead>
@@ -801,8 +960,8 @@ export const LiveWorkoutLogger: React.FC = () => {
                 </div>
                 )}
 
-                {/* Sets Cards — Mobile (hidden for cardio) */}
-                {!wEx.notes?.startsWith("cardio:") && (
+                {/* Sets Cards — Mobile (hidden for cardio & time-based) */}
+                {!wEx.notes?.startsWith("cardio:") && !isTimeBased(wEx.exercise, wEx.targetReps) && (
                 <div className="p-3 space-y-3 md:hidden">
                   {wEx.sets.map((set) => {
                     return (

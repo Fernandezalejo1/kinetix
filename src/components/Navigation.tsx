@@ -9,12 +9,12 @@ import {
   Volume2,
   VolumeX,
   Settings,
-
+  Trophy,
   Zap
 } from "lucide-react";
 import { useWorkout } from "../context/WorkoutContext";
 
-export type NavTab = "workout" | "programs" | "exercises" | "analytics" | "nutrition";
+export type NavTab = "workout" | "programs" | "exercises" | "analytics" | "nutrition" | "reto";
 
 interface NavigationProps {
   currentTab: NavTab;
@@ -43,6 +43,7 @@ export const Navigation: React.FC<NavigationProps> = ({
     { id: "exercises", label: "Biomecánica", shortLabel: "Músculos", icon: Activity },
     { id: "analytics", label: "Analytics & MEV", shortLabel: "Stats", icon: BarChart3 },
     { id: "nutrition", label: "Nutrición", shortLabel: "Nutrición", icon: Utensils },
+    { id: "reto", label: "Reto 21 Días", shortLabel: "Reto", icon: Trophy },
   ];
 
   return (
