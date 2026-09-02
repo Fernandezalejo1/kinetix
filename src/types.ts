@@ -215,6 +215,8 @@ export interface Routine {
   description: string;
   targetSplit: string;
   estimatedDurationMin: number;
+  /** Marca una versión "deload" (descarga) de la rutina: menos volumen/carga. */
+  deload?: boolean;
   exercises: {
     exerciseId: string;
     targetSets: number;

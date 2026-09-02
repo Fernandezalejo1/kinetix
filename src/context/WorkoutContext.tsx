@@ -484,7 +484,11 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
         // Medicine ball = 3kg default; legs = 80kg; else = 40kg
         const isMedicineBall = item.exerciseId === "medicine-ball-slam";
         const defaultWeight = isMedicineBall ? 3 : (exDef.category === "legs" ? 80 : 40);
-        const prevWeight = lastHistory ? lastHistory.weight : defaultWeight;
+        let prevWeight = lastHistory ? lastHistory.weight : defaultWeight;
+        // Semana de descarga: bajar la carga −10-15% para favorecer la recuperación.
+        if ((routine as Routine).deload && !isTime) {
+          prevWeight = Math.round(prevWeight * 0.9 * 4) / 4;
+        }
         const prevReps = lastHistory ? Math.round(lastHistory.reps.reduce((a, b) => a + b, 0) / lastHistory.reps.length) : parsedReps;
 
         const sets: WorkoutSet[] = Array.from({ length: item.targetSets }).map((_, sIdx) => ({

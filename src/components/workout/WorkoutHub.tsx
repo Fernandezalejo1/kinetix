@@ -29,6 +29,12 @@ import { WarmupGeneratorModal } from "./WarmupGeneratorModal";
 import { TempoMetronomeModal } from "./TempoMetronomeModal";
 import { Program, Routine } from "../../types";
 import { isTimeBased } from "../../utils/exerciseMode";
+import {
+  analyzeDeload,
+  buildDeloadRoutine,
+  getDeloadWeekState,
+  setDeloadWeekState,
+} from "../../utils/deloadDetection";
 
 interface WorkoutHubProps {
   onGoToPrograms: () => void;
@@ -135,6 +141,28 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
     };
   }, [workoutHistory, nutritionLog]);
 
+  // IDEA 2: Deload automático por acumulación real de sobrecarga.
+  const deload = useMemo(() => analyzeDeload(workoutHistory, 4), [workoutHistory]);
+  const deloadRoutine = useMemo<Routine | null>(
+    () => (nextRoutine && deload.status !== "none" ? buildDeloadRoutine(nextRoutine) : null),
+    [nextRoutine, deload.status]
+  );
+  const [deloadWeek, setDeloadWeek] = useState(() => getDeloadWeekState());
+
+  const startDeloadWeek = () => {
+    if (!deloadRoutine) return;
+    startWorkoutFromRoutine(deloadRoutine);
+    setDeloadWeek({ active: true, startedAt: Date.now(), routineId: deloadRoutine.id });
+    setDeloadWeekState({ active: true, startedAt: Date.now(), routineId: deloadRoutine.id });
+    showToast(`Semana de descarga iniciada · ${deloadRoutine.name}`);
+  };
+
+  const endDeloadWeek = () => {
+    setDeloadWeek({ active: false });
+    setDeloadWeekState({ active: false });
+    showToast("Semana de descarga finalizada. Volvé a la sobrecarga progresiva.", "success");
+  };
+
   return (
     <div id="workout-hub" className="space-y-8 animate-fadeIn pb-16">
       {/* Hero Quick Start Banner */}
@@ -192,7 +220,96 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
         </div>
       </div>
 
-      {/* Today's Progress Card */}
+      {/* IDEA 2: Deload automático por acumulación real */}
+      {deloadWeek.active ? (
+        <div className="p-5 rounded-3xl bg-gradient-to-br from-teal-500/10 via-neutral-900 to-neutral-950 border border-teal-500/30 space-y-3">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="p-3 rounded-2xl bg-teal-500/15 text-teal-300 border border-teal-500/20 shrink-0">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-teal-500/20 text-teal-300 border border-teal-500/30">
+                    SEMANA DE DESCARGA ACTIVA
+                  </span>
+                </div>
+                <h3 className="text-lg font-black text-white mt-2">Recuperación en curso</h3>
+                <p className="text-xs text-neutral-300 leading-relaxed mt-1">
+                  Estás en tu semana de descarga: menos volumen, −10-15% de carga y más reps en reserva
+                  (RIR más alto). Esto disipa la fatiga sistémica y te deja listo para volver con
+                  sobrecarga progresiva.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={endDeloadWeek}
+              className="px-4 py-2.5 bg-teal-600 hover:bg-teal-500 text-white text-xs font-black rounded-xl transition-colors shadow-lg shadow-teal-600/20 shrink-0"
+            >
+              Finalizar descarga
+            </button>
+          </div>
+          {deloadRoutine && (
+            <button
+              onClick={() => startWorkoutFromRoutine(deloadRoutine)}
+              className="w-full p-3 rounded-2xl bg-teal-500/10 border border-teal-500/20 hover:bg-teal-500/20 transition-colors text-left"
+            >
+              <span className="flex items-center gap-2 text-teal-300 text-xs font-bold">
+                <Play className="w-4 h-4 fill-teal-300" />
+                Volver a iniciar: {deloadRoutine.name}
+              </span>
+            </button>
+          )}
+        </div>
+      ) : deload.status === "due" && deloadRoutine ? (
+        <div className="p-5 rounded-3xl bg-gradient-to-br from-rose-500/10 via-neutral-900 to-neutral-950 border border-rose-500/30 space-y-3">
+          <div className="flex items-start gap-3">
+            <div className="p-3 rounded-2xl bg-rose-500/15 text-rose-300 border border-rose-500/20 shrink-0">
+              <TrendingDown className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                  DELOAD RECOMENDADO
+                </span>
+              </div>
+              <h3 className="text-lg font-black text-white mt-2">
+                Sobrecarga real acumulada ({deload.consecutiveOverloadWeeks} semanas)
+              </h3>
+              <p className="text-xs text-neutral-300 leading-relaxed mt-1">{deload.summary}</p>
+              <ul className="mt-2 space-y-1">
+                {deload.reasons.map((r, i) => (
+                  <li key={i} className="flex items-start gap-1.5 text-[11px] text-neutral-400">
+                    <span className="text-rose-400 mt-0.5">•</span>
+                    <span>{r}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={startDeloadWeek}
+              className="px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-black rounded-xl transition-colors shadow-lg shadow-rose-600/20"
+            >
+              Iniciar semana de descarga
+            </button>
+            <button
+              onClick={() => startWorkoutFromRoutine(deloadRoutine)}
+              className="px-4 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-bold rounded-xl border border-neutral-700 transition-colors"
+            >
+              Solo hoy: {deloadRoutine.name}
+            </button>
+          </div>
+        </div>
+      ) : deload.status === "ready" ? (
+        <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/20 text-xs text-amber-200/90 flex items-start gap-2.5">
+          <TrendingDown className="w-4 h-4 text-amber-300 shrink-0 mt-0.5" />
+          <span>
+            <strong className="font-black text-amber-300">Alerta temprana de fatiga.</strong> {deload.summary}
+          </span>
+        </div>
+      ) : null}
       <div className="p-5 rounded-3xl bg-gradient-to-br from-cyan-500/5 via-neutral-900 to-neutral-950 border border-neutral-800 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
