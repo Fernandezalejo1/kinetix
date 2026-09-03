@@ -139,6 +139,8 @@ export const StepsPanel: React.FC<StepsPanelProps> = ({ compact }) => {
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
+      // Re-verifica permisos antes de leer (evita refrescar con un estado viejo).
+      await refreshStatus();
       const d = await readTodaySteps();
       if (d.source === "healthconnect") {
         const date = new Date().toISOString().split("T")[0];
@@ -152,9 +154,18 @@ export const StepsPanel: React.FC<StepsPanelProps> = ({ compact }) => {
           base: stored?.base,
           adjustment: stored?.adjustment ?? null,
         });
-        showToast("Pasos actualizados.", "success");
+        showToast(
+          d.steps > 0
+            ? `Pasos actualizados: ${d.steps.toLocaleString("es-AR")}.`
+            : "Health Connect conectado pero hoy todavía no registró pasos.",
+          d.steps > 0 ? "success" : "info"
+        );
+      } else if (!isNativePlatform()) {
+        showToast("No hay datos de pasos en la versión web. Usá la app Android o la entrada manual.", "info");
+      } else if (!status.authorized) {
+        showToast("Health Connect no autorizado. Conectalo primero para leer pasos.", "error");
       } else {
-        showToast("No hay datos de pasos disponibles en esta plataforma.", "info");
+        showToast("No se pudieron leer los pasos de Health Connect. Revisá permisos.", "error");
       }
     } finally {
       setRefreshing(false);

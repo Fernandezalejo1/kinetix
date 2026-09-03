@@ -344,63 +344,6 @@ export const NutritionVisionHub: React.FC = () => {
         </div>
       </div>
 
-      {/* Guía paso a paso de la FASE DE DEFINICIÓN */}
-      <div className={`p-5 sm:p-6 rounded-3xl border shadow-2xl space-y-4 ${
-        nutritionGoal === "cut"
-          ? "bg-gradient-to-br from-neutral-900 via-neutral-900 to-amber-950/20 border-amber-500/20"
-          : "bg-neutral-900 border-neutral-800"
-      }`}>
-        <div className="flex items-center gap-2.5">
-          <div className={`p-2.5 rounded-xl border flex items-center justify-center ${
-            nutritionGoal === "cut" ? "bg-amber-500/10 text-amber-400 border-amber-500/25" : "bg-neutral-800 text-neutral-400 border-neutral-700"
-          }`}>
-            <Zap className="w-5 h-5" />
-          </div>
-          <div>
-            <h3 className="text-base font-black text-white tracking-tight">
-              Guía de Fase de Definición {nutritionGoal === "cut" && <span className="text-amber-300">(activa)</span>}
-            </h3>
-            <p className="text-[11px] text-neutral-400">Paso a paso para quemar grasa y REVELAR los abdominales sin perder músculo</p>
-          </div>
-        </div>
-
-        <p className="text-[11px] text-neutral-300 leading-relaxed">
-          La <strong className="text-white">definición</strong> es un déficit calórico controlado combinado con entrenamiento y proteína
-          alta. Los abdominales se <strong className="text-white">construyen con sobrecarga progresiva</strong> (como cualquier músculo) pero
-          solo se <strong className="text-white">VEN</strong> cuando el % de grasa baja (target: ~12% hombres / ~20% mujeres para six-pack).
-          Seguí estos pasos:
-        </p>
-
-        <ol className="space-y-3">
-          {[
-            { t: "1 · Déficit moderado (−15%)", d: "Tu objetivo activo ya lo tiene. Comé ~300 kcal menos que tu TDEE (Mifflin-St Jeor) para perder 0.4–0.8% de peso corporal por semana, no más rápido (protege masa y metabolismo)." },
-            { t: "2 · Proteína alta para retener músculo", d: `Mantené ${NUTRITION_GOALS[nutritionGoal].proteinPerKg} g/kg de peso corporal (ej. ${Math.round(currentWeight * NUTRITION_GOALS[nutritionGoal].proteinPerKg)} g/día para ${currentWeight} kg). Distribuida en 3–5 comidas, priorizando después del entreno.` },
-            { t: "3 · Construí los abdominales con progresión", d: "Usá el programa DEDICADO 'Definición + Abdominales' en Programas: cable-crunch y Russian Twist con peso PROGRESIVO (aumentá carga o reps cada semana), plancha isométrica para resistencia, y no recortes repeticiones." },
-            { t: "4 · Cardio para acelerar el déficit", d: "Día 4 del programa: LISS 65-70% FC máxima (cinta/elíptica 25 min) + pasos diarios (8–10k). El cardio suma a tu déficit sin comprometer el entrenamiento de fuerza." },
-            { t: "5 · Mantené la fuerza en el gimnasio", d: "Entrená igual de fuerte (los compuestos protegen masa muscular). Si el rendimiento cae más de un 10%, el déficit es demasiado agresivo: subí 100–150 kcal." },
-            { t: "6 · Hidratación y sueño", d: "Agua según tu objetivo (Water Tracker) hasta antes de dormir, y evitá cafeína en las horas previas al descanso. Dormir mal sabotea la pérdida de grasa y la recuperación abdominal." },
-          ].map((s) => (
-            <li key={s.t} className="flex gap-3 p-3 rounded-2xl bg-neutral-950 border border-neutral-800">
-              <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${
-                nutritionGoal === "cut" ? "bg-amber-500/15 text-amber-300 border border-amber-500/20" : "bg-neutral-800 text-neutral-300 border border-neutral-700"
-              }`}>
-                <Dna className="w-4 h-4" />
-              </div>
-              <div className="min-w-0">
-                <div className="text-xs font-bold text-white">{s.t}</div>
-                <div className="text-[11px] text-neutral-400 mt-0.5 leading-relaxed">{s.d}</div>
-              </div>
-            </li>
-          ))}
-        </ol>
-
-        <div className="p-3 rounded-2xl bg-amber-500/5 border border-amber-500/15 text-[11px] text-neutral-300 leading-relaxed">
-          <strong className="text-amber-300">Timeline realista:</strong> con un déficit de ~0.5 kg/semana, en{" "}
-          <strong className="text-white">6–8 semanas</strong> perdés ~3–4 kg de grasa y los abdominales empiezan a definirse
-          (si ya los construís con carga). Cada ~1% menos de grasa corporal → el six-pack se hace más visible.
-        </div>
-      </div>
-
       {/* Guía KETO / Cetogénica */}
       <div className={`p-5 sm:p-7 rounded-3xl border shadow-2xl space-y-4 ${
         nutritionGoal === "keto"
@@ -417,30 +360,28 @@ export const NutritionVisionHub: React.FC = () => {
             <h3 className="text-base font-black text-white tracking-tight">
               Guía Keto Cetogénica {nutritionGoal === "keto" && <span className="text-rose-300">(activa)</span>}
             </h3>
-            <p className="text-[11px] text-neutral-400">Alta grasa · carbos mínimos · cuerpos cetónicos como combustible</p>
+            <p className="text-[11px] text-neutral-400">Alta grasa · carbos mínimos · cuerpos cetónicos como combustible · definición y control de apetito</p>
           </div>
         </div>
 
         <p className="text-[11px] text-neutral-300 leading-relaxed">
-          En keto reducís los carbos a <strong className="text-white">&lt;30 g/día</strong> y subís la grasa (~65–70% de las calorías): el
-          hígado produce <strong className="text-white">cuerpos cetónicos</strong> que el cuerpo y el cerebro usan en lugar de glucosa.
-          Para tu déficit (definición) es muy efectivo porque <strong className="text-rose-300">controla el apetito</strong> con grasa saciante y
+          En keto reducís los carbos a <strong className="text-white">&lt;30 g/día</strong> (la app los fija en ~{nutritionLog.carbsTarget} g) y subís
+          la grasa (~65–70% de las calorías): el hígado produce <strong className="text-white">cuerpos cetónicos</strong> que el cuerpo y el cerebro usan
+          en lugar de glucosa. Para definición es muy efectivo porque <strong className="text-rose-300">controla el apetito</strong> con grasa saciante y
           mantiene masa muscular con proteína moderada (1.8 g/kg, sin pasarte porque el exceso de proteína puede salir de cetosis).
         </p>
 
         <ol className="space-y-3">
           {[
-            { t: "1 · Macros keto (tu objetivo activo ya los calcula)", d: `Calorías de déficit (${nutritionLog.calorieTarget} kcal), carbos ≈ ${nutritionLog.carbsTarget} g, proteína ${nutritionLog.proteinTarget} g y grasa ${nutritionLog.fatsTarget} g. Quedás en cetosis al mantener los carbos muy bajos.` },
+            { t: "1 · Tus macros keto (el objetivo ya las calcula)", d: `Calorías de déficit (${nutritionLog.calorieTarget} kcal), carbos ≈ ${nutritionLog.carbsTarget} g, proteína ${nutritionLog.proteinTarget} g y grasa ${nutritionLog.fatsTarget} g. Quedás en cetosis al mantener los carbos muy bajos.` },
             { t: "2 · Qué comer (grasa + proteína + verdura baja en carbo)", d: "Carnes, pescado graso (salmón), huevos, palta, aceite de oliva, mantequilla, quesos, frutos secos y verduras de hoja. Evitá pan, arroz, papa, boniato, fruta dulce, azúcar y ultraprocesados." },
             { t: "3 · Adaptación (la 'gripe keto' es normal)", d: "Los primeros 3–7 días podés sentir fatiga, niebla mental o dolores de cabeza mientras el cuerpo cambia de combustible. Tomá mucha agua y sumá sal/electrolitos (sodio, potasio, magnesio)." },
-            { t: "4 · Electrolitos CLAVE (más que en cualquier dieta)", d: `En keto el cuerpo elimina más sodio y agua: sin reponerlos caés en calambres y niebla. Agregá sal a las comidas, consomé de hueso, y magnesio. Hidratación ${((nutritionLog.calorieTarget / 1000) * 14).toFixed(0)} g de fibra + 2.5–3 L de agua.` },
-            { t: "5 · Rendimiento en el gym", d: "Las primeras 1–2 semanas el rendimiento en series de alta intensidad puede bajar (el músculo aún se adapta a la grasa). Mantené los compuestos con buena técnica; la explosividad ligera se recupera con la adaptación. Café/Cafeína sí entra (sin azúcar)." },
-            { t: "6 · Cuánto tiempo", d: "Keto cíclica: mantenela 8–12 semanas para definición, luego considerá reintroducir carbos de calidad (targeted keto) para el entreno. Monitoreá cómo te sentís; si el rendimiento se desploma &gt;10%, ajustá." },
+            { t: "4 · Electrolitos CLAVE (más que en cualquier dieta)", d: `En keto el cuerpo elimina más sodio y agua: sin reponerlos caés en calambres y niebla. Agregá sal a las comidas, consomé de hueso, y magnesio. Mantené la hidratación (2.5–3 L de agua) y suficiente fibra.` },
+            { t: "5 · Rendimiento en el gym", d: "Las primeras 1–2 semanas el rendimiento en series de alta intensidad puede bajar (el músculo aún se adapta a la grasa). Mantené los compuestos con buena técnica; la explosividad se recupera con la adaptación. Café/Cafeína sí entra (sin azúcar)." },
+            { t: "6 · Cuánto tiempo", d: "Keto cíclica: mantenela 8–12 semanas para definición, luego considerá reintroducir carbos de calidad (targeted keto) para el entreno. Monitoreá cómo te sentís; si el rendimiento se desploma >10%, ajustá." },
           ].map((s) => (
             <li key={s.t} className="flex gap-3 p-3 rounded-2xl bg-neutral-950 border border-neutral-800">
-              <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${
-                nutritionGoal === "keto" ? "bg-rose-500/15 text-rose-300 border border-rose-500/20" : "bg-neutral-800 text-neutral-300 border border-neutral-700"
-              }`}>
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 bg-rose-500/15 text-rose-300 border border-rose-500/20">
                 <Flame className="w-4 h-4" />
               </div>
               <div className="min-w-0">
@@ -453,9 +394,8 @@ export const NutritionVisionHub: React.FC = () => {
 
         <div className="p-3 rounded-2xl bg-rose-500/5 border border-rose-500/15 text-[11px] text-neutral-300 leading-relaxed">
           <strong className="text-rose-300">Consejo para keto:</strong> usá el plan de comidas <strong className="text-white">Keto</strong> en el
-          selector de horarios (3° opción) — comidas altas en grasa y sin carbos que respetan tu día. Activá el objetivo{" "}
-          <strong className="text-white">Keto</strong> arriba y "Aplicar a objetivos"
-          para fijar tus macros. Tu perfil {currentWeight ? `(${currentWeight} kg, definición −${nutritionProfile.deficitPercent}%)` : ""} ya quedó calculado.
+          selector de horarios — comidas altas en grasa y sin carbos que respetan tu día, y aplicá tus macros con "Aplicar a objetivos".
+          Tu perfil {currentWeight ? `(${currentWeight} kg, definición −${nutritionProfile.deficitPercent}%)` : ""} ya quedó calculado.
         </div>
       </div>
 

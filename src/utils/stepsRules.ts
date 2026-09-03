@@ -132,13 +132,25 @@ export function computeStepAdjustment(
   }
 
   // 4. Convertir kcal en macros. Solo carbos y grasas (proteína sagrada).
-  // Distribuimos 70% carbos / 30% grasas del delta (peso de regulación).
-  const carbsDelta = Math.round((caloriesDelta * 0.7) / 4);
-  const fatsDelta = Math.round((caloriesDelta * 0.3) / 9);
-  const checkCalories = carbsDelta * 4 + fatsDelta * 9;
-  // Corrección fina para que la suma coincida con caloriesDelta.
-  const remaining = caloriesDelta - checkCalories;
-  const carbsAdjusted = carbsDelta + (remaining >= 0 ? Math.ceil(remaining / 4) : Math.floor(remaining / 4));
+  //    Si la dieta es KETO (carbos capados en ~25-35g), NUNCA se tocan los
+  //    carbos (mantener cetosis): todo el delta se mueve por las grasas.
+  const keto = base.carbs <= 35;
+  let carbsDelta: number, fatsDelta: number, carbsAdjusted: number;
+  if (keto) {
+    carbsDelta = 0;
+    fatsDelta = Math.round(caloriesDelta / 9);
+    const checkCalories = fatsDelta * 9;
+    const remaining = caloriesDelta - checkCalories;
+    fatsDelta += Math.round(remaining / 9);
+    carbsAdjusted = 0;
+  } else {
+    carbsDelta = Math.round((caloriesDelta * 0.7) / 4);
+    fatsDelta = Math.round((caloriesDelta * 0.3) / 9);
+    const checkCalories = carbsDelta * 4 + fatsDelta * 9;
+    // Corrección fina para que la suma coincida con caloriesDelta.
+    const remaining = caloriesDelta - checkCalories;
+    carbsAdjusted = carbsDelta + (remaining >= 0 ? Math.ceil(remaining / 4) : Math.floor(remaining / 4));
+  }
 
   // 6. Distribución por comidas.
   //    Si el almuerzo ya pasó, no se toca ni almuerzo ni desayuno.
@@ -165,23 +177,25 @@ export function computeStepAdjustment(
   // Mensaje humano explicando la regla aplicada.
   let message: string;
   if (caloriesDelta === 0) {
-    message = `Estás dentro de tu rango de pasos (${steps.toLocaleString("es-AR")} de ${stepGoal.toLocaleString("es-AR")}). Se mantiene la dieta de definición.`;
+    message = `Estás dentro de tu rango de pasos (${steps.toLocaleString("es-AR")} de ${stepGoal.toLocaleString("es-AR")}). Se mantiene la dieta keto de definición.`;
   } else if (caloriesDelta < 0) {
     const reason = cfg.trainedToday
       ? "Entrenaste hoy, así que la reducción se suavizó para proteger tu masa muscular. "
       : "";
-    message = `${reason}Caminaste ${steps.toLocaleString("es-AR")} pasos (${band.label.toLowerCase()}). Se reducen ${Math.abs(caloriesDelta)} kcal de las comidas restantes (solo carbos y grasas, la proteína se mantiene).`;
+    const what = keto ? "solo grasas (los carbos quedan en su tope keto y la proteína se mantiene)" : "solo carbos y grasas, la proteína se mantiene";
+    message = `${reason}Caminaste ${steps.toLocaleString("es-AR")} pasos (${band.label.toLowerCase()}). Se reducen ${Math.abs(caloriesDelta)} kcal de las comidas restantes (${what}).`;
   } else {
     reason: {
       const extra = caloriesDelta > 0 ? " para reponer energía" : "";
-      message = `Estás muy activo (${steps.toLocaleString("es-AR")} pasos). Se agregan ${caloriesDelta} kcal extra en carbos${extra} para rendir el resto del día.`;
+      const what = keto ? "en grasas (sin tocar los carbos, para no salir de cetosis)" : "en carbos";
+      message = `Estás muy activo (${steps.toLocaleString("es-AR")} pasos). Se agregan ${caloriesDelta} kcal extra ${what}${extra} para rendir el resto del día.`;
     }
   }
 
   const adjusted: BaseTargets = {
     calories: base.calories + caloriesDelta,
     protein: base.protein + 0,
-    carbs: Math.max(0, base.carbs + carbsAdjusted),
+    carbs: keto ? base.carbs : Math.max(0, base.carbs + carbsAdjusted),
     fats: Math.max(0, base.fats + fatsDelta),
   };
 

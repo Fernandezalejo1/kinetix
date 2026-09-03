@@ -208,22 +208,18 @@ const INITIAL_WORKOUT_HISTORY: CompletedWorkout[] = [
 
 const INITIAL_NUTRITION: NutritionLog = {
   date: new Date().toISOString().split("T")[0],
-  calorieTarget: 2700,
-  proteinTarget: 175,
-  carbsTarget: 320,
-  fatsTarget: 75,
+  calorieTarget: 2300,
+  proteinTarget: 142,
+  carbsTarget: 25,
+  fatsTarget: 180,
   waterMl: 0,
   meals: [],
 };
 
-// Perfil nutricional + objetivo leídos desde LocalStorage (compatibles con los
-// inicializadores de estado y con el reseteo diario).
-const readNutritionGoal = (): NutritionGoal => {
-  const saved = localStorage.getItem("kinetix_nutrition_goal");
-  return saved === "cut" || saved === "maintenance" || saved === "lean_bulk" || saved === "bulk"
-    ? saved
-    : "cut"; // default del usuario: déficit
-};
+// Perfil nutricional + objetivo leídos desde LocalStorage.
+// La app es 100% KETO / Cetogénica: el objetivo está fijado a "keto" (no se
+// ofrece otro plan en la interfaz). El perfil sí es editable.
+const readNutritionGoal = (): NutritionGoal => "keto";
 
 const readNutritionProfile = (): NutritionProfile => ({
   ...DEFAULT_NUTRITION_PROFILE,

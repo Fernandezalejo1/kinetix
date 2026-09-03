@@ -73,7 +73,7 @@ export const NUTRITION_GOALS: Record<
   },
 };
 
-export const NUTRITION_GOAL_KEYS = Object.keys(NUTRITION_GOALS) as NutritionGoal[];
+export const NUTRITION_GOAL_KEYS = ["keto"] as NutritionGoal[];
 
 // ---------------------------------------------------------------------------
 // Perfil personal → metabolismo exacto (Mifflin-St Jeor) + factor de actividad

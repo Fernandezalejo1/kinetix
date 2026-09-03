@@ -209,7 +209,7 @@ const SCHEDULES: Record<ScheduleType, { label: string; short: string; icon: Reac
 };
 
 export const MealSchedulerPanel: React.FC = () => {
-  const [schedule, setSchedule] = useState<ScheduleType>("normal");
+  const [schedule, setSchedule] = useState<ScheduleType>("keto");
   const { addMeal, updateMacroTargets, nutritionLog, nutritionProfile } = useWorkout();
   const { showToast } = useToast();
 

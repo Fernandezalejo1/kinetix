@@ -93,12 +93,11 @@ export async function readTodaySteps(): Promise<StepsOfDay> {
       bucket: "day",
       aggregation: "sum",
     });
-    // queryAggregated agrupa por día; tomamos la suma del primer bucket (o el que corresponda a hoy).
-    const todayBucket = res.samples.find((s) => {
-      const d = new Date(s.startDate).toDateString();
-      return d === now.toDateString();
-    });
-    const steps = Math.round(todayBucket?.value ?? 0);
+    // La consulta ya está acotada a HOY (medianoche local → ahora), así que TODOS
+    // los samples devueltos pertenecen a hoy. Los sumamos directamente en lugar de
+    // buscar un bucket por fecha: evita fallos por desfases de zona horaria en el
+    // formateo de la fecha del bucket.
+    const steps = Math.round((res.samples ?? []).reduce((sum, s) => sum + (s.value || 0), 0));
     return { steps, asOf: new Date().toISOString(), source: "healthconnect" };
   } catch {
     return { steps: 0, asOf: new Date().toISOString(), source: null };
@@ -122,11 +121,8 @@ export async function readStepsForDate(date: Date): Promise<number> {
       bucket: "day",
       aggregation: "sum",
     });
-    const bucket = res.samples.find((s) => {
-      const d = new Date(s.startDate).toDateString();
-      return d === start.toDateString();
-    });
-    return Math.round(bucket?.value ?? 0);
+    const steps = Math.round((res.samples ?? []).reduce((sum, s) => sum + (s.value || 0), 0));
+    return steps;
   } catch {
     return 0;
   }
