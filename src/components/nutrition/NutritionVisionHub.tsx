@@ -163,7 +163,16 @@ export const NutritionVisionHub: React.FC = () => {
 
   const filteredQuickMeals = quickCategory === "todos" ? QUICK_MEALS : QUICK_MEALS.filter((m) => m.category === quickCategory);
 
-  const macroCards = [
+  const macroCards: {
+    label: string;
+    value: number;
+    target: number;
+    unit: string;
+    color: string;
+    bar: string;
+    icon: React.ReactNode;
+    limit?: boolean;
+  }[] = [
     {
       label: "Calorías",
       value: currentCalories,
@@ -183,13 +192,16 @@ export const NutritionVisionHub: React.FC = () => {
       icon: <Dna className="w-4 h-4 text-cyan-400" />,
     },
     {
-      label: "Carbohidratos",
+      label: nutritionGoal === "keto" ? "Carbohidratos (bajo ~25g)" : "Carbohidratos",
       value: currentCarbs,
       target: targetCarbs,
       unit: "g",
       color: "text-purple-400",
       bar: "bg-purple-400",
       icon: <Zap className="w-4 h-4 text-purple-400" />,
+      // En keto los carbos NO son una meta a llenar: son un TETO a no superar
+      // para mantenerse en cetosis. Se muestran como presupuesto, no objetivo.
+      limit: nutritionGoal === "keto",
     },
     {
       label: "Grasas Saludables",
@@ -450,23 +462,42 @@ export const NutritionVisionHub: React.FC = () => {
       {/* Macro overview */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {macroCards.map((card) => {
+          const isLimit = !!card.limit;
+          // Para una meta (calorías/proteína/grasa): % de lo que ya cubriste.
+          // Para un límite (carbos en keto): % del presupuesto ya consumido (el 100% = tope).
           const pct = card.target > 0 ? Math.min(100, (card.value / card.target) * 100) : 0;
-          const remaining = Math.max(0, card.target - card.value);
+          const remaining = card.target - card.value; // puede ser negativo en un límite
+          const over = isLimit && remaining < 0;
           return (
-            <div key={card.label} className="p-4 sm:p-5 rounded-3xl bg-neutral-900 border border-neutral-800 shadow-xl space-y-3 min-w-0">
+            <div key={card.label} className={`p-4 sm:p-5 rounded-3xl bg-neutral-900 border shadow-xl space-y-3 min-w-0 ${over ? "border-red-500/50" : "border-neutral-800"}`}>
               <div className="flex justify-between items-center text-[11px] font-bold text-neutral-400 uppercase tracking-wider gap-2">
                 <span className="truncate">{card.label}</span>
                 {card.icon}
               </div>
-              <div className={`text-2xl sm:text-3xl font-black ${card.color} whitespace-nowrap`}>
+              <div className={`text-2xl sm:text-3xl font-black ${over ? "text-red-400" : card.color} whitespace-nowrap`}>
                 {card.value} <span className="text-sm font-normal text-neutral-400">/ {card.target}{card.unit}</span>
               </div>
               <div className="h-2 bg-neutral-800 rounded-full overflow-hidden">
-                <div className={`h-full ${card.bar} rounded-full transition-all duration-500`} style={{ width: `${pct}%` }} />
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    isLimit ? (over ? "bg-red-500" : pct >= 80 ? "bg-amber-400" : "bg-purple-400") : card.bar
+                  }`}
+                  style={{ width: `${pct}%` }}
+                />
               </div>
               <div className="text-[11px] text-neutral-400 flex justify-between font-mono">
-                <span>Restantes:</span>
-                <span className="font-bold text-white">{remaining} {card.unit}</span>
+                {isLimit ? (
+                  <span className="font-bold text-neutral-300">Solo te sobran:</span>
+                ) : (
+                  <span>Restantes:</span>
+                )}
+                <span className={`font-bold ${over ? "text-red-400" : "text-white"}`}>
+                  {isLimit
+                    ? over
+                      ? `+${Math.abs(remaining)} ${card.unit} excedidos`
+                      : `${remaining} ${card.unit}`
+                    : `${remaining} ${card.unit}`}
+                </span>
               </div>
             </div>
           );
