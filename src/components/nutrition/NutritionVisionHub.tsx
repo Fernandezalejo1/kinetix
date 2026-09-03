@@ -295,11 +295,11 @@ export const NutritionVisionHub: React.FC = () => {
         </div>
 
         <p className="text-[11px] text-neutral-400 leading-relaxed">
-          <strong className="text-amber-300">Estás en déficit (−{nutritionProfile.deficitPercent}%) y tu día es nocturno:</strong> trabajás
-          sentado de <strong className="text-white">{nutritionProfile.workStart}</strong> a <strong className="text-white">{nutritionProfile.workEnd}</strong>,
-          así que tus comidas se organizan en ese rango y tu hidratación va hasta antes de dormir. Mantené la{" "}
+          <strong className="text-amber-300">Estás en déficit (−{nutritionProfile.deficitPercent}%)</strong> con un día laboral de{" "}
+          <strong className="text-white">{nutritionProfile.workStart}</strong> a <strong className="text-white">{nutritionProfile.workEnd}</strong>,
+          así que tus comidas e hidratación se organizan en ese rango y la hidratación va hasta antes de dormir. Mantené la{" "}
           <strong className="text-white">proteína {NUTRITION_GOALS[nutritionGoal].proteinPerKg} g/kg</strong> para no perder músculo con el déficit,
-          y evitá cafeína después de las 00:00 para proteger tu sueño.
+          y evitá cafeína en las horas previas a tu descanso para proteger el sueño.
         </p>
       </div>
 
@@ -378,7 +378,7 @@ export const NutritionVisionHub: React.FC = () => {
             { t: "3 · Construí los abdominales con progresión", d: "Usá el programa DEDICADO 'Definición + Abdominales' en Programas: cable-crunch y Russian Twist con peso PROGRESIVO (aumentá carga o reps cada semana), plancha isométrica para resistencia, y no recortes repeticiones." },
             { t: "4 · Cardio para acelerar el déficit", d: "Día 4 del programa: LISS 65-70% FC máxima (cinta/elíptica 25 min) + pasos diarios (8–10k). El cardio suma a tu déficit sin comprometer el entrenamiento de fuerza." },
             { t: "5 · Mantené la fuerza en el gimnasio", d: "Entrená igual de fuerte (los compuestos protegen masa muscular). Si el rendimiento cae más de un 10%, el déficit es demasiado agresivo: subí 100–150 kcal." },
-            { t: "6 · Hidratación y sueño (clave en turno nocturno)", d: "Agua según tu objetivo (Water Tracker) hasta antes de dormir, y cafeína nunca después de las 00:00. Dormir mal sabotea la pérdida de grasa y la recuperación abdominal." },
+            { t: "6 · Hidratación y sueño", d: "Agua según tu objetivo (Water Tracker) hasta antes de dormir, y evitá cafeína en las horas previas al descanso. Dormir mal sabotea la pérdida de grasa y la recuperación abdominal." },
           ].map((s) => (
             <li key={s.t} className="flex gap-3 p-3 rounded-2xl bg-neutral-950 border border-neutral-800">
               <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${
@@ -452,10 +452,10 @@ export const NutritionVisionHub: React.FC = () => {
         </ol>
 
         <div className="p-3 rounded-2xl bg-rose-500/5 border border-rose-500/15 text-[11px] text-neutral-300 leading-relaxed">
-          <strong className="text-rose-300">Importante para tu caso:</strong> usá el plan de comidas <strong className="text-white">Keto</strong> en el
-          selector de horarios (3° opción) — mantiene tu rutina real (10:30 pre-gym, 13:00 almuerzo, 17:00 merienda, 21:00 cena, 00:00 síntesis)
-          con comidas altas en grasa y sin carbos. Activá el objetivo <strong className="text-white">Keto</strong> arriba y "Aplicar a objetivos"
-          para fijar tus macros. Tu perfil (114 kg, definición −15%) ya quedó calculado.
+          <strong className="text-rose-300">Consejo para keto:</strong> usá el plan de comidas <strong className="text-white">Keto</strong> en el
+          selector de horarios (3° opción) — comidas altas en grasa y sin carbos que respetan tu día. Activá el objetivo{" "}
+          <strong className="text-white">Keto</strong> arriba y "Aplicar a objetivos"
+          para fijar tus macros. Tu perfil {currentWeight ? `(${currentWeight} kg, definición −${nutritionProfile.deficitPercent}%)` : ""} ya quedó calculado.
         </div>
       </div>
 
@@ -719,7 +719,7 @@ export const NutritionVisionHub: React.FC = () => {
                 ))}
               </div>
               <p className="text-[10px] text-neutral-500 mt-1.5">
-                Moderado (−15%) es lo ideal en un trabajo sedentario: suficiente para perder grasa sin caerte de energía a las 02:00.
+                Moderado (−15%) suele ser lo ideal en un trabajo sedentario: suficiente para perder grasa sin caerte de energía durante el día.
               </p>
             </div>
 

@@ -26,8 +26,7 @@ interface ScheduledMeal {
   preWorkout?: boolean;
 }
 
-// Horario adaptado a tu día real (turno nocturno pero despertás ~10:00,
-// entrenás a media mañana y trabajás de noche):
+// Horario NOCTURNO (para quien despierta al mediodía y trabaja/entrena de noche):
 //   10:30 Pre-Entreno · 13:00 Almuerzo (post-gym) · 17:00 Merienda (pre-trabajo)
 //   21:00 Cena (trabajando) · 00:00 Síntesis (comida nocturna)
 const NIGHT_SCHEDULE: ScheduledMeal[] = [
@@ -137,8 +136,8 @@ const NORMAL_SCHEDULE: ScheduledMeal[] = [
   },
 ];
 
-// Plan KETO adaptado a tu día real (despierto 10:00, turno nocturno): alta grasa,
-// carbos mínimos (~20-35 g) y proteína moderada. El app lo escala a tu déficit.
+// Plan KETO genérico (cetogénico): alta grasa, carbos mínimos (~20-35 g) y
+// proteína moderada. El app lo escala a tu déficit.
 const KETO_SCHEDULE: ScheduledMeal[] = [
   {
     time: "10:30",
@@ -210,7 +209,7 @@ const SCHEDULES: Record<ScheduleType, { label: string; short: string; icon: Reac
 };
 
 export const MealSchedulerPanel: React.FC = () => {
-  const [schedule, setSchedule] = useState<ScheduleType>("nocturno");
+  const [schedule, setSchedule] = useState<ScheduleType>("normal");
   const { addMeal, updateMacroTargets, nutritionLog, nutritionProfile } = useWorkout();
   const { showToast } = useToast();
 

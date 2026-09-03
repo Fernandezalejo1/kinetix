@@ -78,16 +78,16 @@ export const NUTRITION_GOAL_KEYS = Object.keys(NUTRITION_GOALS) as NutritionGoal
 // ---------------------------------------------------------------------------
 // Perfil personal → metabolismo exacto (Mifflin-St Jeor) + factor de actividad
 // ---------------------------------------------------------------------------
-// Default adaptado al usuario: 27 años, 190cm, 114kg, masculino, trabajo SEDENTARIO
-// en PC de 17:00 a 02:00 con objetivo de déficit (-15%). El perfil es editable en
-// "Mi Perfil" (Nutrición).
+// Valores por defecto GENÉRICOS (ejemplo neutral, editable en "Mi Perfil",
+// pestaña Nutrición). Cada usuario ajusta los suyos: edad, altura, peso,
+// género, nivel de actividad, horario laboral y % de déficit.
 export const DEFAULT_NUTRITION_PROFILE: NutritionProfile = {
-  age: 27,
-  heightCm: 190,
+  age: 30,
+  heightCm: 175,
   sex: "masculino",
-  activityLevel: "sedentario",
-  workStart: "17:00",
-  workEnd: "02:00",
+  activityLevel: "moderado",
+  workStart: "09:00",
+  workEnd: "17:00",
   deficitPercent: 15,
 };
 

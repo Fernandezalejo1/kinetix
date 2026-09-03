@@ -25,8 +25,6 @@
 
 **🔗 Producción:** https://kinetix-science-based-hypertrophy-a.vercel.app/
 
-> 🔒 **Acceso:** la app está protegida con el PIN fijo `2113`.
-
 ---
 
 ## ✨ Features
@@ -35,6 +33,7 @@
 - ✅ **Programas de entrenamiento** con doble progresión automática (sube el peso cuando calzas el rango con el RIR objetivo)
 - ✅ **Workout logger** en vivo con banner de objetivo por ejercicio (sets × reps × RIR)
 - ✅ **Doble progresión** con regla de mayoría y delta de peso por tipo de ejercicio (compuesto/aislamiento)
+- ✅ **Deload automático** por acumulación real de sobrecarga: analiza 4 semanas de RIR/volumen/tasa de fallos y genera una semana de descarga (menos volumen, más reps en reserva)
 - ✅ **Ejercicios por tiempo** (isométricos: plancha, superman, handstand) con **timer** Iniciar/Pausar/Reiniciar + vibración — sin contador de repeticiones
 - ✅ **Timer de descanso** entre series y tracking de RIR/RPE
 - ✅ **Calculadora de 1RM** con múltiples fórmulas (Brzycki, Epley, Wathan)
@@ -51,7 +50,8 @@
 - ✅ **Visualizador de anatomía** y detalle por ejercicio
 
 ### 🥗 Nutrición
-- ✅ **Objetivos por meta** (Volumen Magro, Bulk, Mantenimiento, Déficit) con seguimiento de macros
+- ✅ **Objetivos por meta** (Volumen Magro, Bulk, Mantenimiento, Déficit, Keto) con seguimiento de macros
+- ✅ **Keto cetogénica**: carbos como **tope a no superar** (no como meta), con aviso cuando te excedés del presupuesto de 25g
 - ✅ **Ajustes automáticos por pasos** (Health Connect): reglas deterministas que ajustan calorías/proteína sin IA
 - ✅ **Plan de comidas** con horario normal o nocturno, platos rápidos por momento y guía de suplementos basada en evidencia
 - ✅ **Water tracker** y distribución calórica
@@ -84,7 +84,7 @@ src/
 ├── context/            # WorkoutContext (estado global + localStorage)
 ├── data/               # exercisesData, programsData, nutritionData
 ├── utils/              # scienceCalculators, exerciseEnhancer, doubleProgression,
-│                       # exerciseMode, stepsRules, healthConnect, challengeStorage
+│                       # exerciseMode, deloadDetection, stepsRules, healthConnect, challengeStorage
 ├── types.ts
 ├── App.tsx             # Root con lazy loading
 └── main.tsx            # Entry con ErrorBoundary + PWA

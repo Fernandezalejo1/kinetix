@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, Suspense } from "react";
 import { WorkoutProvider, useWorkout } from "./context/WorkoutContext";
 import { Navigation, NavTab } from "./components/Navigation";
 import { LiveWorkoutLogger } from "./components/workout/LiveWorkoutLogger";
-import { PinLock } from "./components/PinLock";
 import { SettingsModal } from "./components/SettingsModal";
 import { StepsEngine } from "./components/nutrition/StepsEngine";
 
@@ -138,12 +137,6 @@ const AppContent: React.FC = () => {
 };
 
 function AppWithPin() {
-  const [isUnlocked, setIsUnlocked] = useState(() => false);
-
-  if (!isUnlocked) {
-    return <PinLock onUnlock={() => setIsUnlocked(true)} />;
-  }
-
   return <AppContent />;
 }
 

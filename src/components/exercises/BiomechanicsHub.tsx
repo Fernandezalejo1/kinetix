@@ -136,7 +136,7 @@ export const BiomechanicsHub: React.FC = () => {
             </div>
             <p className="text-[11px] text-neutral-400 leading-relaxed">
               Máquina militar/remolón con apoyo de nuca (el que usás en prensa de hombros) puede servir de soporte; si no, usá band-pull-apart diario.
-              Estiramiento cervical suave (rotaciones y flexiones laterales lentas, mentón al pecho 20 s) cada noche. Evitá café 6 h antes de dormir en turno nocturno.
+              Estiramiento cervical suave (rotaciones y flexiones laterales lentas, mentón al pecho 20 s) cada noche. Evitá café 6 h antes de dormir.
             </p>
           </div>
         </div>
