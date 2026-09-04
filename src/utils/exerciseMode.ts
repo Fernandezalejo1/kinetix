@@ -18,11 +18,19 @@ export function isTimeBased(ex: Exercise, targetReps?: string): boolean {
   return detectExecutionMode(ex, targetReps) === "time";
 }
 
-/** Parse a target like "60s", "45-60s", "20-30s" into the target duration in seconds.
- *  Returns null if not a time-based target. */
+/** Parse a target like "60s", "45-60s", "20-30s", "15 min" or "20min".
+ *  Returns the target duration in seconds, or null if not a time-based target. */
 export function parseTargetSeconds(targetReps?: string): number | null {
   if (!targetReps) return null;
   const raw = targetReps.trim().toLowerCase();
+  // "20 min" / "20min" → 1200 s (LISS/cardio). Los bloques de cardio se
+  // acumulaban como 30 s porque caían al fallback sin matchear.
+  const minMatch = raw.match(/^(\d+)\s*min$/);
+  if (minMatch) {
+    const minutes = parseInt(minMatch[1], 10);
+    if (Number.isFinite(minutes) && minutes > 0) return minutes * 60;
+    return null;
+  }
   const m = raw.match(/^(\d+)(?:-(\d+))?s?$/);
   if (!m) return null;
   const min = parseInt(m[1], 10);

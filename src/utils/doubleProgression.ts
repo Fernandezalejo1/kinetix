@@ -4,7 +4,7 @@ import { isCompoundExercise } from "./scienceCalculators";
 /** Detección de "compuesto" robusta: barra y máquinas principales se tratan
  *  como compuestos (salto de 2,5 kg); el resto apunta a micro-carga (1,25 kg).
  *  Se conserva la lista legacy de isCompoundExercise por compatibilidad. */
-const COMPOUND_EQUIPMENT = new Set(["barbell", "machine", "smith-mashine"]);
+const COMPOUND_EQUIPMENT = new Set(["barbell", "machine", "smith"]);
 function isCompoundLike(ex: Exercise): boolean {
   if (COMPOUND_EQUIPMENT.has(ex.equipment)) return true;
   return isCompoundExercise(ex);
@@ -98,14 +98,19 @@ export function analyzeDoubleProgression(wEx: WorkoutExercise): DoubleProgressio
     message: "",
   };
 
-  if (!range) return base;
+  if (!range) {
+    base.status = "not_progressable";
+    base.message =
+      "Este ejercicio usa un objetivo por tiempo, AMRAP o por lado (ej. «20/side»). La doble progresión clásica no aplica: progresá sumando repeticiones totales o aumentando el tiempo sostenido antes de subir carga.";
+    return base;
+  }
 
-  const working = wEx.sets.filter((s) => s.completed && s.type !== "warmup");
+  const working = wEx.sets.filter((s) => s.completed && s.type !== "warmup" && s.type !== "cardio");
   const completedSets = working.length;
   const currentWeight = round1(
     working.length > 0
       ? working[working.length - 1].weight
-      : (wEx.sets.find((s) => s.type !== "warmup")?.weight ?? 0)
+      : (wEx.sets.find((s) => s.type !== "warmup" && s.type !== "cardio")?.weight ?? 0)
   );
 
   base.completedSets = completedSets;

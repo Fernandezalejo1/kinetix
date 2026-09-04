@@ -4,6 +4,18 @@ import { createServer as createViteServer } from "vite";
 
 const app = express();
 const PORT = 3000;
+const HOST = process.env.KINETIX_HOST || "127.0.0.1";
+
+// Security headers (self-host / dev). En produccion (Vercel) se
+// aplican via vercel.json; aqui cubrimos el modo servidor local.
+app.use((_req, res, next) => {
+  res.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https:; media-src 'self' blob:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  next();
+});
 
 // Health endpoint
 app.get("/api/health", (_req, res) => {
@@ -26,8 +38,8 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`KINETIX Server running on http://0.0.0.0:${PORT}`);
+  app.listen(PORT, HOST, () => {
+    console.log(`KINETIX Server running on http://${HOST}:${PORT}`);
   });
 }
 

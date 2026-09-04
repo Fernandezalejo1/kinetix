@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useWorkout } from "../../context/WorkoutContext";
 import { useToast } from "../../context/ToastContext";
+import { ConfirmDialog } from "../ConfirmDialog";
 import { localDateKey } from "../../utils/dateUtils";
 import { computeStepAdjustment, isLunchPassed, lunchAlreadyLogged, stepBadge, BaseTargets } from "../../utils/stepsRules";
 import {
@@ -77,6 +78,7 @@ export const StepsPanel: React.FC<StepsPanelProps> = ({ compact }) => {
   );
   const [baseToday, setBaseToday] = useState<BaseTargets | null>(() => readStoredDay()?.base ?? null);
   const [refreshing, setRefreshing] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
 
   const todayKey = localDateKey();
   const dayIsToday = today?.date === todayKey;
@@ -479,13 +481,27 @@ export const StepsPanel: React.FC<StepsPanelProps> = ({ compact }) => {
               />
               Aplicar ajuste automáticamente
             </label>
-            <button onClick={handleReset} className="flex items-center gap-1.5 text-[11px] text-neutral-500 hover:text-orange-400 transition-colors">
+            <button onClick={() => setConfirmReset(true)} className="flex items-center gap-1.5 text-[11px] text-neutral-500 hover:text-orange-400 transition-colors">
               <Unlink className="w-3.5 h-3.5" />
               Resetear día
             </button>
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmReset}
+        title="Resetear ajuste por pasos"
+        message="¿Revertir el ajuste de macros de hoy? Se volverán a tus objetivos base y el ajuste automático por pasos quedará desactivado."
+        confirmLabel="Resetear"
+        cancelLabel="Cancelar"
+        danger
+        onConfirm={() => {
+          setConfirmReset(false);
+          handleReset();
+        }}
+        onCancel={() => setConfirmReset(false)}
+      />
     </div>
   );
 };

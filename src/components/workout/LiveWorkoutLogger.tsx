@@ -345,7 +345,7 @@ const DoubleProgressionBanner: React.FC<{ wEx: WorkoutExercise }> = ({ wEx }) =>
   );
 };
 
-export const LiveWorkoutLogger: React.FC = () => {
+export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ onGoToAnalytics }) => {
   const {
     activeSession,
     isWorkoutModalOpen,
@@ -380,6 +380,7 @@ export const LiveWorkoutLogger: React.FC = () => {
   const [finishedSummary, setFinishedSummary] = useState<{ prsAchieved: any[]; totalVolumeKg: number } | null>(null);
   const [difficultySurvey, setDifficultySurvey] = useState<{ exerciseId: string; exerciseName: string } | null>(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [confirmRemoveEx, setConfirmRemoveEx] = useState<string | null>(null);
   const { showToast } = useToast();
 
   const handleCancelConfirmed = () => {
@@ -463,14 +464,18 @@ export const LiveWorkoutLogger: React.FC = () => {
                 {finishedSummary.prsAchieved.map((pr: any, i: number) => (
                   <div key={i} className="flex justify-between items-center gap-2 text-xs text-neutral-200">
                     <span className="min-w-0 truncate">{pr.exerciseName}</span>
-                    <span className="font-extrabold text-amber-300 shrink-0 whitespace-nowrap">1RM Estimado: {pr.value} kg</span>
+                    <span className="font-extrabold text-amber-300 shrink-0 whitespace-nowrap">1RM Estimado: {pr.value} {weightUnit}</span>
                   </div>
                 ))}
               </div>
             )}
 
             <button
-              onClick={() => setFinishedSummary(null)}
+              onClick={() => {
+                setFinishedSummary(null);
+                setIsWorkoutModalOpen(false);
+                onGoToAnalytics?.();
+              }}
               className="w-full py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-cyan-600/20"
             >
               Ver Análisis en Dashboard
@@ -748,9 +753,10 @@ export const LiveWorkoutLogger: React.FC = () => {
                     </button>
 
                     <button
-                      onClick={() => removeExerciseFromActiveWorkout(wEx.id)}
+                      onClick={() => setConfirmRemoveEx(wEx.id)}
                       className="p-2.5 min-w-[44px] min-h-[44px] rounded-xl bg-neutral-800 hover:bg-red-900/40 text-neutral-400 hover:text-red-400 border border-neutral-700 transition-colors flex items-center justify-center"
                       title="Eliminar del entrenamiento"
+                      aria-label={`Eliminar ${wEx.exercise.nameEs || wEx.exercise.name} del entrenamiento`}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -1007,9 +1013,9 @@ export const LiveWorkoutLogger: React.FC = () => {
                         </div>
 
                         <div className="grid grid-cols-2 gap-2">
-                          <div>
+                          <div className="min-w-0">
                             <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1">Peso ({weightUnit})</label>
-                            <div className="flex items-center justify-between bg-neutral-950 rounded-xl border border-neutral-800 p-1">
+                            <div className="flex items-center justify-between bg-neutral-950 rounded-xl border border-neutral-800 p-1 min-w-0">
                               <button
                                 type="button"
                                 onClick={() =>
@@ -1017,7 +1023,8 @@ export const LiveWorkoutLogger: React.FC = () => {
                                     weight: Math.max(0, Math.round((set.weight - 2.5) * 10) / 10),
                                   })
                                 }
-                                className="w-11 h-11 flex items-center justify-center text-neutral-400 active:text-white rounded-lg bg-neutral-900 text-base touch-target"
+                                className="w-9 h-10 shrink-0 flex items-center justify-center text-neutral-400 active:text-white rounded-lg bg-neutral-900 text-base touch-target"
+                                aria-label={`Bajar peso de la serie ${set.setNumber}`}
                               >
                                 −
                               </button>
@@ -1030,7 +1037,7 @@ export const LiveWorkoutLogger: React.FC = () => {
                                     weight: parseFloat(e.target.value) || 0,
                                   })
                                 }
-                                className="w-14 text-center bg-transparent font-bold text-white text-sm focus:outline-none touch-target"
+                                className="flex-1 min-w-0 text-center bg-transparent font-bold text-white text-sm focus:outline-none touch-target"
                               />
                               <button
                                 type="button"
@@ -1039,15 +1046,16 @@ export const LiveWorkoutLogger: React.FC = () => {
                                     weight: Math.round((set.weight + 2.5) * 10) / 10,
                                   })
                                 }
-                                className="w-11 h-11 flex items-center justify-center text-neutral-400 active:text-white rounded-lg bg-cyan-600/20 text-cyan-300 text-base font-bold touch-target"
+                                className="w-9 h-10 shrink-0 flex items-center justify-center text-neutral-400 active:text-white rounded-lg bg-cyan-600/20 text-cyan-300 text-base font-bold touch-target"
+                                aria-label={`Subir peso de la serie ${set.setNumber}`}
                               >
                                 +
                               </button>
                             </div>
                           </div>
-                          <div>
+                          <div className="min-w-0">
                             <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1">Reps</label>
-                            <div className="flex items-center justify-between bg-neutral-950 rounded-xl border border-neutral-800 p-1">
+                            <div className="flex items-center justify-between bg-neutral-950 rounded-xl border border-neutral-800 p-1 min-w-0">
                               <button
                                 type="button"
                                 onClick={() =>
@@ -1055,7 +1063,8 @@ export const LiveWorkoutLogger: React.FC = () => {
                                     reps: Math.max(1, set.reps - 1),
                                   })
                                 }
-                                className="w-11 h-11 flex items-center justify-center text-neutral-400 active:text-white rounded-lg bg-neutral-900 text-base touch-target"
+                                className="w-9 h-10 shrink-0 flex items-center justify-center text-neutral-400 active:text-white rounded-lg bg-neutral-900 text-base touch-target"
+                                aria-label={`Bajar reps de la serie ${set.setNumber}`}
                               >
                                 −
                               </button>
@@ -1068,7 +1077,7 @@ export const LiveWorkoutLogger: React.FC = () => {
                                     reps: parseInt(e.target.value, 10) || 0,
                                   })
                                 }
-                                className="w-14 text-center bg-transparent font-bold text-white text-sm focus:outline-none touch-target"
+                                className="flex-1 min-w-0 text-center bg-transparent font-bold text-white text-sm focus:outline-none touch-target"
                               />
                               <button
                                 type="button"
@@ -1077,7 +1086,8 @@ export const LiveWorkoutLogger: React.FC = () => {
                                     reps: set.reps + 1,
                                   })
                                 }
-                                className="w-11 h-11 flex items-center justify-center text-neutral-400 active:text-white rounded-lg bg-cyan-600/20 text-cyan-300 text-base font-bold touch-target"
+                                className="w-9 h-10 shrink-0 flex items-center justify-center text-neutral-400 active:text-white rounded-lg bg-cyan-600/20 text-cyan-300 text-base font-bold touch-target"
+                                aria-label={`Subir reps de la serie ${set.setNumber}`}
                               >
                                 +
                               </button>
@@ -1176,6 +1186,20 @@ export const LiveWorkoutLogger: React.FC = () => {
         danger
         onConfirm={handleCancelConfirmed}
         onCancel={() => setConfirmCancel(false)}
+      />
+
+      {/* Confirm removing a single exercise from the active session */}
+      <ConfirmDialog
+        open={confirmRemoveEx !== null}
+        title="Eliminar ejercicio"
+        message="¿Eliminar este ejercicio de la sesión? Se borrarán todas sus series y el progreso registrado."
+        confirmLabel="Eliminar"
+        danger
+        onConfirm={() => {
+          if (confirmRemoveEx) removeExerciseFromActiveWorkout(confirmRemoveEx);
+          setConfirmRemoveEx(null);
+        }}
+        onCancel={() => setConfirmRemoveEx(null)}
       />
 
       {/* Difficulty Survey Modal */}

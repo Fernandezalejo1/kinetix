@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { StepsPanel } from "./nutrition/StepsPanel";
 import { useToast } from "../context/ToastContext";
+import { VALIDATORS, isArray, isPlainObject } from "../utils/storage";
 
 interface SettingsModalProps {
   open: boolean;
@@ -113,49 +114,83 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
   };
 
   const IMPORT_VERSION = 1;
+  const MAX_BACKUP_SIZE = 5 * 1024 * 1024; // 5 MB
+
+  // Json-safe check para claves desconocidas del backup: solo estructuras
+  // JSON serializables, nunca funciones/undefined/prototypes.
+  const isJsonSafe = (v: unknown): boolean =>
+    v === null ||
+    typeof v === "string" ||
+    typeof v === "number" ||
+    typeof v === "boolean" ||
+    isArray(v) ||
+    isPlainObject(v);
 
   const importFile = (file: File) => {
+    if (file.size > MAX_BACKUP_SIZE) {
+      showToast("El archivo es demasiado grande (máx. 5 MB)", "error");
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => {
+      let parsed: any;
       try {
-        const parsed = JSON.parse(String(reader.result));
-        // Validación de esquema: debe ser un backup real de KINETIX.
-        if (!parsed || parsed.app !== "KINETIX" || parsed.version !== IMPORT_VERSION) {
-          showToast("El archivo no es un backup válido de KINETIX", "error");
-          return;
-        }
-        const data = parsed?.data;
-        if (!data || typeof data !== "object" || Array.isArray(data)) {
-          showToast("El archivo no es un backup válido de KINETIX", "error");
-          return;
-        }
-        if (!window.confirm("Se reemplazarán TODOS tus datos actuales con los del backup. ¿Continuar?")) {
-          return;
-        }
-        // Clear all previous kinetix keys, then write new ones
-        const keysToRemove: string[] = [];
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (key && key.startsWith("kinetix_") && !EXCLUDED_KEYS.includes(key)) {
-            keysToRemove.push(key);
-          }
-        }
-        keysToRemove.forEach((k) => localStorage.removeItem(k));
-        Object.entries(data).forEach(([key, value]) => {
-          if (key.startsWith("kinetix_")) {
-            // Solo datos JSON-serializables; evita inyectar basura.
-            try {
-              localStorage.setItem(key, JSON.stringify(value));
-            } catch {
-              /* skip entries that can't be serialized */
-            }
-          }
-        });
-        showToast("Datos restaurados. Recargando…", "success");
-        setTimeout(() => window.location.reload(), 1200);
+        parsed = JSON.parse(String(reader.result));
       } catch {
         showToast("Error al leer el backup", "error");
+        return;
       }
+      // Validación de esquema: debe ser un backup real de KINETIX.
+      if (!parsed || parsed.app !== "KINETIX" || parsed.version !== IMPORT_VERSION) {
+        showToast("El archivo no es un backup válido de KINETIX", "error");
+        return;
+      }
+      const data = parsed?.data;
+      if (!data || typeof data !== "object" || Array.isArray(data)) {
+        showToast("El archivo no es un backup válido de KINETIX", "error");
+        return;
+      }
+      // M1 — Validación por esquema: importar solo entradas con la forma
+      // esperada (las claves conocidas pasan su type guard; las desconocidas
+      // deben ser JSON-safe). Lo inválido se descarta.
+      const validEntries: [string, unknown][] = [];
+      let skipped = 0;
+      for (const [key, value] of Object.entries(data)) {
+        if (!key.startsWith("kinetix_") || EXCLUDED_KEYS.includes(key)) continue;
+        const ok = key in VALIDATORS ? VALIDATORS[key](value) : isJsonSafe(value);
+        if (ok) validEntries.push([key, value]);
+        else skipped++;
+      }
+      if (validEntries.length === 0) {
+        showToast("El backup no contiene datos válidos para importar", "error");
+        return;
+      }
+      if (!window.confirm("Se reemplazarán TODOS tus datos actuales con los del backup. ¿Continuar?")) {
+        return;
+      }
+      // Clear all previous kinetix keys, then write new ones
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith("kinetix_") && !EXCLUDED_KEYS.includes(key)) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach((k) => localStorage.removeItem(k));
+      validEntries.forEach(([key, value]) => {
+        try {
+          localStorage.setItem(key, JSON.stringify(value));
+        } catch {
+          /* skip entries that can't be serialized */
+        }
+      });
+      showToast(
+        skipped > 0
+          ? `Datos restaurados (${skipped} entradas inválidas omitidas). Recargando…`
+          : "Datos restaurados. Recargando…",
+        skipped > 0 ? "info" : "success"
+      );
+      setTimeout(() => window.location.reload(), 1200);
     };
     reader.readAsText(file);
   };

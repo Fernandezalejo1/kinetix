@@ -99,6 +99,7 @@ export const Navigation: React.FC<NavigationProps> = ({
               onClick={() => setSoundEnabled(!soundEnabled)}
               className="p-1.5 sm:p-2 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white transition-colors touch-target"
               title="Audio temporizador"
+              aria-label={soundEnabled ? "Silenciar audio del temporizador" : "Activar audio del temporizador"}
             >
               {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4 text-neutral-500" />}
             </button>
@@ -107,6 +108,7 @@ export const Navigation: React.FC<NavigationProps> = ({
               onClick={onOpenSettings}
               className="p-1.5 sm:p-2 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white transition-colors touch-target"
               title="Configuración"
+              aria-label="Abrir configuración"
             >
               <Settings className="w-4 h-4" />
             </button>

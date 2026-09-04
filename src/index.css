@@ -173,6 +173,15 @@ input[type="number"] {
   min-width: 44px;
 }
 
+/* Focus visible global: los controles muestran un anillo visible al navegar
+   con teclado / lector de pantalla (los focus:outline-none de la app no dejan
+   sin indicador de foco). Solo aplica a interacción por teclado, no al toque. */
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid rgb(34 211 238);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
 .card-premium {
   background: linear-gradient(135deg, rgb(23 23 23) 0%, rgb(10 10 10) 100%);
   border: 1px solid rgba(64, 64, 64, 0.5);

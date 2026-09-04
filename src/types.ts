@@ -16,7 +16,7 @@ export type MuscleGroup =
   | "abs"
   | "lower_back";
 
-export type SetType = "normal" | "warmup" | "dropset" | "myorep" | "restpause" | "failure";
+export type SetType = "normal" | "warmup" | "dropset" | "myorep" | "restpause" | "failure" | "cardio";
 
 export type ResistanceProfile = "lengthened" | "shortened" | "mid_range" | "linear" | "accommodating";
 
@@ -200,10 +200,11 @@ export interface CompletedWorkout {
   endTime?: number;
   durationSeconds: number;
   totalVolumeKg: number;
+  totalVolumeSeconds?: number;
   totalSets: number;
   exercises: WorkoutExercise[];
   prCount: number;
-  averageRir: number;
+  averageRir: number | null;
   fatigueScore?: number;
   energyLevel?: number;
   comments?: string;

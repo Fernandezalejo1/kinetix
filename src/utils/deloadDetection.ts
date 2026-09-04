@@ -14,9 +14,9 @@ export interface WeeklyDeloadMetric {
   weekIndex: number; // 0 = más reciente
   workouts: number;
   volumeKg: number;
-  averageRir: number; // promedio de RIR de todas las series (menor = más cerca del fallo)
-  failureRate: number; // % de series con RIR 0 (fallo) dentro del total
-  hardRate: number; // % de series con RIR <= 1
+  averageRir: number | null; // promedio de RIR de todas las series (menor = más cerca del fallo). null si no hay datos.
+  failureRate: number | null; // % de series con RIR 0 (fallo) dentro del total
+  hardRate: number | null; // % de series con RIR <= 1
 }
 
 export interface DeloadRecommendation {
@@ -54,7 +54,7 @@ function weekBounds(now: number, weeksBack: number): [number, number] {
 }
 
 function effectiveSets(sets: WorkoutSet[]): WorkoutSet[] {
-  return sets.filter((s) => s.completed && s.type !== "warmup");
+  return sets.filter((s) => s.completed && s.type !== "warmup" && s.type !== "cardio");
 }
 
 /** Agrupa los workouts por ventanas semanales (0 = esta semana, 1 = hace 1 semana...). */
@@ -75,20 +75,21 @@ export function computeWeeklyDeloadMetrics(
     const allSets = wks.flatMap((w) => w.exercises.flatMap((e) => effectiveSets(e.sets)));
     const withRir = allSets.filter((s) => typeof s.rir === "number");
 
+    // Sin series con RIR NO se inventa "1.0" (eso disparaba un deload falso).
     const rirSum = withRir.reduce((a, s) => a + (s.rir ?? 0), 0);
-    const averageRir = withRir.length > 0 ? Math.round((rirSum / withRir.length) * 100) / 100 : 1;
+    const averageRir = withRir.length > 0 ? Math.round((rirSum / withRir.length) * 100) / 100 : null;
 
     const failureCount = withRir.filter((s) => (s.rir ?? 0) === 0).length;
     const hardCount = withRir.filter((s) => (s.rir ?? 0) <= 1).length;
-    const base = withRir.length > 0 ? withRir.length : 1;
+    const base = withRir.length > 0 ? withRir.length : null;
 
     metrics.push({
       weekIndex: w,
       workouts: wks.length,
       volumeKg: wks.reduce((a, w) => a + w.totalVolumeKg, 0),
       averageRir,
-      failureRate: Math.round((failureCount / base) * 100),
-      hardRate: Math.round((hardCount / base) * 100),
+      failureRate: base === null ? null : Math.round((failureCount / base) * 100),
+      hardRate: base === null ? null : Math.round((hardCount / base) * 100),
     });
   }
 
@@ -108,13 +109,15 @@ export function analyzeDeload(history: CompletedWorkout[], weeks: number = 4): D
   const prev = weekly[1];
   const reasons: string[] = [];
 
-  // Necesitamos al menos la semana reciente con datos de RIR para juzgar.
-  const recentHasRir = trainedWeeks.length > 0 && weekly[0].averageRir < 2;
+  // Necesitamos al menos la semana reciente con datos reales de RIR para juzgar.
+  const recentHasRir = trainedWeeks.length > 0 && weekly[0].averageRir != null;
 
   let rirTrend = 0;
   let volumeTrendPercent = 0;
   if (prev && prev.workouts > 0 && recent && recent.workouts > 0) {
-    rirTrend = Math.round((recent.averageRir - prev.averageRir) * 100) / 100;
+    if (recent.averageRir != null && prev.averageRir != null) {
+      rirTrend = Math.round((recent.averageRir - prev.averageRir) * 100) / 100;
+    }
     volumeTrendPercent =
       prev.volumeKg > 0
         ? Math.round((((recent.volumeKg - prev.volumeKg) / prev.volumeKg) * 100) * 10) / 10
@@ -122,17 +125,34 @@ export function analyzeDeload(history: CompletedWorkout[], weeks: number = 4): D
   }
 
   // Señal 1: RIR bajo sostenido en la semana reciente (entreno cerca del fallo)
-  if (recent && recent.workouts > 0 && recent.averageRir < DELOAD_THRESHOLDS.rirLow) {
+  if (
+    recent &&
+    recent.workouts > 0 &&
+    recent.averageRir != null &&
+    recent.averageRir < DELOAD_THRESHOLDS.rirLow
+  ) {
     reasons.push(`RIR promedio muy bajo (${recent.averageRir}) la semana pasada`);
   }
 
   // Señal 2: el RIR está bajando semana a semana (acumulando fatiga)
-  if (recent && prev && prev.workouts > 0 && rirTrend < DELOAD_THRESHOLDS.rirTrendDrop) {
+  if (
+    recent &&
+    prev &&
+    prev.workouts > 0 &&
+    recent.averageRir != null &&
+    prev.averageRir != null &&
+    rirTrend < DELOAD_THRESHOLDS.rirTrendDrop
+  ) {
     reasons.push(`El RIR cayó ${Math.abs(rirTrend)} pts semana a semana (fatiga en aumento)`);
   }
 
   // Señal 3: alta tasa de fallos o fuera de reserva
-  if (recent && (recent.hardRate >= DELOAD_THRESHOLDS.hardRateHigh || recent.failureRate >= DELOAD_THRESHOLDS.failureRateHigh)) {
+  if (
+    recent &&
+    recent.hardRate != null &&
+    recent.failureRate != null &&
+    (recent.hardRate >= DELOAD_THRESHOLDS.hardRateHigh || recent.failureRate >= DELOAD_THRESHOLDS.failureRateHigh)
+  ) {
     reasons.push(
       `El ${recent.hardRate}% de las series recientes se hizo con RIR ≤ 1 (máxima intensidad)`
     );
@@ -149,7 +169,10 @@ export function analyzeDeload(history: CompletedWorkout[], weeks: number = 4): D
   let consecutiveOverloadWeeks = 0;
   for (const m of trainedWeeks) {
     const overloaded =
-      m.averageRir < DELOAD_THRESHOLDS.weeklyOverloadRir && m.hardRate >= DELOAD_THRESHOLDS.weeklyOverloadHardRate;
+      m.averageRir != null &&
+      m.hardRate != null &&
+      m.averageRir < DELOAD_THRESHOLDS.weeklyOverloadRir &&
+      m.hardRate >= DELOAD_THRESHOLDS.weeklyOverloadHardRate;
     if (overloaded) consecutiveOverloadWeeks++;
     else break;
   }
@@ -161,7 +184,7 @@ export function analyzeDeload(history: CompletedWorkout[], weeks: number = 4): D
   // Reducción sugerida de volumen: más agresiva si la fatiga es alta
   let suggestedVolumeCutPercent = 40;
   if (due && recent) {
-    suggestedVolumeCutPercent = recent.failureRate >= 30 ? 60 : 50;
+    suggestedVolumeCutPercent = (recent.failureRate ?? 0) >= 30 ? 60 : 50;
   }
 
   let summary = "Sin señales de sobrecarga acumulada. Podés entrenar con normalidad.";
@@ -177,7 +200,7 @@ export function analyzeDeload(history: CompletedWorkout[], weeks: number = 4): D
     weekly,
     rirTrend,
     volumeTrendPercent,
-    failureRate: recent ? recent.failureRate : 0,
+    failureRate: recent ? (recent.failureRate ?? 0) : 0,
     reasons,
     suggestedVolumeCutPercent,
     summary,

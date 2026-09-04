@@ -29,7 +29,7 @@ export function tempoSecondsPerRep(tempo?: string): number {
 
 /** TUT de una serie en segundos. Para isométricos usa durationSeconds. */
 export function computeSetTUT(reps: number, tempo?: string, durationSeconds?: number): number {
-  if (durationSeconds && durationSeconds > 0) return durationSeconds;
+  if (durationSeconds != null && durationSeconds > 0) return durationSeconds;
   if (!(reps > 0)) return 0;
   return tempoSecondsPerRep(tempo) * reps;
 }

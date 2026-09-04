@@ -8,20 +8,34 @@ import {
 } from "../types";
 
 // Science-based 1RM Calculators
-export function calculate1RM(weight: number, reps: number): {
+// Las fórmulas Brzycki/Epley/Wathan están validadas para 1-10 reps (con error
+// creciente desde ~5). Por encima de 12 reps la extrapolación distorsiona el
+// 1RM (p. ej. 20×15 → ~30 kg cuando el real es ~26) y a 36 reps la de Brzycki
+// diverge a 720 kg. Así que limitamos la predicción al rango válido y devolvemos
+// `valid: false` para que los consumidores no registren PRs fabricados.
+export const MAX_VALID_1RM_REPS = 12;
+
+export function calculate1RM(
+  weight: number,
+  reps: number
+): {
   brzycki: number;
   epley: number;
   wathan: number;
   average: number;
+  valid: boolean;
 } {
   if (reps <= 0 || weight <= 0) {
-    return { brzycki: weight, epley: weight, wathan: weight, average: weight };
+    return { brzycki: weight, epley: weight, wathan: weight, average: weight, valid: false };
   }
   if (reps === 1) {
-    return { brzycki: weight, epley: weight, wathan: weight, average: weight };
+    return { brzycki: weight, epley: weight, wathan: weight, average: weight, valid: true };
+  }
+  if (reps > MAX_VALID_1RM_REPS) {
+    return { brzycki: NaN, epley: NaN, wathan: NaN, average: NaN, valid: false };
   }
 
-  const brzycki = weight * (36 / (37 - Math.min(reps, 36)));
+  const brzycki = weight * (36 / (37 - reps));
   const epley = weight * (1 + reps / 30);
   const wathan = (100 * weight) / (48.8 + 53.8 * Math.exp(-0.075 * reps));
   const average = Math.round(((brzycki + epley + wathan) / 3) * 10) / 10;
@@ -31,6 +45,7 @@ export function calculate1RM(weight: number, reps: number): {
     epley: Math.round(epley * 10) / 10,
     wathan: Math.round(wathan * 10) / 10,
     average,
+    valid: true,
   };
 }
 
@@ -173,9 +188,11 @@ export function computeWeeklyVolumeStatus(
   };
 
   recentExercises.forEach((wEx) => {
-    // Count completed effective sets (RIR <= 3 and type !== 'warmup')
+    // Count completed effective sets (RIR <= 3, excluye warmup y cardio — el
+    // cardio NO es volumen de fuerza y no debe empujar a un grupo muscular
+    // por encima del MAV/MRV.
     const effectiveSets = wEx.sets.filter(
-      (s) => s.completed && s.type !== "warmup" && (s.rir === undefined || s.rir <= 3)
+      (s) => s.completed && s.type !== "warmup" && s.type !== "cardio" && (s.rir === undefined || s.rir <= 3)
     ).length;
 
     wEx.exercise.primaryMuscles.forEach((muscle) => {
@@ -324,6 +341,8 @@ export function playTickSound() {
 // -------------------------------------------------------------
 
 export function isCompoundExercise(exercise: { id: string; category?: string; equipment?: string }): boolean {
+  // Smith machines and main bars are always compounds regardless of specific id list.
+  if (exercise.equipment === "smith" || exercise.equipment === "barbell") return true;
   const compoundIds = [
     "incline-barbell-press",
     "incline-dumbbell-press",
@@ -347,7 +366,7 @@ export function calculateAutoProgression(
   weightUnit: "kg" | "lbs" = "kg"
 ): AutoProgressionRecommendation {
   const isCompound = isCompoundExercise(exercise);
-  const workingSets = sets.filter((s) => s.completed && s.type !== "warmup");
+  const workingSets = sets.filter((s) => s.completed && s.type !== "warmup" && s.type !== "cardio");
 
   if (workingSets.length === 0) {
     // Sin series reales no se inventa ningún peso: se pide entrenar primero.
@@ -385,20 +404,25 @@ export function calculateAutoProgression(
   // Compute average RIR (convert RPE to RIR if RIR is missing).
   // Si ninguna serie trae RIR/RPE real, NO inventamos RIR=2: se marca
   // rirMissing para que la recomendación pida el dato en vez de progresar a ciegas.
+  // Un `rir: null` explícito NO se promedia como 0 (evita "RIR 0 = fallo" falso).
   let rirMissing = true;
   const rirValues = workingSets.map((s) => {
-    if (s.rir !== undefined) {
+    const rir = s.rir != null ? Number(s.rir) : null;
+    if (rir !== null && Number.isFinite(rir) && rir >= 0 && rir <= 10) {
       rirMissing = false;
-      return s.rir;
+      return rir;
     }
-    if (s.rpe !== undefined) {
-      rirMissing = false;
-      return Math.max(0, 10 - s.rpe);
+    if (s.rpe != null) {
+      const pe = Number(s.rpe);
+      if (Number.isFinite(pe) && pe >= 1 && pe <= 10) {
+        rirMissing = false;
+        return Math.max(0, 10 - pe);
+      }
     }
-    return 2; // fallback solo para el promedio provisorio
+    return 2; // fallback: luego el guard rirMissing lo neutraliza
   });
   const avgRir = Math.round((rirValues.reduce((sum, r) => sum + r, 0) / rirValues.length) * 10) / 10;
-  const avgRpe = Math.round((10 - avgRir) * 10) / 10;
+  const avgRpe = Math.max(1, Math.round((10 - avgRir) * 10) / 10);
 
   let deltaWeight = 0;
   let action: AutoProgressionRecommendation["action"] = "maintain";
@@ -553,10 +577,15 @@ export function computeAllAutoProgressions(
 ): AutoProgressionRecommendation[] {
   const exerciseMap = new Map<string, WorkoutSet[]>();
 
-  // Collect most recent sets per exercise
+  // `recentExercises` viene de `workoutHistory.flatMap(w => w.exercises)` con el
+  // historial ordenado del más nuevo al más viejo. Por eso la PRIMERA aparición
+  // de cada ejercicio es su sesión más reciente: usarla evita que la progresión
+  // promedie semanas viejas y arrastre recomendaciones desactualizadas (ej. 3
+  // semanas a 100 kg ignorando el salto real a 105 kg de la última sesión).
   recentExercises.forEach((wex) => {
-    const existing = exerciseMap.get(wex.exerciseId) || [];
-    exerciseMap.set(wex.exerciseId, [...existing, ...wex.sets]);
+    if (!exerciseMap.has(wex.exerciseId)) {
+      exerciseMap.set(wex.exerciseId, wex.sets);
+    }
   });
 
   const recommendations: AutoProgressionRecommendation[] = [];

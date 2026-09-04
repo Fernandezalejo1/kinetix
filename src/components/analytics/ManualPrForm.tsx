@@ -3,7 +3,7 @@ import { Plus, X } from "lucide-react";
 import { useWorkout } from "../../context/WorkoutContext";
 import { useToast } from "../../context/ToastContext";
 import { EXERCISES_DATABASE } from "../../data/exercisesData";
-import { calculate1RM } from "../../utils/scienceCalculators";
+import { calculate1RM, MAX_VALID_1RM_REPS } from "../../utils/scienceCalculators";
 import { localDateKey } from "../../utils/dateUtils";
 
 /** Carga manual de un 1RM: medido en sesión o estimado (peso × reps).
@@ -23,16 +23,22 @@ export const ManualPrForm: React.FC<{ onDone?: () => void }> = ({ onDone }) => {
 
   const estimated = useMemo(() => {
     const w = parseFloat(weight);
-    const r = Math.max(1, Math.min(36, parseInt(reps, 10) || 1));
+    const r = Math.max(1, Math.min(MAX_VALID_1RM_REPS, parseInt(reps, 10) || 1));
     if (!(w > 0) || !exercise) return null;
-    return r === 1 ? w : calculate1RM(w, r).average;
+    if (r === 1) return { value: w, valid: true };
+    const calc = calculate1RM(w, r);
+    return { value: calc.average, valid: calc.valid };
   }, [weight, reps, exercise]);
 
   const handleSave = () => {
     const w = parseFloat(weight);
-    const r = Math.max(1, Math.min(36, parseInt(reps, 10) || 1));
+    const r = Math.max(1, Math.min(MAX_VALID_1RM_REPS, parseInt(reps, 10) || 1));
     if (!(w > 0) || !exercise || estimated === null) {
       showToast("Ingresá un peso válido mayor a 0.", "error");
+      return;
+    }
+    if (!estimated.valid) {
+      showToast(`No se puede estimar el 1RM con más de ${MAX_VALID_1RM_REPS} reps. Usá un peso de 1-12 reps o un 1RM medido.`, "error");
       return;
     }
     const prev = personalRecords.find((p) => p.exerciseId === exercise.id && p.type === "1RM");
@@ -40,12 +46,12 @@ export const ManualPrForm: React.FC<{ onDone?: () => void }> = ({ onDone }) => {
       exerciseId: exercise.id,
       exerciseName: exercise.nameEs || exercise.name,
       type: "1RM",
-      value: Math.round(estimated * 10) / 10,
+      value: Math.round(estimated.value * 10) / 10,
       reps: r,
       date: localDateKey(),
       previousValue: prev?.value,
     });
-    showToast(`1RM de ${exercise.nameEs || exercise.name} guardado: ${Math.round(estimated * 10) / 10} ${weightUnit}.`, "success");
+    showToast(`1RM de ${exercise.nameEs || exercise.name} guardado: ${Math.round(estimated.value * 10) / 10} ${weightUnit}.`, "success");
     setWeight("");
     setReps("1");
     onDone?.();
@@ -86,7 +92,7 @@ export const ManualPrForm: React.FC<{ onDone?: () => void }> = ({ onDone }) => {
           <input
             type="number"
             min={1}
-            max={36}
+            max={MAX_VALID_1RM_REPS}
             value={reps}
             onChange={(e) => setReps(e.target.value)}
             className="w-full mt-1 px-2.5 py-2.5 bg-neutral-900 border border-neutral-800 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500 min-w-0"
@@ -95,8 +101,17 @@ export const ManualPrForm: React.FC<{ onDone?: () => void }> = ({ onDone }) => {
       </div>
       {estimated !== null && (
         <p className="text-[11px] text-neutral-400">
-          e1RM estimado: <strong className="text-amber-300">{Math.round(estimated * 10) / 10} {weightUnit}</strong>
-          {parseInt(reps, 10) > 1 ? " (fórmula promedio Brzycki/Epley/Wathan)" : " (peso directo de 1 rep)"}
+          {estimated.valid ? (
+            <>
+              e1RM estimado: <strong className="text-amber-300">{Math.round(estimated.value * 10) / 10} {weightUnit}</strong>
+              {parseInt(reps, 10) > 1 ? " (fórmula promedio Brzycki/Epley/Wathan)" : " (peso directo de 1 rep)"}
+            </>
+          ) : (
+            <span className="text-red-400">
+              Estimación no disponible: las fórmulas de 1RM pierden validez por encima de {MAX_VALID_1RM_REPS} reps.
+              Registrá un 1RM medido o un set de 1-{MAX_VALID_1RM_REPS} reps.
+            </span>
+          )}
         </p>
       )}
       <button

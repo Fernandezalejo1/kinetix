@@ -212,11 +212,13 @@ export const ScienceDashboard: React.FC = () => {
             <TrendingUp className="w-4 h-4 text-purple-400" />
           </div>
           <div className="text-2xl sm:text-3xl font-black text-white truncate">
-            {weekStats.thisWeekVolume > 0 ? weekStats.thisWeekVolume.toLocaleString() : "0"}{" "}
-            <span className="text-sm font-normal text-neutral-400">{weightUnit}</span>
+            {weekStats.thisWeekVolume > 0 ? weekStats.thisWeekVolume.toLocaleString() : "—"}{" "}
+            {weekStats.thisWeekVolume > 0 && <span className="text-sm font-normal text-neutral-400">{weightUnit}</span>}
           </div>
           <span className={`text-[10px] sm:text-[11px] font-bold mt-1 block ${weekStats.volumeDelta >= 0 ? "text-cyan-400" : "text-amber-400"}`}>
-            {weekStats.volumeDelta >= 0 ? `+${weekStats.volumeDelta}%` : `${weekStats.volumeDelta}%`} vs anterior
+            {workoutHistory.length > 0
+              ? (weekStats.volumeDelta >= 0 ? `+${weekStats.volumeDelta}%` : `${weekStats.volumeDelta}%`) + " vs anterior"
+              : "Completá tu primer entrenamiento para ver tu tonelaje"}
           </span>
         </div>
 

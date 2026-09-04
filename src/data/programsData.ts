@@ -19,9 +19,9 @@ export const PREBUILT_PROGRAMS: Program[] = [
         estimatedDurationMin: 60,
         exercises: [
           { exerciseId: "smith-incline-bench-press", targetSets: 3, targetReps: "6-12", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 90 },
-          { exerciseId: "low-to-high-cable-flye", targetSets: 3, targetReps: "6-12", targetRir: 0, targetTempo: "3-0-1-2", restSeconds: 90 },
+          { exerciseId: "low-to-high-cable-flye", targetSets: 3, targetReps: "6-12", targetRir: 1, targetTempo: "3-0-1-2", restSeconds: 90 },
           { exerciseId: "cable-pullover", targetSets: 3, targetReps: "10-15", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 60 },
-          { exerciseId: "lever-military-press", targetSets: 3, targetReps: "6-12", targetRir: 1, targetTempo: "3-1-0-1", restSeconds: 90 },
+          { exerciseId: "lever-military-press", targetSets: 2, targetReps: "6-12", targetRir: 1, targetTempo: "3-1-0-1", restSeconds: 90 },
           { exerciseId: "cable-lateral-raise", targetSets: 3, targetReps: "15-20", targetRir: 0, targetTempo: "3-0-1-1", restSeconds: 45 },
           { exerciseId: "overhead-cable-triceps-extension", targetSets: 3, targetReps: "6-12", targetRir: 0, targetTempo: "3-1-1-0", restSeconds: 60 },
           { exerciseId: "chest-dip", targetSets: 3, targetReps: "6-12", targetRir: 1, targetTempo: "3-1-0-1", restSeconds: 90 },
@@ -66,12 +66,12 @@ export const PREBUILT_PROGRAMS: Program[] = [
         targetSplit: "Core & Movilidad",
         estimatedDurationMin: 55,
         exercises: [
-          { exerciseId: "handstand-hold", targetSets: 4, targetReps: "30s", targetRir: 2, targetTempo: "Sostén isométrico", restSeconds: 60 },
-          { exerciseId: "l-sit-hold", targetSets: 4, targetReps: "20-30s", targetRir: 2, targetTempo: "Sostén isométrico", restSeconds: 60 },
+          { exerciseId: "handstand-hold", targetSets: 2, targetReps: "30s", targetRir: 2, targetTempo: "Sostén isométrico", restSeconds: 60 },
+          { exerciseId: "l-sit-hold", targetSets: 3, targetReps: "20-30s", targetRir: 2, targetTempo: "Sostén isométrico", restSeconds: 60 },
           { exerciseId: "windshield-wipers", targetSets: 3, targetReps: "6-12", targetRir: 1, targetTempo: "3-0-1-0", restSeconds: 60 },
           { exerciseId: "dragon-flag", targetSets: 3, targetReps: "6-12", targetRir: 1, targetTempo: "3-0-2-0", restSeconds: 60 },
           { exerciseId: "serratus-punches", targetSets: 3, targetReps: "15", targetRir: 2, targetTempo: "2-1-0-1", restSeconds: 45 },
-          { exerciseId: "front-plank", targetSets: 3, targetReps: "60s", targetRir: 1, targetTempo: "Sostén isométrico", restSeconds: 60 }
+          { exerciseId: "front-plank", targetSets: 2, targetReps: "60s", targetRir: 1, targetTempo: "Sostén isométrico", restSeconds: 60 }
         ]
       },
       {
@@ -82,11 +82,11 @@ export const PREBUILT_PROGRAMS: Program[] = [
         estimatedDurationMin: 55,
         exercises: [
           { exerciseId: "explosive-step-up", targetSets: 3, targetReps: "10", targetRir: 2, targetTempo: "Explosivo", restSeconds: 60 },
-          { exerciseId: "smith-incline-bench-press", targetSets: 3, targetReps: "6-12", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 90 },
-          { exerciseId: "lever-military-press", targetSets: 3, targetReps: "6-12", targetRir: 1, targetTempo: "3-1-0-1", restSeconds: 90 },
+          { exerciseId: "smith-incline-bench-press", targetSets: 2, targetReps: "6-12", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 90 },
+          { exerciseId: "lever-military-press", targetSets: 2, targetReps: "6-12", targetRir: 1, targetTempo: "3-1-0-1", restSeconds: 90 },
           { exerciseId: "cable-lateral-raise", targetSets: 3, targetReps: "15-20", targetRir: 0, targetTempo: "3-0-1-1", restSeconds: 45 },
           { exerciseId: "bench-dip", targetSets: 3, targetReps: "6-12", targetRir: 1, targetTempo: "3-1-0-1", restSeconds: 60 },
-          { exerciseId: "pike-push-up", targetSets: 3, targetReps: "AMRAP", targetRir: 1, targetTempo: "3-0-1-0", restSeconds: 60 },
+          { exerciseId: "pike-push-up", targetSets: 2, targetReps: "AMRAP", targetRir: 1, targetTempo: "3-0-1-0", restSeconds: 60 },
           { exerciseId: "seated-calf-raise", targetSets: 3, targetReps: "15-20", targetRir: 0, targetTempo: "3-2-1-0", restSeconds: 45 }
         ]
       },
@@ -205,16 +205,16 @@ export const PREBUILT_PROGRAMS: Program[] = [
       {
         id: "ppl-legs-b",
         name: "Legs B (Enfoque Isquiotibiales & Cadena Posterior)",
-        description: "Bisagras de cadera profundas y contracción en acortamiento de glúteos.",
+        description: "Bisagras de cadera profundas y contracción en acortamiento de glúteos, más cuádriceps para llegar a la frecuencia 2x semanal del grupo.",
         targetSplit: "Legs (Pierna)",
         estimatedDurationMin: 60,
         exercises: [
           { exerciseId: "romanian-deadlift", targetSets: 3, targetReps: "8-10", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 180 },
           { exerciseId: "barbell-hip-thrust", targetSets: 3, targetReps: "10-12", targetRir: 1, targetTempo: "2-0-1-2", restSeconds: 150 },
+          { exerciseId: "hack-squat-machine", targetSets: 3, targetReps: "8-10", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 150 },
           { exerciseId: "seated-leg-curl", targetSets: 3, targetReps: "12-15", targetRir: 0, targetTempo: "3-0-1-1", restSeconds: 90 },
           { exerciseId: "standing-calf-raise", targetSets: 4, targetReps: "12-15", targetRir: 0, targetTempo: "3-2-1-1", restSeconds: 90 },
-          { exerciseId: "lying-scissors-cross", targetSets: 3, targetReps: "15/side", targetRir: 1, targetTempo: "2-1-1-0", restSeconds: 45 },
-          { exerciseId: "superman-hold", targetSets: 3, targetReps: "20-30s", targetRir: 1, targetTempo: "Sostén isométrico", restSeconds: 45 }
+          { exerciseId: "superman-hold", targetSets: 2, targetReps: "20-30s", targetRir: 1, targetTempo: "Sostén isométrico", restSeconds: 45 }
         ]
       }
     ]
@@ -305,9 +305,9 @@ export const PREBUILT_PROGRAMS: Program[] = [
           { exerciseId: "smith-incline-bench-press", targetSets: 3, targetReps: "8-10", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 120 },
           { exerciseId: "cable-chest-flye", targetSets: 3, targetReps: "12-15", targetRir: 1, targetTempo: "3-0-1-2", restSeconds: 90 },
           { exerciseId: "overhead-cable-triceps-extension", targetSets: 3, targetReps: "10-12", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 90 },
-          { exerciseId: "cable-crunch", targetSets: 4, targetReps: "12-15", targetRir: 0, targetTempo: "3-1-1-1", restSeconds: 45 },
-          { exerciseId: "decline-crunch", targetSets: 3, targetReps: "12-15", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 45 },
-          { exerciseId: "front-plank", targetSets: 3, targetReps: "45-60s", targetRir: 1, targetTempo: "Sostén isométrico", restSeconds: 45 }
+          { exerciseId: "cable-crunch", targetSets: 3, targetReps: "12-15", targetRir: 1, targetTempo: "3-1-1-1", restSeconds: 45 },
+          { exerciseId: "decline-crunch", targetSets: 2, targetReps: "12-15", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 45 },
+          { exerciseId: "front-plank", targetSets: 2, targetReps: "45-60s", targetRir: 1, targetTempo: "Sostén isométrico", restSeconds: 45 }
         ]
       },
       {
@@ -320,9 +320,8 @@ export const PREBUILT_PROGRAMS: Program[] = [
           { exerciseId: "neutral-grip-lat-pulldown", targetSets: 3, targetReps: "10-12", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 120 },
           { exerciseId: "chest-supported-t-bar-row", targetSets: 3, targetReps: "10-12", targetRir: 1, targetTempo: "2-1-1-1", restSeconds: 120 },
           { exerciseId: "incline-dumbbell-curl", targetSets: 3, targetReps: "12-15", targetRir: 0, targetTempo: "3-1-1-0", restSeconds: 90 },
-          { exerciseId: "weighted-russian-twist", targetSets: 4, targetReps: "12-15/side", targetRir: 1, targetTempo: "2-0-1-1", restSeconds: 45 },
-          { exerciseId: "air-bike", targetSets: 3, targetReps: "20/side", targetRir: 1, targetTempo: "2-0-1-0", restSeconds: 45 },
-          { exerciseId: "front-plank", targetSets: 3, targetReps: "45-60s", targetRir: 1, targetTempo: "Sostén isométrico", restSeconds: 45 }
+          { exerciseId: "weighted-russian-twist", targetSets: 3, targetReps: "12-15/side", targetRir: 1, targetTempo: "2-0-1-1", restSeconds: 45 },
+          { exerciseId: "front-plank", targetSets: 2, targetReps: "45-60s", targetRir: 1, targetTempo: "Sostén isométrico", restSeconds: 45 }
         ]
       },
       {
@@ -342,17 +341,16 @@ export const PREBUILT_PROGRAMS: Program[] = [
       },
       {
         id: "def-cardio-abs",
-        name: "Día 4 · Cardio Definición + Bloque Abdominal Denso",
-        description: "PASO FINAL del abdominal: bloque denso de definición (recto + oblicuos + lumbar) y cardio para maximizar el déficit y revelar el six-pack.",
+        name: "Día 4 · Cardio Definición + Core Final",
+        description: "PASO FINAL: bloque de core de cierre (recto + lumbar) moderado y cardio para maximizar el déficit y revelar el six-pack. Se evita el volumen abdominal innecesario en déficit.",
         targetSplit: "Cardio + Core",
         estimatedDurationMin: 45,
         exercises: [
           { exerciseId: "elliptical-machine-walk", targetSets: 1, targetReps: "25 min", targetRir: 3, targetTempo: "Cardio LISS 65-70% FC", restSeconds: 60 },
-          { exerciseId: "floor-crunch", targetSets: 3, targetReps: "20", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 30 },
-          { exerciseId: "air-bike", targetSets: 3, targetReps: "20/side", targetRir: 1, targetTempo: "2-0-1-0", restSeconds: 30 },
-          { exerciseId: "weighted-russian-twist", targetSets: 3, targetReps: "15/side", targetRir: 1, targetTempo: "2-0-1-1", restSeconds: 30 },
-          { exerciseId: "front-plank", targetSets: 3, targetReps: "60s", targetRir: 1, targetTempo: "Sostén isométrico", restSeconds: 30 },
-          { exerciseId: "superman-hold", targetSets: 3, targetReps: "20-30s", targetRir: 1, targetTempo: "Sostén isométrico", restSeconds: 30 }
+          { exerciseId: "floor-crunch", targetSets: 2, targetReps: "20", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 30 },
+          { exerciseId: "weighted-russian-twist", targetSets: 2, targetReps: "15/side", targetRir: 1, targetTempo: "2-0-1-1", restSeconds: 30 },
+          { exerciseId: "front-plank", targetSets: 2, targetReps: "60s", targetRir: 1, targetTempo: "Sostén isométrico", restSeconds: 30 },
+          { exerciseId: "superman-hold", targetSets: 2, targetReps: "20-30s", targetRir: 1, targetTempo: "Sostén isométrico", restSeconds: 30 }
         ]
       }
     ]

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+﻿import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import {
   ActiveWorkoutSession,
   CompletedWorkout,
@@ -19,8 +19,9 @@ import {
 } from "../types";
 import { EXERCISES_DATABASE } from "../data/exercisesData";
 import { DEFAULT_NUTRITION_PROFILE, computePersonalTargets } from "../data/nutritionData";
-import { calculate1RM, unlockAudio, playRestTimerCompletedSound, playTickSound } from "../utils/scienceCalculators";
+import { calculate1RM, isCompoundExercise, unlockAudio, playRestTimerCompletedSound, playTickSound } from "../utils/scienceCalculators";
 import { detectExecutionMode, isTimeBased, parseTargetSeconds } from "../utils/exerciseMode";
+import { safeParse, safeSet, safeRemove, VALIDATORS, isArrayOrNull } from "../utils/storage";
 import confetti from "canvas-confetti";
 
 interface RestTimerState {
@@ -90,7 +91,7 @@ interface WorkoutContextType {
 
 const WorkoutContext = createContext<WorkoutContextType | undefined>(undefined);
 
-// Sin datos semilla: el historial empieza vacío y solo muestra sesiones
+// Sin datos semilla: el historial empieza vacÃ­o y solo muestra sesiones
 // reales del usuario. Nunca se inventan entrenamientos, PRs ni medidas.
 const INITIAL_WORKOUT_HISTORY: CompletedWorkout[] = [];
 
@@ -107,24 +108,28 @@ const INITIAL_NUTRITION: NutritionLog = {
   meals: [],
 };
 
-/** Tope de carbos diarios: la app es 100% keto/cetogénica. Ningún objetivo
- *  (plan, edición manual o ajuste por pasos) puede superarlo. */
+/** Tope de carbos diarios: la app es 100% keto/cetogÃ©nica. NingÃºn objetivo
+ *  (plan, ediciÃ³n manual o ajuste por pasos) puede superarlo. */
 export const KETO_CARB_CAP = 35;
 
-// Perfil nutricional + objetivo leídos desde LocalStorage.
-// La app es 100% KETO / Cetogénica: el objetivo está fijado a "keto" (no se
-// ofrece otro plan en la interfaz). El perfil sí es editable.
+// Perfil nutricional + objetivo leÃ­dos desde LocalStorage.
+// La app es 100% KETO / CetogÃ©nica: el objetivo estÃ¡ fijado a "keto" (no se
+// ofrece otro plan en la interfaz). El perfil sÃ­ es editable.
 const readNutritionGoal = (): NutritionGoal => "keto";
 
 const readNutritionProfile = (): NutritionProfile => ({
   ...DEFAULT_NUTRITION_PROFILE,
-  ...safeParse<Partial<NutritionProfile> | null>("kinetix_nutrition_profile", null),
+  ...safeParse<Partial<NutritionProfile> | null>(
+    "kinetix_nutrition_profile",
+    null,
+    (v) => v === null || VALIDATORS["kinetix_nutrition_profile"](v)
+  ),
 });
 
 const computeTargetsFromWeight = (weightKg: number) =>
   computePersonalTargets(weightKg, readNutritionGoal(), readNutritionProfile());
 
-// Sin datos semilla: métricas, PRs e historial empiezan vacíos.
+// Sin datos semilla: mÃ©tricas, PRs e historial empiezan vacÃ­os.
 // Los PRs solo nacen de sesiones reales o de carga manual del usuario.
 const INITIAL_BODY_METRICS: BodyMetricEntry[] = [];
 
@@ -132,7 +137,7 @@ const INITIAL_PRS: PersonalRecord[] = [];
 
 const INITIAL_EXERCISE_HISTORY: ExerciseHistoryEntry[] = [];
 
-// Migración única: elimina SOLO los datos semilla exactos de versiones
+// MigraciÃ³n Ãºnica: elimina SOLO los datos semilla exactos de versiones
 // previas (ids fijos hist-1..3, bm-1..3, pr-1..4, eh-1..4, wex-1..7, s-1..22).
 // Los datos reales del usuario usan ids con timestamp y se conservan intactos.
 const SEED_IDS = new Set<string>([
@@ -177,24 +182,14 @@ const SEED_IDS = new Set<string>([
   }
 })();
 
-const safeParse = <T,>(key: string, fallback: T): T => {
-  try {
-    const saved = localStorage.getItem(key);
-    return saved ? JSON.parse(saved) : fallback;
-  } catch {
-    localStorage.removeItem(key);
-    return fallback;
-  }
-};
-
 /** Limita un historial en localStorage para no agotar la cuota (~5 MB).
- *  Mantiene las entradas más recientes (los arrays se prependen). */
+ *  Mantiene las entradas mÃ¡s recientes (los arrays se prependen). */
 function capForStorage<T>(arr: T[], max: number): T[] {
   if (!Array.isArray(arr) || arr.length <= max) return arr;
   return arr.slice(0, max);
 }
 
-// Migración silenciosa: recorta historiales ya existentes que superen el tope.
+// MigraciÃ³n silenciosa: recorta historiales ya existentes que superen el tope.
 (() => {
   try {
     for (const [key, max] of [
@@ -221,7 +216,11 @@ function capForStorage<T>(arr: T[], max: number): T[] {
 
 export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [activeSession, setActiveSession] = useState<ActiveWorkoutSession | null>(() => {
-    return safeParse<ActiveWorkoutSession | null>("kinetix_active_workout", null);
+    return safeParse<ActiveWorkoutSession | null>(
+      "kinetix_active_workout",
+      null,
+      (v) => v === null || VALIDATORS["kinetix_active_workout"](v)
+    );
   });
 
   const [restTimer, setRestTimer] = useState<RestTimerState>({
@@ -233,18 +232,22 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
   });
 
   const [workoutHistory, setWorkoutHistory] = useState<CompletedWorkout[]>(() => {
-    return safeParse("kinetix_workout_history", INITIAL_WORKOUT_HISTORY);
+    return safeParse("kinetix_workout_history", INITIAL_WORKOUT_HISTORY, VALIDATORS["kinetix_workout_history"]);
   });
 
   const [nutritionLog, setNutritionLog] = useState<NutritionLog>(() => {
-    const saved = safeParse<NutritionLog | null>("kinetix_nutrition_log", null);
+    const saved = safeParse<NutritionLog | null>(
+      "kinetix_nutrition_log",
+      null,
+      (v) => v === null || VALIDATORS["kinetix_nutrition_log"](v)
+    );
     const today = new Date().toISOString().split("T")[0];
-    // Same day: keep the logged meals and targets as-is — salvo que los
+    // Same day: keep the logged meals and targets as-is â€” salvo que los
     // carbos superen el tope keto (objetivos viejos contaminados por planes
     // no-keto): en ese caso se recalculan desde el peso, sin tocar comidas.
     if (saved && saved.date === today) {
       if (saved.carbsTarget > KETO_CARB_CAP) {
-        const savedMetrics = safeParse<BodyMetricEntry[] | null>("kinetix_body_metrics", null);
+        const savedMetrics = safeParse<BodyMetricEntry[] | null>("kinetix_body_metrics", null, isArrayOrNull);
         const list = savedMetrics && savedMetrics.length ? savedMetrics : INITIAL_BODY_METRICS;
         const weightKg = list[list.length - 1]?.weightKg ?? 78;
         return { ...saved, ...computeTargetsFromWeight(weightKg) };
@@ -252,7 +255,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
       return saved;
     }
     // New day (or nothing saved): reset meals/water and recompute targets from body weight.
-    const savedMetrics = safeParse<BodyMetricEntry[] | null>("kinetix_body_metrics", null);
+    const savedMetrics = safeParse<BodyMetricEntry[] | null>("kinetix_body_metrics", null, isArrayOrNull);
     const list = savedMetrics && savedMetrics.length ? savedMetrics : INITIAL_BODY_METRICS;
     const weightKg = list[list.length - 1]?.weightKg ?? 78;
     const targets = computeTargetsFromWeight(weightKg);
@@ -266,7 +269,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
   });
 
   const [bodyMetrics, setBodyMetrics] = useState<BodyMetricEntry[]>(() => {
-    return safeParse("kinetix_body_metrics", INITIAL_BODY_METRICS);
+    return safeParse("kinetix_body_metrics", INITIAL_BODY_METRICS, VALIDATORS["kinetix_body_metrics"]);
   });
 
   const [nutritionGoal, setNutritionGoalState] = useState<NutritionGoal>(readNutritionGoal);
@@ -274,65 +277,83 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [nutritionProfile, setNutritionProfileState] = useState<NutritionProfile>(readNutritionProfile);
 
   const [personalRecords, setPersonalRecords] = useState<PersonalRecord[]>(() => {
-    return safeParse("kinetix_prs", INITIAL_PRS);
+    return safeParse("kinetix_prs", INITIAL_PRS, VALIDATORS["kinetix_prs"]);
   });
 
   const [exerciseHistory, setExerciseHistory] = useState<ExerciseHistoryEntry[]>(() => {
-    return safeParse("kinetix_exercise_history", INITIAL_EXERCISE_HISTORY);
+    return safeParse("kinetix_exercise_history", INITIAL_EXERCISE_HISTORY, VALIDATORS["kinetix_exercise_history"]);
   });
 
   const [customRoutines, setCustomRoutines] = useState<CustomRoutine[]>(() => {
-    return safeParse("kinetix_custom_routines", []);
+    return safeParse("kinetix_custom_routines", [], VALIDATORS["kinetix_custom_routines"]);
   });
 
-  const [weightUnit, setWeightUnit] = useState<"kg" | "lbs">("kg");
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  const [autoStartTimer, setAutoStartTimer] = useState(true);
+  const [weightUnit, setWeightUnit] = useState<"kg" | "lbs">(() =>
+    safeParse("kinetix_weight_unit", null, VALIDATORS["kinetix_weight_unit"]) === "lbs" ? "lbs" : "kg"
+  );
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(() =>
+    safeParse("kinetix_sound_enabled", null, VALIDATORS["kinetix_sound_enabled"]) === false ? false : true
+  );
+  const [autoStartTimer, setAutoStartTimer] = useState<boolean>(() =>
+    safeParse("kinetix_auto_start_timer", null, VALIDATORS["kinetix_auto_start_timer"]) === false ? false : true
+  );
   const [selectedExerciseForDetail, setSelectedExerciseForDetail] = useState<Exercise | null>(null);
   const [isWorkoutModalOpen, setIsWorkoutModalOpen] = useState(false);
 
   // Sync to LocalStorage
   useEffect(() => {
     if (activeSession) {
-      localStorage.setItem("kinetix_active_workout", JSON.stringify(activeSession));
+      safeSet("kinetix_active_workout", activeSession);
     } else {
-      localStorage.removeItem("kinetix_active_workout");
+      safeRemove("kinetix_active_workout");
     }
   }, [activeSession]);
 
   useEffect(() => {
-    localStorage.setItem("kinetix_workout_history", JSON.stringify(capForStorage(workoutHistory, 400)));
+    safeSet("kinetix_workout_history", capForStorage(workoutHistory, 400));
   }, [workoutHistory]);
 
   useEffect(() => {
-    localStorage.setItem("kinetix_nutrition_log", JSON.stringify(nutritionLog));
+    safeSet("kinetix_nutrition_log", nutritionLog);
   }, [nutritionLog]);
 
   useEffect(() => {
-    localStorage.setItem("kinetix_body_metrics", JSON.stringify(capForStorage(bodyMetrics, 1000)));
+    safeSet("kinetix_body_metrics", capForStorage(bodyMetrics, 1000));
   }, [bodyMetrics]);
 
   useEffect(() => {
-    localStorage.setItem("kinetix_nutrition_goal", nutritionGoal);
+    safeSet("kinetix_nutrition_goal", nutritionGoal);
   }, [nutritionGoal]);
 
   useEffect(() => {
-    localStorage.setItem("kinetix_nutrition_profile", JSON.stringify(nutritionProfile));
+    safeSet("kinetix_nutrition_profile", nutritionProfile);
   }, [nutritionProfile]);
 
   useEffect(() => {
-    localStorage.setItem("kinetix_prs", JSON.stringify(personalRecords));
+    safeSet("kinetix_prs", personalRecords);
   }, [personalRecords]);
 
   useEffect(() => {
-    localStorage.setItem("kinetix_exercise_history", JSON.stringify(capForStorage(exerciseHistory, 2000)));
+    safeSet("kinetix_exercise_history", capForStorage(exerciseHistory, 2000));
   }, [exerciseHistory]);
 
   useEffect(() => {
-    localStorage.setItem("kinetix_custom_routines", JSON.stringify(customRoutines));
+    safeSet("kinetix_weight_unit", weightUnit);
+  }, [weightUnit]);
+
+  useEffect(() => {
+    safeSet("kinetix_sound_enabled", soundEnabled);
+  }, [soundEnabled]);
+
+  useEffect(() => {
+    safeSet("kinetix_auto_start_timer", autoStartTimer);
+  }, [autoStartTimer]);
+
+  useEffect(() => {
+    safeSet("kinetix_custom_routines", customRoutines);
   }, [customRoutines]);
 
-  // Rest Timer Interval — timestamp-based so it keeps correct time even if the
+  // Rest Timer Interval â€” timestamp-based so it keeps correct time even if the
   // phone screen locks / the app is backgrounded and setInterval is throttled.
   useEffect(() => {
     let interval: any = null;
@@ -409,7 +430,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
         const isMedicineBall = item.exerciseId === "medicine-ball-slam";
         const defaultWeight = isMedicineBall ? 3 : (exDef.category === "legs" ? 80 : 40);
         let prevWeight = lastHistory ? lastHistory.weight : defaultWeight;
-        // Semana de descarga: bajar la carga −10-15% para favorecer la recuperación.
+        // Semana de descarga: bajar la carga âˆ’10-15% para favorecer la recuperaciÃ³n.
         if ((routine as Routine).deload && !isTime) {
           prevWeight = Math.round(prevWeight * 0.9 * 4) / 4;
         }
@@ -444,20 +465,29 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
         };
       });
 
-      // Add cardio block at the end (20 min treadmill)
-      const cardioDef = EXERCISES_DATABASE.find((e) => e.id === "elliptical-machine-walk") || EXERCISES_DATABASE[0];
-      const cardioSets: WorkoutSet[] = [
-        { id: `cardio-${Date.now()}`, setNumber: 1, type: "normal", weight: 0, reps: 1, rir: 2, tempo: "--",
-          completed: false, previousWeight: 0, previousReps: 1, previousRir: 2 },
-      ];
-      workoutExercises.push({
-        id: `wex-cardio-${Date.now()}`,
-        exerciseId: cardioDef.id,
-        exercise: cardioDef,
-        targetRestSeconds: 0,
-        sets: cardioSets,
-        notes: "cardio:20min",
+      // Add cardio block at the end (20 min treadmill) â€” marcado como "cardio"
+      // para NO contarlo como serie efectiva de fuerza en volumen/deload/volumen semanal.
+      // Se agrega SOLO si la rutina no prescribe ya cardio (ej. D7 NIGHTWING ya
+      // incluye elliptical "20 min"; duplicarlo harÃ­a 40 min auto-prescritos).
+      const alreadyHasCardio = routine.exercises.some((item: any) => {
+        const def = EXERCISES_DATABASE.find((e) => e.id === item.exerciseId);
+        return def && (def.executionMode === "time" || /min/i.test(String(item.targetReps ?? "")));
       });
+      if (!alreadyHasCardio) {
+        const cardioDef = EXERCISES_DATABASE.find((e) => e.id === "elliptical-machine-walk") || EXERCISES_DATABASE[0];
+        const cardioSets: WorkoutSet[] = [
+          { id: `cardio-${Date.now()}`, setNumber: 1, type: "cardio", weight: 0, reps: 1, rir: 2, tempo: "--",
+            completed: false, previousWeight: 0, previousReps: 1, previousRir: 2 },
+        ];
+        workoutExercises.push({
+          id: `wex-cardio-${Date.now()}`,
+          exerciseId: cardioDef.id,
+          exercise: cardioDef,
+          targetRestSeconds: 0,
+          sets: cardioSets,
+          notes: "cardio:20min",
+        });
+      }
 
       const newSession: ActiveWorkoutSession = {
         id: `session-${Date.now()}`,
@@ -475,10 +505,11 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const startEmptyWorkout = useCallback((name = "Entrenamiento Libre") => {
     try {
-      // Add cardio block (20 min treadmill)
+      // Add cardio block (20 min treadmill) â€” marcado como "cardio"
+      // para NO contarlo como serie efectiva de fuerza en volumen/deload/volumen semanal.
       const cardioDef = EXERCISES_DATABASE.find((e) => e.id === "elliptical-machine-walk") || EXERCISES_DATABASE[0];
       const cardioSets: WorkoutSet[] = [
-        { id: `cardio-${Date.now()}`, setNumber: 1, type: "normal", weight: 0, reps: 1, rir: 2, tempo: "--",
+        { id: `cardio-${Date.now()}`, setNumber: 1, type: "cardio", weight: 0, reps: 1, rir: 2, tempo: "--",
           completed: false, previousWeight: 0, previousReps: 1, previousRir: 2 },
       ];
       const cardioEx: WorkoutExercise = {
@@ -729,6 +760,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     const durationSeconds = Math.max(60, Math.floor((Date.now() - activeSession.startTime) / 1000));
     let totalVolumeKg = 0;
+    let totalSeconds = 0;
     let totalSets = 0;
     let sessionRirTotal = 0;
     let sessionRirCount = 0;
@@ -742,6 +774,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
       let maxWeight = 0;
       let exerciseRirTotal = 0;
       let exerciseRirCount = 0;
+      let timeSeconds = 0;
       const timeBased = isTimeBased(wEx.exercise, wEx.targetReps);
 
       wEx.sets.forEach((s) => {
@@ -749,10 +782,11 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
           totalSets++;
           exerciseSets++;
           if (timeBased) {
-            // Time-based exercise: volume = total seconds sustained; reps = seconds per set
+            // Time-based exercise: se acumula en un canal separado (segundos),
+            // NO se mezcla con tonelaje de fuerza (kg).
             const secs = s.durationSeconds ?? 0;
-            totalVolumeKg += secs;
-            exerciseVolume += secs;
+            timeSeconds += secs;
+            totalSeconds += secs;
             exerciseReps.push(secs);
           } else {
             const setVolume = s.weight * s.reps;
@@ -772,10 +806,12 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
           const e1rmObj = calculate1RM(s.weight, s.reps);
           const current1RM = e1rmObj.average;
           const existingPR = personalRecords.find((p) => p.exerciseId === wEx.exerciseId && p.type === "1RM");
-          // Solo registrar un PR por ejercicio, usando el mejor e1RM de la sesión
+          // Solo registrar un PR por ejercicio, usando el mejor e1RM de la sesiÃ³n.
+          // Y solo cuando la estimaciÃ³n es vÃ¡lida (<= 12 reps): +15 reps la
+          // extrapolaciÃ³n infla el 1RM y fabricarÃ­a rÃ©cords falsos.
           const alreadyPRdThisSession = newPrs.some((np) => np.exerciseId === wEx.exerciseId && np.type === "1RM");
 
-          if (!alreadyPRdThisSession && (!existingPR || current1RM > existingPR.value)) {
+          if (e1rmObj.valid && !alreadyPRdThisSession && (!existingPR || current1RM > existingPR.value)) {
             const prItem: PersonalRecord = {
               id: `pr-${Date.now()}-${wEx.exerciseId}`,
               exerciseId: wEx.exerciseId,
@@ -808,7 +844,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
       }
     });
 
-    const averageRir = sessionRirCount > 0 ? Math.round((sessionRirTotal / sessionRirCount) * 10) / 10 : 1.0;
+    const averageRir = sessionRirCount > 0 ? Math.round((sessionRirTotal / sessionRirCount) * 10) / 10 : null;
 
     const completed: CompletedWorkout = {
       id: `completed-${Date.now()}`,
@@ -816,6 +852,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
       date: new Date().toISOString(),
       durationSeconds,
       totalVolumeKg,
+      totalVolumeSeconds: totalSeconds,
       totalSets,
       exercises: activeSession.exercises,
       prCount: newPrs.length,
@@ -851,10 +888,14 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
   const cancelWorkout = useCallback(() => {
     setActiveSession(null);
     setIsWorkoutModalOpen(false);
+    stopRestTimer();
+    // Elimina la sesiÃ³n fantasma persistida de inmediato (no espera al effect):
+    // si la app se cierra en ese instante, no queda un active_workout zombie.
+    safeRemove("kinetix_active_workout");
   }, [stopRestTimer]);
 
-  /** Carga manual de un récord (1RM medido o estimado de una sesión real).
-   *  Reemplaza el récord previo del mismo ejercicio+tipo. */
+  /** Carga manual de un rÃ©cord (1RM medido o estimado de una sesiÃ³n real).
+   *  Reemplaza el rÃ©cord previo del mismo ejercicio+tipo. */
   const addPersonalRecord = useCallback((pr: Omit<PersonalRecord, "id">) => {
     const item: PersonalRecord = { ...pr, id: `pr-manual-${Date.now()}` };
     setPersonalRecords((prev) => {
@@ -869,7 +910,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const ensureTodayLogic = useCallback((): { today: string; targets: { calories: number; protein: number; carbs: number; fats: number } } => {
     const today = new Date().toISOString().split("T")[0];
-    const savedMetrics = safeParse<BodyMetricEntry[] | null>("kinetix_body_metrics", null);
+    const savedMetrics = safeParse<BodyMetricEntry[] | null>("kinetix_body_metrics", null, isArrayOrNull);
     const list = savedMetrics && savedMetrics.length ? savedMetrics : INITIAL_BODY_METRICS;
     const weightKg = list[list.length - 1]?.weightKg ?? 78;
     return { today, targets: computeTargetsFromWeight(weightKg) };
@@ -897,7 +938,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
       setNutritionLog((prev) => {
         const { today, targets: freshTargets } = ensureTodayLogic();
         const base = prev.date === today ? prev : { ...INITIAL_NUTRITION, ...freshTargets, date: today, meals: [], waterMl: 0 };
-        // La app es 100% keto: ningún camino (plan, edición manual, motor de
+        // La app es 100% keto: ningÃºn camino (plan, ediciÃ³n manual, motor de
         // pasos) puede dejar los carbos por encima del tope.
         return {
           ...base,
@@ -917,7 +958,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const setNutritionGoal = useCallback((goal: NutritionGoal) => {
     setNutritionGoalState(goal);
-    const savedMetrics = safeParse<BodyMetricEntry[] | null>("kinetix_body_metrics", null);
+    const savedMetrics = safeParse<BodyMetricEntry[] | null>("kinetix_body_metrics", null, isArrayOrNull);
     const list = savedMetrics && savedMetrics.length ? savedMetrics : INITIAL_BODY_METRICS;
     const weightKg = list[list.length - 1]?.weightKg ?? 78;
     const profile = readNutritionProfile();
@@ -926,7 +967,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const setNutritionProfile = useCallback((profile: NutritionProfile) => {
     setNutritionProfileState(profile);
-    const savedMetrics = safeParse<BodyMetricEntry[] | null>("kinetix_body_metrics", null);
+    const savedMetrics = safeParse<BodyMetricEntry[] | null>("kinetix_body_metrics", null, isArrayOrNull);
     const list = savedMetrics && savedMetrics.length ? savedMetrics : INITIAL_BODY_METRICS;
     const weightKg = list[list.length - 1]?.weightKg ?? 78;
     const goal = readNutritionGoal();
@@ -1011,7 +1052,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
   const clearGhostSessions = useCallback(() => {
     setActiveSession(null);
     setIsWorkoutModalOpen(false);
-    localStorage.removeItem("kinetix_active_workout");
+    safeRemove("kinetix_active_workout");
     stopRestTimer();
   }, [stopRestTimer]);
 
@@ -1031,7 +1072,9 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     if (last.difficulty === "had_more" || (last.reps.every((r) => r >= 10) && history[0].sets >= 3)) {
       const ex = EXERCISES_DATABASE.find((e) => e.id === exerciseId);
-      const isCompound = ex?.equipment === "barbell";
+      // GramÃ¡tica de carga unificada con los demÃ¡s motores: compuestos (barra,
+      // mÃ¡quina, smith) saltan 2,5 kg; aislamientos micro-carga 1 kg.
+      const isCompound = ex ? isCompoundExercise(ex) : false;
       return last.weight + (isCompound ? 2.5 : 1);
     }
     if (last.difficulty === "very_hard") {
