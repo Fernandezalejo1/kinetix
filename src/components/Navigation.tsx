@@ -48,7 +48,7 @@ export const Navigation: React.FC<NavigationProps> = ({
 
   return (
     <>
-      <header className="sticky top-0 z-30 glass-effect border-b border-neutral-800 safe-area-top">
+      <header className="sticky top-0 z-30 bg-neutral-950 border-b border-neutral-800 safe-area-top">
         <div className="max-w-7xl mx-auto px-2 sm:px-6 py-2 sm:py-3 flex items-center justify-between gap-2">
           {/* Brand - compact on mobile */}
           <div
@@ -124,7 +124,7 @@ export const Navigation: React.FC<NavigationProps> = ({
         </div>
 
         {/* Desktop Sub-Navigation */}
-        <div className="border-t border-neutral-900 bg-neutral-950/60 hidden md:block">
+        <div className="border-t border-neutral-900 bg-neutral-950 hidden md:block">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 flex gap-1 sm:gap-4 overflow-x-auto scrollbar-thin text-xs font-bold">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -149,7 +149,7 @@ export const Navigation: React.FC<NavigationProps> = ({
       </header>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 glass-effect border-t border-neutral-800 safe-area-bottom">
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-neutral-950 border-t border-neutral-800 safe-area-bottom">
         <div className="flex items-stretch justify-around px-0.5">
           {navItems.map((item) => {
             const Icon = item.icon;

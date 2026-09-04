@@ -107,6 +107,10 @@ const INITIAL_NUTRITION: NutritionLog = {
   meals: [],
 };
 
+/** Tope de carbos diarios: la app es 100% keto/cetogénica. Ningún objetivo
+ *  (plan, edición manual o ajuste por pasos) puede superarlo. */
+export const KETO_CARB_CAP = 35;
+
 // Perfil nutricional + objetivo leídos desde LocalStorage.
 // La app es 100% KETO / Cetogénica: el objetivo está fijado a "keto" (no se
 // ofrece otro plan en la interfaz). El perfil sí es editable.
@@ -235,8 +239,16 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [nutritionLog, setNutritionLog] = useState<NutritionLog>(() => {
     const saved = safeParse<NutritionLog | null>("kinetix_nutrition_log", null);
     const today = new Date().toISOString().split("T")[0];
-    // Same day: keep the logged meals and targets as-is.
+    // Same day: keep the logged meals and targets as-is — salvo que los
+    // carbos superen el tope keto (objetivos viejos contaminados por planes
+    // no-keto): en ese caso se recalculan desde el peso, sin tocar comidas.
     if (saved && saved.date === today) {
+      if (saved.carbsTarget > KETO_CARB_CAP) {
+        const savedMetrics = safeParse<BodyMetricEntry[] | null>("kinetix_body_metrics", null);
+        const list = savedMetrics && savedMetrics.length ? savedMetrics : INITIAL_BODY_METRICS;
+        const weightKg = list[list.length - 1]?.weightKg ?? 78;
+        return { ...saved, ...computeTargetsFromWeight(weightKg) };
+      }
       return saved;
     }
     // New day (or nothing saved): reset meals/water and recompute targets from body weight.
@@ -885,12 +897,14 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
       setNutritionLog((prev) => {
         const { today, targets: freshTargets } = ensureTodayLogic();
         const base = prev.date === today ? prev : { ...INITIAL_NUTRITION, ...freshTargets, date: today, meals: [], waterMl: 0 };
+        // La app es 100% keto: ningún camino (plan, edición manual, motor de
+        // pasos) puede dejar los carbos por encima del tope.
         return {
           ...base,
-          calorieTarget: targets.calories,
-          proteinTarget: targets.protein,
-          carbsTarget: targets.carbs,
-          fatsTarget: targets.fats,
+          calorieTarget: Math.max(0, Math.round(targets.calories)),
+          proteinTarget: Math.max(0, Math.round(targets.protein)),
+          carbsTarget: Math.min(KETO_CARB_CAP, Math.max(0, Math.round(targets.carbs))),
+          fatsTarget: Math.max(0, Math.round(targets.fats)),
         };
       });
     },

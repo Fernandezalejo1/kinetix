@@ -354,7 +354,11 @@ export const ScienceDashboard: React.FC = () => {
                       Última Sesión
                     </span>
                     <div className="text-lg font-black text-neutral-300">
-                      {prog.currentWeight} <span className="text-xs font-normal text-neutral-400">{weightUnit}</span>
+                      {prog.currentWeight > 0 ? (
+                        <>{prog.currentWeight} <span className="text-xs font-normal text-neutral-400">{weightUnit}</span></>
+                      ) : (
+                        <span className="text-sm">P. corporal</span>
+                      )}
                     </div>
                     <span className="text-[11px] font-mono text-neutral-400 block">
                       {prog.lastReps} reps @ RIR {prog.averageRir}
@@ -387,8 +391,12 @@ export const ScienceDashboard: React.FC = () => {
                       Próxima Sesión
                     </span>
                     <div className="text-xl font-black text-white">
-                      {prog.recommendedWeight}{" "}
-                      <span className="text-xs font-normal text-cyan-300">{weightUnit}</span>
+                      {prog.recommendedWeight > 0 ? (
+                        <>{prog.recommendedWeight}{" "}
+                        <span className="text-xs font-normal text-cyan-300">{weightUnit}</span></>
+                      ) : (
+                        <span className="text-sm">P. corporal</span>
+                      )}
                     </div>
                     <span className="text-[11px] font-mono text-emerald-400 font-bold block">
                       Objetivo: {prog.targetRepsNext}
@@ -493,15 +501,15 @@ export const ScienceDashboard: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 min-w-0 w-full sm:w-auto">
               <select
                 value={simExerciseId}
                 onChange={(e) => setSimExerciseId(e.target.value)}
-                className="px-3 py-2 bg-neutral-900 border border-neutral-800 rounded-xl text-xs font-bold text-white focus:outline-none focus:border-cyan-500"
+                className="px-3 py-2 bg-neutral-900 border border-neutral-800 rounded-xl text-xs font-bold text-white focus:outline-none focus:border-cyan-500 w-full sm:w-auto sm:max-w-[280px] min-w-0"
               >
                 {EXERCISES_DATABASE.map((ex) => (
                   <option key={ex.id} value={ex.id}>
-                    {ex.nameEs} ({ex.equipment})
+                    {ex.nameEs || ex.name}
                   </option>
                 ))}
               </select>

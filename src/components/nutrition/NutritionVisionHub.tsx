@@ -193,19 +193,19 @@ export const NutritionVisionHub: React.FC = () => {
       icon: <Dna className="w-4 h-4 text-cyan-400" />,
     },
     {
-      label: nutritionGoal === "keto" ? "Carbohidratos (bajo ~25g)" : "Carbohidratos",
+      label: "Carbos · Tope 25g",
       value: currentCarbs,
       target: targetCarbs,
       unit: "g",
       color: "text-purple-400",
       bar: "bg-purple-400",
-      icon: <Zap className="w-4 h-4 text-purple-400" />,
+      icon: <Zap className="w-4 h-4 text-purple-400 shrink-0" />,
       // En keto los carbos NO son una meta a llenar: son un TETO a no superar
       // para mantenerse en cetosis. Se muestran como presupuesto, no objetivo.
-      limit: nutritionGoal === "keto",
+      limit: true,
     },
     {
-      label: "Grasas Saludables",
+      label: "Grasas",
       value: currentFats,
       target: targetFats,
       unit: "g",
@@ -394,8 +394,8 @@ export const NutritionVisionHub: React.FC = () => {
         </ol>
 
         <div className="p-3 rounded-2xl bg-rose-500/5 border border-rose-500/15 text-[11px] text-neutral-300 leading-relaxed">
-          <strong className="text-rose-300">Consejo para keto:</strong> usá el plan de comidas <strong className="text-white">Keto</strong> en el
-          selector de horarios — comidas altas en grasa y sin carbos que respetan tu día, y aplicá tus macros con "Aplicar a objetivos".
+          <strong className="text-rose-300">Consejo para keto:</strong> elegí tu horario (<strong className="text-white">Keto Noche / Keto Día</strong>) en el
+          plan de comidas — todo es alto en grasa y sin carbos — y aplicá tus macros con "Aplicar a objetivos".
           Tu perfil {currentWeight ? `(${currentWeight} kg, definición −${nutritionProfile.deficitPercent}%)` : ""} ya quedó calculado.
         </div>
       </div>
@@ -413,10 +413,10 @@ export const NutritionVisionHub: React.FC = () => {
             <div key={card.label} className={`p-4 sm:p-5 rounded-3xl bg-neutral-900 border shadow-xl space-y-3 min-w-0 ${over ? "border-red-500/50" : "border-neutral-800"}`}>
               <div className="flex justify-between items-center text-[11px] font-bold text-neutral-400 uppercase tracking-wider gap-2">
                 <span className="truncate">{card.label}</span>
-                {card.icon}
+                <span className="shrink-0">{card.icon}</span>
               </div>
-              <div className={`text-2xl sm:text-3xl font-black ${over ? "text-red-400" : card.color} whitespace-nowrap`}>
-                {card.value} <span className="text-sm font-normal text-neutral-400">/ {card.target}{card.unit}</span>
+              <div className={`text-xl sm:text-3xl font-black ${over ? "text-red-400" : card.color} whitespace-nowrap truncate`}>
+                {card.value} <span className="text-xs sm:text-sm font-normal text-neutral-400">/ {card.target}{card.unit}</span>
               </div>
               <div className="h-2 bg-neutral-800 rounded-full overflow-hidden">
                 <div
@@ -426,13 +426,13 @@ export const NutritionVisionHub: React.FC = () => {
                   style={{ width: `${pct}%` }}
                 />
               </div>
-              <div className="text-[11px] text-neutral-400 flex justify-between font-mono">
+              <div className="text-[11px] text-neutral-400 flex justify-between gap-2 font-mono">
                 {isLimit ? (
-                  <span className="font-bold text-neutral-300">Solo te sobran:</span>
+                  <span className="font-bold text-neutral-300 truncate">Te quedan:</span>
                 ) : (
-                  <span>Restantes:</span>
+                  <span className="truncate">Restantes:</span>
                 )}
-                <span className={`font-bold ${over ? "text-red-400" : "text-white"}`}>
+                <span className={`font-bold shrink-0 ${over ? "text-red-400" : "text-white"}`}>
                   {isLimit
                     ? over
                       ? `+${Math.abs(remaining)} ${card.unit} excedidos`

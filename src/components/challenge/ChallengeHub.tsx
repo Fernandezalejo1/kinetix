@@ -268,7 +268,11 @@ export const ChallengeHub: React.FC = () => {
                 }} />
             </div>
             <p className="text-[10px] text-neutral-500">
-              {Math.max(0, DAILY_GOAL - todaySteps).toLocaleString("es-AR")} pasos para Master
+              {todaySteps >= DAILY_GOAL ? (
+                <span className="text-emerald-400 font-bold">¡Meta del día superada! Suma para Challenger (20.000)</span>
+              ) : (
+                <>{Math.max(0, DAILY_GOAL - todaySteps).toLocaleString("es-AR")} pasos para Master</>
+              )}
             </p>
           </div>
 
