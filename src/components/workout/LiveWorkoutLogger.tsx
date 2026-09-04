@@ -461,9 +461,9 @@ export const LiveWorkoutLogger: React.FC = () => {
               <div className="p-4 rounded-2xl bg-amber-950/20 border border-amber-500/30 text-left space-y-2">
                 <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">Hitos de Sobrecarga Progresiva</span>
                 {finishedSummary.prsAchieved.map((pr: any, i: number) => (
-                  <div key={i} className="flex justify-between items-center text-xs text-neutral-200">
-                    <span>{pr.exerciseName}</span>
-                    <span className="font-extrabold text-amber-300">1RM Estimado: {pr.value} kg</span>
+                  <div key={i} className="flex justify-between items-center gap-2 text-xs text-neutral-200">
+                    <span className="min-w-0 truncate">{pr.exerciseName}</span>
+                    <span className="font-extrabold text-amber-300 shrink-0 whitespace-nowrap">1RM Estimado: {pr.value} kg</span>
                   </div>
                 ))}
               </div>

@@ -25,7 +25,21 @@ import {
   saveStepsConfig,
   saveStoredDay,
   subscribeStepsChanged,
+  type StepsOfDay,
+  type StepsSourceTotal,
 } from "../../utils/healthConnect";
+
+function timeAgo(iso?: string): string {
+  if (!iso) return "";
+  const ms = Date.now() - Date.parse(iso);
+  if (!Number.isFinite(ms) || ms < 0) return "";
+  const min = Math.floor(ms / 60000);
+  if (min < 1) return "ahora mismo";
+  if (min < 60) return `hace ${min} min`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `hace ${h} h`;
+  return `hace ${Math.floor(h / 24)} d`;
+}
 
 export interface StepsPanelProps {
   /** Modo compacto para la vista de nutrición (sin conectar, solo resumen). */
@@ -46,10 +60,16 @@ export const StepsPanel: React.FC<StepsPanelProps> = ({ compact }) => {
   const [manualSteps, setManualSteps] = useState("");
   const [manualEntryOpen, setManualEntryOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
-  const [today, setToday] = useState<{ date: string; steps: number; source: "healthconnect" | "manual" | null } | null>(
+  const [today, setToday] = useState<{
+    date: string;
+    steps: number;
+    source: "healthconnect" | "manual" | null;
+    asOf?: string;
+    sources?: StepsSourceTotal[];
+  } | null>(
     () => {
       const d = readStoredDay();
-      return d ? { date: d.date, steps: d.steps, source: d.source } : null;
+      return d ? { date: d.date, steps: d.steps, source: d.source, asOf: d.asOf, sources: d.sources } : null;
     }
   );
   const [baseToday, setBaseToday] = useState<BaseTargets | null>(() => readStoredDay()?.base ?? null);
@@ -83,12 +103,56 @@ export const StepsPanel: React.FC<StepsPanelProps> = ({ compact }) => {
   useEffect(() => {
     const refresh = () => {
       const d = readStoredDay();
-      setToday(d ? { date: d.date, steps: d.steps, source: d.source } : null);
+      setToday(d ? { date: d.date, steps: d.steps, source: d.source, asOf: d.asOf, sources: d.sources } : null);
       setBaseToday(d?.base ?? null);
     };
     refresh();
     return subscribeStepsChanged(refresh);
   }, []);
+
+  /** Guarda en el día lo leído de Health Connect (con desglose por fuente). */
+  const storeHcDay = useCallback((d: StepsOfDay) => {
+    const date = localDateKey();
+    setToday({ date, steps: d.steps, source: "healthconnect", asOf: d.asOf, sources: d.sources });
+    const stored = readStoredDay();
+    saveStoredDay({
+      date,
+      steps: d.steps,
+      source: "healthconnect",
+      asOf: d.asOf,
+      sources: d.sources,
+      base: stored?.base,
+      adjustment: stored?.adjustment ?? null,
+    });
+  }, []);
+
+  // Al volver a la app (foreground) re-lee Health Connect en silencio:
+  // las apps de origen (Samsung Health, Zepp) vuelcan con demora.
+  useEffect(() => {
+    if (!isNativePlatform()) return;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const onVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(async () => {
+        try {
+          const st = await getHealthStatus();
+          if (!st.authorized) return;
+          const cfg = readStepsConfig();
+          if (!cfg.enabled) return;
+          const d = await readTodaySteps();
+          if (d.source === "healthconnect") storeHcDay(d);
+        } catch {
+          /* silencioso */
+        }
+      }, 1500);
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      if (timer) clearTimeout(timer);
+    };
+  }, [storeHcDay]);
 
   const refreshStatus = useCallback(async () => {
     const st = await getHealthStatus();
@@ -113,17 +177,7 @@ export const StepsPanel: React.FC<StepsPanelProps> = ({ compact }) => {
         saveStepsConfig(nextCfg);
         const d = await readTodaySteps();
         if (d.source === "healthconnect") {
-          const date = localDateKey();
-          setToday({ date, steps: d.steps, source: "healthconnect" });
-          const stored = readStoredDay();
-          saveStoredDay({
-            date,
-            steps: d.steps,
-            source: "healthconnect",
-            asOf: d.asOf,
-            base: stored?.base,
-            adjustment: stored?.adjustment ?? null,
-          });
+          storeHcDay(d);
         }
         showToast("Health Connect conectado. Pasos leídos.", "success");
       } else {
@@ -144,17 +198,7 @@ export const StepsPanel: React.FC<StepsPanelProps> = ({ compact }) => {
       await refreshStatus();
       const d = await readTodaySteps();
       if (d.source === "healthconnect") {
-        const date = localDateKey();
-        setToday({ date, steps: d.steps, source: "healthconnect" });
-        const stored = readStoredDay();
-        saveStoredDay({
-          date,
-          steps: d.steps,
-          source: "healthconnect",
-          asOf: d.asOf,
-          base: stored?.base,
-          adjustment: stored?.adjustment ?? null,
-        });
+        storeHcDay(d);
         showToast(
           d.steps > 0
             ? `Pasos actualizados: ${d.steps.toLocaleString("es-AR")}.`
@@ -180,13 +224,14 @@ export const StepsPanel: React.FC<StepsPanelProps> = ({ compact }) => {
       return;
     }
     const date = localDateKey();
-    setToday({ date, steps: n, source: "manual" });
+    setToday({ date, steps: n, source: "manual", asOf: new Date().toISOString(), sources: undefined });
     const stored = readStoredDay();
     saveStoredDay({
       date,
       steps: n,
       source: "manual",
       asOf: new Date().toISOString(),
+      sources: undefined,
       base: stored?.base,
       adjustment: stored?.adjustment ?? null,
     });
@@ -237,9 +282,22 @@ export const StepsPanel: React.FC<StepsPanelProps> = ({ compact }) => {
                 {(today?.steps ?? 0).toLocaleString("es-AR")}
                 <span className="text-xs text-neutral-500 font-bold ml-1">/ {config.stepGoal.toLocaleString("es-AR")}</span>
               </p>
-              <p className="text-[10px] text-neutral-500">
-                {today?.source === "healthconnect" ? "vía Health Connect" : today?.source === "manual" ? "ingresado manualmente" : ""}
+              <p className="text-[10px] text-neutral-500 break-words">
+                {today?.source === "healthconnect"
+                  ? `vía Health Connect${today.asOf ? ` · actualizado ${timeAgo(today.asOf)}` : ""}`
+                  : today?.source === "manual"
+                    ? "ingresado manualmente (vale hasta el próximo refresco)"
+                    : ""}
               </p>
+              {today?.source === "healthconnect" && today.sources && today.sources.length > 0 && (
+                <div className="mt-1.5 space-y-0.5">
+                  {today.sources.map((s) => (
+                    <p key={s.name} className="text-[10px] text-neutral-500 font-mono truncate">
+                      {s.name}: <span className="text-neutral-300">{s.steps.toLocaleString("es-AR")}</span>
+                    </p>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="text-right">
               {adjustment ? (
@@ -360,6 +418,20 @@ export const StepsPanel: React.FC<StepsPanelProps> = ({ compact }) => {
             </div>
           )}
 
+          {/* Por qué puede diferir del reloj / Samsung */}
+          <details className="bg-neutral-900/60 border border-neutral-800/70 rounded-xl p-3">
+            <summary className="text-[11px] font-bold text-neutral-300 cursor-pointer">
+              ¿No coincide con tu reloj o Samsung Health?
+            </summary>
+            <ul className="text-[11px] text-neutral-400 space-y-1 mt-2 leading-relaxed">
+              <li>• Este número es lo que <strong className="text-neutral-200">Health Connect</strong> tiene ahora. Samsung Health y Zepp muestran sus propios conteos: solo llegan acá si esas apps vuelcan a Health Connect (con demora de minutos).</li>
+              <li>• Samsung Health: Ajustes → Health Connect → permitir Pasos.</li>
+              <li>• Zepp: abrí la app para forzar la sincronización del reloj, y activá el enlace con Health Connect / Google Fit.</li>
+              <li>• El reloj suele contar más porque registra sin el teléfono encima; al sincronizar se iguala.</li>
+              <li>• Si necesitás el valor exacto del reloj ya: ingresalo manualmente abajo (vale hasta el próximo refresco).</li>
+            </ul>
+          </details>
+
           {/* Reglas explicadas */}
           <div className="bg-neutral-900/60 border border-neutral-800/70 rounded-xl p-3 space-y-1.5">
             <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">Reglas aplicadas (sin IA, 100% deterministas)</p>
@@ -367,7 +439,7 @@ export const StepsPanel: React.FC<StepsPanelProps> = ({ compact }) => {
               <li>• 0–5.000 pasos: –250 kcal</li>
               <li>• 5.001–8.000 pasos: –150 kcal</li>
               <li>• 8.001–12.000 pasos: mantener</li>
-              <li>• +12.000 pasos: +150 kcal (carbos)</li>
+              <li>• +12.000 pasos: +150 kcal (grasa, keto)</li>
               <li>• Entrenaste hoy → reducción suavizada</li>
               <li>• La proteína nunca baja de su meta</li>
               <li>• Nunca bajo del 80% de tus calorías base</li>

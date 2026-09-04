@@ -350,7 +350,7 @@ export const ExerciseHistoryProgressionChart: React.FC<ExerciseHistoryProgressio
             )}
           </div>
 
-          <div className="text-xs font-medium text-neutral-400">{data.routineName}</div>
+          <div className="text-xs font-medium text-neutral-400 break-words">{data.routineName}</div>
 
           <div className="grid grid-cols-2 gap-2 pt-1">
             <div className="p-2 rounded-xl bg-neutral-900/80 border border-neutral-800">

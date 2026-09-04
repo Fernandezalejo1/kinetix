@@ -600,9 +600,9 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
           <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-2xl max-h-[90dvh] flex flex-col overflow-hidden shadow-2xl" onClick={(e) => e.stopPropagation()}>
             {/* Header */}
             <div className="p-5 border-b border-neutral-800 bg-neutral-950/50 shrink-0">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-black text-white">{selectedSession.routineName}</h3>
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <h3 className="text-lg font-black text-white break-words">{selectedSession.routineName}</h3>
                   <p className="text-xs text-neutral-400 mt-1">
                     {new Date(selectedSession.date).toLocaleDateString("es-ES", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
                   </p>

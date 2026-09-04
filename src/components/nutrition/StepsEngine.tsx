@@ -71,11 +71,13 @@ export const StepsEngine: React.FC = () => {
 
       updateMacroTargets(adj.adjusted);
 
+      const prevStored = readStoredDay();
       saveStoredDay({
         date: todayKey,
         steps,
         source,
         asOf: new Date().toISOString(),
+        sources: prevStored?.sources,
         base,
         adjustment: { caloriesDelta: adj.caloriesDelta, bandLabel: adj.bandLabel, message: adj.message },
       });

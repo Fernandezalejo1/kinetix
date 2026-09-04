@@ -15,10 +15,18 @@ export interface StepsStatus {
   native: boolean;
 }
 
+export interface StepsSourceTotal {
+  /** App/fuente que registró los pasos (ej. "Samsung Health", "Zepp Life"). */
+  name: string;
+  steps: number;
+}
+
 export interface StepsOfDay {
   steps: number;
   asOf: string;
   source: "healthconnect" | "manual" | null;
+  /** Desglose por fuente (solo Health Connect). */
+  sources?: StepsSourceTotal[];
 }
 
 const READ_TYPES: HealthDataType[] = ["steps", "totalCalories"];
@@ -75,9 +83,50 @@ export async function requestHealthAuthorization(): Promise<boolean> {
   }
 }
 
+type AggSample = { value?: number | null; startDate?: string; endDate?: string; sourceName?: string | null };
+
+/**
+ * Suma samples de un queryAggregated acotando al rango [rangeStartMs, rangeEndMs).
+ * Se queda con los samples que se SOLAPAN con el rango (no exige que arranquen
+ * dentro: los buckets diarios pueden alinearse a UTC y empezar antes de la
+ * medianoche local; excluirlos daría 0). Además arma el desglose por fuente
+ * para que el usuario vea QUÉ app aportó cada parte del total.
+ */
+function summarizeSamples(
+  samples: AggSample[] | undefined,
+  rangeStartMs: number,
+  rangeEndMs: number
+): { steps: number; sources: StepsSourceTotal[] } {
+  const bySource = new Map<string, number>();
+  let total = 0;
+  for (const s of samples ?? []) {
+    const v = s.value || 0;
+    if (!(v > 0)) continue;
+    const sStart = s.startDate ? Date.parse(s.startDate) : NaN;
+    const sEnd = s.endDate ? Date.parse(s.endDate) : NaN;
+    // Sin fechas o con solapamiento con el rango → contar. Solo se descarta
+    // lo que está claramente fuera del rango pedido.
+    if (Number.isFinite(sStart) && Number.isFinite(sEnd) && (sEnd <= rangeStartMs || sStart >= rangeEndMs)) {
+      continue;
+    }
+    total += v;
+    const name = (s.sourceName || "Teléfono").trim() || "Teléfono";
+    bySource.set(name, (bySource.get(name) ?? 0) + v);
+  }
+  const sources = [...bySource.entries()]
+    .map(([name, steps]) => ({ name, steps: Math.round(steps) }))
+    .sort((a, b) => b.steps - a.steps);
+  return { steps: Math.round(total), sources };
+}
+
 /**
  * Lee las calorías y pasos de HOY (desde medianoche local hasta ahora).
  * En fallback web devuelve step 0 / no autorizado, indicando que use manual.
+ *
+ * NOTA: Health Connect solo ve lo que cada app (Samsung Health, Zepp, etc.)
+ * sincronizó con él. Si el reloj o Samsung muestran más pasos, es porque esa
+ * fuente aún no volcó a Health Connect (sincronización con demora o permiso
+ * apagado en la app de origen), no un error de lectura.
  */
 export async function readTodaySteps(): Promise<StepsOfDay> {
   if (!isNativePlatform()) {
@@ -94,12 +143,12 @@ export async function readTodaySteps(): Promise<StepsOfDay> {
       bucket: "day",
       aggregation: "sum",
     });
-    // La consulta ya está acotada a HOY (medianoche local → ahora), así que TODOS
-    // los samples devueltos pertenecen a hoy. Los sumamos directamente en lugar de
-    // buscar un bucket por fecha: evita fallos por desfases de zona horaria en el
-    // formateo de la fecha del bucket.
-    const steps = Math.round((res.samples ?? []).reduce((sum, s) => sum + (s.value || 0), 0));
-    return { steps, asOf: new Date().toISOString(), source: "healthconnect" };
+    const { steps, sources } = summarizeSamples(
+      res.samples as AggSample[] | undefined,
+      start.getTime(),
+      now.getTime()
+    );
+    return { steps, asOf: new Date().toISOString(), source: "healthconnect", sources };
   } catch {
     return { steps: 0, asOf: new Date().toISOString(), source: null };
   }
@@ -122,8 +171,7 @@ export async function readStepsForDate(date: Date): Promise<number> {
       bucket: "day",
       aggregation: "sum",
     });
-    const steps = Math.round((res.samples ?? []).reduce((sum, s) => sum + (s.value || 0), 0));
-    return steps;
+    return summarizeSamples(res.samples as AggSample[] | undefined, start.getTime(), end.getTime()).steps;
   } catch {
     return 0;
   }
@@ -180,11 +228,13 @@ export function saveStepsConfig(cfg: StepsConfig): void {
   }
 }
 
-interface StoredDay {
+export interface StoredDay {
   date: string;
   steps: number;
   source: StepsOfDay["source"];
   asOf: string;
+  /** Desglose por fuente de la última lectura de Health Connect. */
+  sources?: StepsSourceTotal[];
   /** Targets BASE del día (sin ajuste). Se congelan al primer ajuste para
    *  que recalcular con más pasos revierta correctamente (idempotente). */
   base?: {

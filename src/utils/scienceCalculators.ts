@@ -350,30 +350,29 @@ export function calculateAutoProgression(
   const workingSets = sets.filter((s) => s.completed && s.type !== "warmup");
 
   if (workingSets.length === 0) {
-    // Default fallback when no working sets exist
-    const defaultWeight = isCompound ? 60 : 15;
+    // Sin series reales no se inventa ningún peso: se pide entrenar primero.
     return {
       exerciseId: exercise.id,
       exerciseName: exercise.nameEs,
       category: exercise.category,
       equipment: exercise.equipment,
-      currentWeight: defaultWeight,
-      lastReps: 8,
-      averageRir: 2,
-      averageRpe: 8,
-      recommendedWeight: isCompound ? defaultWeight + 2.5 : defaultWeight + 1,
-      deltaWeight: isCompound ? 2.5 : 1,
-      deltaPercent: isCompound ? 4.1 : 6.6,
-      action: "increase",
-      actionLabel: "Sobrecarga Progresiva (+2.5 kg)",
-      targetRepsNext: "8-10 reps",
+      currentWeight: 0,
+      lastReps: 0,
+      averageRir: 0,
+      averageRpe: 0,
+      recommendedWeight: 0,
+      deltaWeight: 0,
+      deltaPercent: 0,
+      action: "maintain",
+      actionLabel: "Sin datos todavía",
+      targetRepsNext: "—",
       targetRirNext: 2,
       scientificRationale:
-        "RIR estimado de 2.0 en rango adaptativo óptimo (MAV). Incremento de carga estándar para continuar la tensión mecánica.",
-      confidenceScore: 92,
-      progressionType: "Sobrecarga de Carga Directa",
+        "Todavía no hay series registradas de este ejercicio: completá una sesión real (o cargá un 1RM manual) para habilitar la recomendación.",
+      confidenceScore: 0,
+      progressionType: "Dato insuficiente",
       fatigueStatus: "optima",
-      nextSessionTip: "Mantener tempo 3-1-0-1 y asegurar descanso completo entre series.",
+      nextSessionTip: "Registrá peso, reps y RIR serie por serie.",
       isCompound,
     };
   }
@@ -569,22 +568,6 @@ export function computeAllAutoProgressions(
     }
   });
 
-  // If no workouts yet or few exercises, supplement with top science core exercises
-  if (recommendations.length < 4) {
-    const defaultsToInclude = allCatalogExercises.slice(0, 6);
-    defaultsToInclude.forEach((ex) => {
-      if (!recommendations.some((r) => r.exerciseId === ex.id)) {
-        const isComp = isCompoundExercise(ex);
-        const sampleWeight = isComp ? 100 : 25;
-        const sampleSets: WorkoutSet[] = [
-          { id: "sample-1", setNumber: 1, type: "normal", weight: sampleWeight, reps: 8, rir: 2, completed: true },
-          { id: "sample-2", setNumber: 2, type: "normal", weight: sampleWeight, reps: 8, rir: 2, completed: true },
-          { id: "sample-3", setNumber: 3, type: "normal", weight: sampleWeight, reps: 7, rir: 1, completed: true },
-        ];
-        recommendations.push(calculateAutoProgression(ex, sampleSets, weightUnit));
-      }
-    });
-  }
-
+  // Sin sesiones no se inventa nada: solo ejercicios con series reales.
   return recommendations;
 }

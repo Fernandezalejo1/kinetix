@@ -13,7 +13,9 @@ import { useWorkout } from "../../context/WorkoutContext";
 import { useToast } from "../../context/ToastContext";
 import { MealItem } from "../../types";
 
-type ScheduleType = "nocturno" | "normal" | "keto";
+/** La app es 100% KETO: los dos horarios (nocturno/diurno) usan comidas
+ *  cetogénicas. Solo cambia el timing, nunca los macros base. */
+type ScheduleType = "nocturno" | "normal";
 
 interface ScheduledMeal {
   time: string;
@@ -26,123 +28,14 @@ interface ScheduledMeal {
   preWorkout?: boolean;
 }
 
-// Horario NOCTURNO (para quien despierta al mediodía y trabaja/entrena de noche):
+// Horario NOCTURNO KETO (despierta 10:00, trabaja/entrena de noche):
 //   10:30 Pre-Entreno · 13:00 Almuerzo (post-gym) · 17:00 Merienda (pre-trabajo)
 //   21:00 Cena (trabajando) · 00:00 Síntesis (comida nocturna)
 const NIGHT_SCHEDULE: ScheduledMeal[] = [
   {
     time: "10:30",
-    name: "Pre-Entreno · Despertar + Perro",
-    foods: "Banana + avena + whey + miel (carbos rápidos)",
-    calories: 350,
-    protein: 35,
-    carbs: 45,
-    fats: 4,
-    preWorkout: true,
-  },
-  {
-    time: "13:00",
-    name: "Almuerzo · Post-Gym",
-    foods: "Arroz + pollo/pechuga + verduras + aguacate",
-    calories: 800,
-    protein: 85,
-    carbs: 55,
-    fats: 22,
-  },
-  {
-    time: "17:00",
-    name: "Merienda · Pre-Trabajo",
-    foods: "Yogur griego + frutos secos + banana",
-    calories: 420,
-    protein: 45,
-    carbs: 25,
-    fats: 16,
-  },
-  {
-    time: "21:00",
-    name: "Cena · En el Trabajo",
-    foods: "Carne magra + arroz integral + verduras + aceite de oliva",
-    calories: 600,
-    protein: 65,
-    carbs: 35,
-    fats: 22,
-  },
-  {
-    time: "00:00",
-    name: "Última comida · Síntesis",
-    foods: "Pescado blanco + claras + ensalada + aceite de oliva",
-    calories: 400,
-    protein: 50,
-    carbs: 4,
-    fats: 27,
-  },
-];
-
-const NORMAL_SCHEDULE: ScheduledMeal[] = [
-  {
-    time: "08:00",
-    name: "Desayuno",
-    foods: "Avena + huevos + fruta",
-    calories: 500,
-    protein: 32,
-    carbs: 60,
-    fats: 14,
-  },
-  {
-    time: "11:00",
-    name: "Media mañana",
-    foods: "Yogur griego + frutos secos",
-    calories: 300,
-    protein: 22,
-    carbs: 18,
-    fats: 16,
-  },
-  {
-    time: "14:00",
-    name: "Almuerzo",
-    foods: "Arroz + carne magra + verduras",
-    calories: 700,
-    protein: 48,
-    carbs: 90,
-    fats: 14,
-  },
-  {
-    time: "17:00",
-    name: "Pre-Entreno · Combustible",
-    foods: "Banana + tostadas con miel + café (carbos rápidos)",
-    calories: 400,
-    protein: 20,
-    carbs: 75,
-    fats: 3,
-    preWorkout: true,
-  },
-  {
-    time: "19:00",
-    name: "Post-Entreno · Recuperación",
-    foods: "Papa + pollo + verduras",
-    calories: 500,
-    protein: 38,
-    carbs: 75,
-    fats: 7,
-  },
-  {
-    time: "22:00",
-    name: "Cena",
-    foods: "Pechuga + ensalada + aceite de oliva",
-    calories: 400,
-    protein: 38,
-    carbs: 15,
-    fats: 20,
-  },
-];
-
-// Plan KETO genérico (cetogénico): alta grasa, carbos mínimos (~20-35 g) y
-// proteína moderada. El app lo escala a tu déficit.
-const KETO_SCHEDULE: ScheduledMeal[] = [
-  {
-    time: "10:30",
-    name: "Pre-Entreno · Café con Crema + Whey",
-    foods: "Whey + mantequilla de maní + café con crema (grasa primero, nada de azúcar)",
+    name: "Pre-Entreno · Despertar",
+    foods: "Café con crema + whey + mantequilla de maní (grasa primero, nada de azúcar)",
     calories: 400,
     protein: 30,
     carbs: 8,
@@ -151,7 +44,7 @@ const KETO_SCHEDULE: ScheduledMeal[] = [
   },
   {
     time: "13:00",
-    name: "Almuerzo · Carnes + Grasa + Verduras",
+    name: "Almuerzo · Post-Gym",
     foods: "Carne picada/cerdo + palta + espinaca + aceite de oliva",
     calories: 700,
     protein: 50,
@@ -160,7 +53,7 @@ const KETO_SCHEDULE: ScheduledMeal[] = [
   },
   {
     time: "17:00",
-    name: "Merienda · Queso + Frutos Secos",
+    name: "Merienda · Pre-Trabajo",
     foods: "Queso + almendras + aceitunas (grasa de calidad, llenadora)",
     calories: 450,
     protein: 22,
@@ -169,7 +62,7 @@ const KETO_SCHEDULE: ScheduledMeal[] = [
   },
   {
     time: "21:00",
-    name: "Cena · Pescado + Mantequilla",
+    name: "Cena · En el Trabajo",
     foods: "Salmón/carne + brócoli + mantequilla (Omega-3 + saciedad)",
     calories: 600,
     protein: 44,
@@ -178,7 +71,7 @@ const KETO_SCHEDULE: ScheduledMeal[] = [
   },
   {
     time: "00:00",
-    name: "Última comida · Síntesis Proteica",
+    name: "Última comida · Síntesis",
     foods: "Cottage + nueces + aceite de oliva (caseína nocturna)",
     calories: 350,
     protein: 30,
@@ -187,29 +80,82 @@ const KETO_SCHEDULE: ScheduledMeal[] = [
   },
 ];
 
+// Horario DIURNO KETO (despierta ~07:00, ritmo de día normal).
+const NORMAL_SCHEDULE: ScheduledMeal[] = [
+  {
+    time: "08:00",
+    name: "Desayuno",
+    foods: "Omelette + palta + espinaca",
+    calories: 520,
+    protein: 34,
+    carbs: 8,
+    fats: 40,
+  },
+  {
+    time: "11:00",
+    name: "Media mañana",
+    foods: "Yogur griego natural + nueces + cacao",
+    calories: 300,
+    protein: 20,
+    carbs: 7,
+    fats: 22,
+  },
+  {
+    time: "14:00",
+    name: "Almuerzo",
+    foods: "Bife + huevo + queso + ensalada",
+    calories: 690,
+    protein: 52,
+    carbs: 6,
+    fats: 50,
+  },
+  {
+    time: "17:00",
+    name: "Pre-Entreno · Combustible",
+    foods: "Whey + crema + café (grasa rápida, nada de azúcar)",
+    calories: 340,
+    protein: 30,
+    carbs: 8,
+    fats: 22,
+    preWorkout: true,
+  },
+  {
+    time: "19:00",
+    name: "Post-Entreno · Recuperación",
+    foods: "Pollo + brócoli + queso + crema",
+    calories: 500,
+    protein: 44,
+    carbs: 8,
+    fats: 32,
+  },
+  {
+    time: "22:00",
+    name: "Cena",
+    foods: "Pescado + palta + oliva + ensalada",
+    calories: 450,
+    protein: 40,
+    carbs: 6,
+    fats: 30,
+  },
+];
+
 const SCHEDULES: Record<ScheduleType, { label: string; short: string; icon: React.ReactNode; meals: ScheduledMeal[] }> = {
   nocturno: {
-    label: "Horario Nocturno (despierto 10:00 → trabajo de noche)",
-    short: "Nocturno",
+    label: "Keto Nocturno (despierto 10:00 → trabajo de noche)",
+    short: "Keto Noche",
     icon: <Moon className="w-4 h-4" />,
     meals: NIGHT_SCHEDULE,
   },
   normal: {
-    label: "Horario Normal (día)",
-    short: "Normal",
+    label: "Keto Día (horario normal)",
+    short: "Keto Día",
     icon: <Sun className="w-4 h-4" />,
     meals: NORMAL_SCHEDULE,
-  },
-  keto: {
-    label: "Keto Cetogénico (bajo en carbos, alto en grasa)",
-    short: "Keto",
-    icon: <Flame className="w-4 h-4" />,
-    meals: KETO_SCHEDULE,
   },
 };
 
 export const MealSchedulerPanel: React.FC = () => {
-  const [schedule, setSchedule] = useState<ScheduleType>("keto");
+  const [schedule, setSchedule] = useState<ScheduleType>("normal");
   const { addMeal, updateMacroTargets, nutritionLog, nutritionProfile } = useWorkout();
   const { showToast } = useToast();
 
@@ -279,7 +225,7 @@ export const MealSchedulerPanel: React.FC = () => {
       </div>
 
       {/* Schedule selector */}
-      <div className="grid grid-cols-3 gap-2 p-1 bg-neutral-900 rounded-2xl border border-neutral-800">
+      <div className="grid grid-cols-2 gap-2 p-1 bg-neutral-900 rounded-2xl border border-neutral-800">
         {(Object.keys(SCHEDULES) as ScheduleType[]).map((key) => {
           const s = SCHEDULES[key];
           const isActive = schedule === key;
@@ -332,7 +278,7 @@ export const MealSchedulerPanel: React.FC = () => {
                       {meal.preWorkout && (
                         <span className="flex items-center gap-1 text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
                           <Zap className="w-3 h-3" />
-                          Carbos pre-entreno
+                          Pre-entreno keto
                         </span>
                       )}
                     </div>

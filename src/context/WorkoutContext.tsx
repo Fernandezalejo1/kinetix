@@ -84,129 +84,15 @@ interface WorkoutContextType {
   clearGhostSessions: () => void;
   getExerciseHistory: (exerciseId: string) => ExerciseHistoryEntry[];
   getNextWeight: (exerciseId: string) => number;
+  addPersonalRecord: (pr: Omit<PersonalRecord, "id">) => void;
+  deletePersonalRecord: (prId: string) => void;
 }
 
 const WorkoutContext = createContext<WorkoutContextType | undefined>(undefined);
 
-const INITIAL_WORKOUT_HISTORY: CompletedWorkout[] = [
-  {
-    id: "hist-1",
-    routineName: "Push A (Hipertrofia Clavicular)",
-    date: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
-    durationSeconds: 3240,
-    totalVolumeKg: 8450,
-    totalSets: 13,
-    averageRir: 1.2,
-    prCount: 1,
-    fatigueScore: 4,
-    exercises: [
-      {
-        id: "wex-1",
-        exerciseId: "incline-dumbbell-press",
-        exercise: EXERCISES_DATABASE[1],
-        targetRestSeconds: 150,
-        sets: [
-          { id: "s-1", setNumber: 1, type: "normal", weight: 36, reps: 10, rir: 1, completed: true },
-          { id: "s-2", setNumber: 2, type: "normal", weight: 36, reps: 9, rir: 1, completed: true },
-          { id: "s-3", setNumber: 3, type: "normal", weight: 36, reps: 8, rir: 0, completed: true },
-        ],
-      },
-      {
-        id: "wex-2",
-        exerciseId: "barbell-bench-press",
-        exercise: EXERCISES_DATABASE[0],
-        targetRestSeconds: 180,
-        sets: [
-          { id: "s-4", setNumber: 1, type: "normal", weight: 95, reps: 8, rir: 1, completed: true },
-          { id: "s-5", setNumber: 2, type: "normal", weight: 95, reps: 7, rir: 1, completed: true },
-          { id: "s-6", setNumber: 3, type: "normal", weight: 95, reps: 6, rir: 0, completed: true },
-        ],
-      },
-      {
-        id: "wex-3",
-        exerciseId: "cable-lateral-raise",
-        exercise: EXERCISES_DATABASE[9],
-        targetRestSeconds: 90,
-        sets: [
-          { id: "s-7", setNumber: 1, type: "normal", weight: 12.5, reps: 15, rir: 1, completed: true },
-          { id: "s-8", setNumber: 2, type: "normal", weight: 12.5, reps: 14, rir: 0, completed: true },
-          { id: "s-9", setNumber: 3, type: "normal", weight: 12.5, reps: 12, rir: 0, completed: true },
-          { id: "s-10", setNumber: 4, type: "dropset", weight: 8.5, reps: 15, rir: 0, completed: true },
-        ],
-      },
-    ],
-  },
-  {
-    id: "hist-2",
-    routineName: "Pull A (Dorsal & Espalda Alta)",
-    date: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
-    durationSeconds: 3100,
-    totalVolumeKg: 9200,
-    totalSets: 14,
-    averageRir: 1.0,
-    prCount: 2,
-    fatigueScore: 5,
-    exercises: [
-      {
-        id: "wex-4",
-        exerciseId: "neutral-grip-lat-pulldown",
-        exercise: EXERCISES_DATABASE[3],
-        targetRestSeconds: 150,
-        sets: [
-          { id: "s-11", setNumber: 1, type: "normal", weight: 80, reps: 10, rir: 1, completed: true },
-          { id: "s-12", setNumber: 2, type: "normal", weight: 80, reps: 9, rir: 1, completed: true },
-          { id: "s-13", setNumber: 3, type: "normal", weight: 80, reps: 8, rir: 0, completed: true },
-        ],
-      },
-      {
-        id: "wex-5",
-        exerciseId: "chest-supported-t-bar-row",
-        exercise: EXERCISES_DATABASE[4],
-        targetRestSeconds: 120,
-        sets: [
-          { id: "s-14", setNumber: 1, type: "normal", weight: 65, reps: 10, rir: 1, completed: true },
-          { id: "s-15", setNumber: 2, type: "normal", weight: 65, reps: 10, rir: 1, completed: true },
-          { id: "s-16", setNumber: 3, type: "normal", weight: 65, reps: 9, rir: 0, completed: true },
-        ],
-      },
-    ],
-  },
-  {
-    id: "hist-3",
-    routineName: "Legs A (Cuádriceps & Gemelos)",
-    date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    durationSeconds: 3600,
-    totalVolumeKg: 12400,
-    totalSets: 15,
-    averageRir: 1.4,
-    prCount: 1,
-    fatigueScore: 6,
-    exercises: [
-      {
-        id: "wex-6",
-        exerciseId: "barbell-hack-or-squat",
-        exercise: EXERCISES_DATABASE[6],
-        targetRestSeconds: 180,
-        sets: [
-          { id: "s-17", setNumber: 1, type: "normal", weight: 130, reps: 8, rir: 2, completed: true },
-          { id: "s-18", setNumber: 2, type: "normal", weight: 130, reps: 7, rir: 1, completed: true },
-          { id: "s-19", setNumber: 3, type: "normal", weight: 130, reps: 6, rir: 1, completed: true },
-        ],
-      },
-      {
-        id: "wex-7",
-        exerciseId: "hack-squat-machine",
-        exercise: EXERCISES_DATABASE[7],
-        targetRestSeconds: 150,
-        sets: [
-          { id: "s-20", setNumber: 1, type: "normal", weight: 140, reps: 10, rir: 1, completed: true },
-          { id: "s-21", setNumber: 2, type: "normal", weight: 140, reps: 9, rir: 0, completed: true },
-          { id: "s-22", setNumber: 3, type: "myorep", weight: 140, reps: 8, rir: 0, completed: true },
-        ],
-      },
-    ],
-  },
-];
+// Sin datos semilla: el historial empieza vacío y solo muestra sesiones
+// reales del usuario. Nunca se inventan entrenamientos, PRs ni medidas.
+const INITIAL_WORKOUT_HISTORY: CompletedWorkout[] = [];
 
 const INITIAL_NUTRITION: NutritionLog = {
   date: new Date().toISOString().split("T")[0],
@@ -234,65 +120,58 @@ const readNutritionProfile = (): NutritionProfile => ({
 const computeTargetsFromWeight = (weightKg: number) =>
   computePersonalTargets(weightKg, readNutritionGoal(), readNutritionProfile());
 
-const INITIAL_BODY_METRICS: BodyMetricEntry[] = [
-  {
-    id: "bm-1",
-    date: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-    weightKg: 78.2,
-    waistCm: 81.5,
-    chestCm: 104.0,
-    armsCm: 38.5,
-    thighsCm: 61.0,
-    estimatedBodyFat: 13.8,
-  },
-  {
-    id: "bm-2",
-    date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-    weightKg: 78.5,
-    waistCm: 81.2,
-    chestCm: 104.5,
-    armsCm: 38.8,
-    thighsCm: 61.4,
-    estimatedBodyFat: 13.5,
-  },
-  {
-    id: "bm-3",
-    date: new Date().toISOString().split("T")[0],
-    weightKg: 78.9,
-    waistCm: 81.0,
-    chestCm: 105.2,
-    armsCm: 39.2,
-    thighsCm: 62.0,
-    estimatedBodyFat: 13.2,
-    notes: "Aumento de masa muscular magra con cintura estable (recomposición positiva).",
-  },
-];
+// Sin datos semilla: métricas, PRs e historial empiezan vacíos.
+// Los PRs solo nacen de sesiones reales o de carga manual del usuario.
+const INITIAL_BODY_METRICS: BodyMetricEntry[] = [];
 
-const INITIAL_PRS: PersonalRecord[] = [
-  { id: "pr-1", exerciseId: "barbell-bench-press", exerciseName: "Press de Banca con Barra", type: "1RM", value: 118, date: "2026-08-15", previousValue: 115 },
-  { id: "pr-2", exerciseId: "barbell-hack-or-squat", exerciseName: "Sentadilla Trasera Barra Alta", type: "1RM", value: 165, date: "2026-08-18", previousValue: 160 },
-  { id: "pr-3", exerciseId: "romanian-deadlift", exerciseName: "Peso Muerto Rumano con Barra", type: "1RM", value: 175, date: "2026-08-10", previousValue: 170 },
-  { id: "pr-4", exerciseId: "incline-dumbbell-press", exerciseName: "Press Inclinado con Mancuernas (30°)", type: "max_weight", value: 38, reps: 8, date: "2026-08-19" },
-];
+const INITIAL_PRS: PersonalRecord[] = [];
 
-const INITIAL_EXERCISE_HISTORY: ExerciseHistoryEntry[] = [
-  {
-    id: "eh-1", exerciseId: "barbell-bench-press", date: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
-    weight: 95, sets: 3, reps: [8, 7, 6], rpe: 9, difficulty: "just_right", volumeKg: 2090,
-  },
-  {
-    id: "eh-2", exerciseId: "barbell-hack-or-squat", date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    weight: 130, sets: 3, reps: [8, 7, 6], rpe: 9, difficulty: "just_right", volumeKg: 2730,
-  },
-  {
-    id: "eh-3", exerciseId: "neutral-grip-lat-pulldown", date: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
-    weight: 80, sets: 3, reps: [10, 9, 8], rpe: 9, difficulty: "good", volumeKg: 2160,
-  },
-  {
-    id: "eh-4", exerciseId: "incline-dumbbell-press", date: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
-    weight: 36, sets: 3, reps: [10, 9, 8], rpe: 9, difficulty: "just_right", volumeKg: 972,
-  },
-];
+const INITIAL_EXERCISE_HISTORY: ExerciseHistoryEntry[] = [];
+
+// Migración única: elimina SOLO los datos semilla exactos de versiones
+// previas (ids fijos hist-1..3, bm-1..3, pr-1..4, eh-1..4, wex-1..7, s-1..22).
+// Los datos reales del usuario usan ids con timestamp y se conservan intactos.
+const SEED_IDS = new Set<string>([
+  "hist-1", "hist-2", "hist-3",
+  "bm-1", "bm-2", "bm-3",
+  "pr-1", "pr-2", "pr-3", "pr-4",
+  "eh-1", "eh-2", "eh-3", "eh-4",
+  "wex-1", "wex-2", "wex-3", "wex-4", "wex-5", "wex-6", "wex-7",
+  ...Array.from({ length: 22 }, (_, i) => `s-${i + 1}`),
+]);
+(() => {
+  try {
+    const scrubArray = (key: string) => {
+      const raw = localStorage.getItem(key);
+      if (!raw) return;
+      let arr: unknown;
+      try {
+        arr = JSON.parse(raw);
+      } catch {
+        return;
+      }
+      if (!Array.isArray(arr)) return;
+      const clean = arr.filter(
+        (it) =>
+          !(
+            it &&
+            typeof it === "object" &&
+            typeof (it as { id?: unknown }).id === "string" &&
+            SEED_IDS.has((it as { id: string }).id)
+          )
+      );
+      if (clean.length !== arr.length) {
+        localStorage.setItem(key, JSON.stringify(clean));
+      }
+    };
+    scrubArray("kinetix_workout_history");
+    scrubArray("kinetix_body_metrics");
+    scrubArray("kinetix_prs");
+    scrubArray("kinetix_exercise_history");
+  } catch {
+    /* ignorar */
+  }
+})();
 
 const safeParse = <T,>(key: string, fallback: T): T => {
   try {
@@ -960,8 +839,21 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
   const cancelWorkout = useCallback(() => {
     setActiveSession(null);
     setIsWorkoutModalOpen(false);
-    stopRestTimer();
   }, [stopRestTimer]);
+
+  /** Carga manual de un récord (1RM medido o estimado de una sesión real).
+   *  Reemplaza el récord previo del mismo ejercicio+tipo. */
+  const addPersonalRecord = useCallback((pr: Omit<PersonalRecord, "id">) => {
+    const item: PersonalRecord = { ...pr, id: `pr-manual-${Date.now()}` };
+    setPersonalRecords((prev) => {
+      const filtered = prev.filter((p) => !(p.exerciseId === item.exerciseId && p.type === item.type));
+      return [item, ...filtered];
+    });
+  }, []);
+
+  const deletePersonalRecord = useCallback((prId: string) => {
+    setPersonalRecords((prev) => prev.filter((p) => p.id !== prId));
+  }, []);
 
   const ensureTodayLogic = useCallback((): { today: string; targets: { calories: number; protein: number; carbs: number; fats: number } } => {
     const today = new Date().toISOString().split("T")[0];
@@ -1189,6 +1081,8 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
         clearGhostSessions,
         getExerciseHistory,
         getNextWeight,
+        addPersonalRecord,
+        deletePersonalRecord,
       }}
     >
       {children}

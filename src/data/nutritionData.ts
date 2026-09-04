@@ -192,26 +192,27 @@ export const QUICK_MEAL_CATEGORIES: { id: QuickMealCategory | "todos"; label: st
   { id: "pre_post", label: "Pre / Post" },
 ];
 
+// 100% KETO: todos los presets son bajos en carbos (≤12 g) y altos en grasa.
+// La app es cetogénica; no se ofrecen platos con arroz/papa/avena/pan/fruta/miel.
 export const QUICK_MEALS: QuickMealPreset[] = [
-  { name: "Batido Whey + Plátano + Cacahuete", category: "pre_post", cal: 480, pro: 42, carb: 50, fat: 12, fiber: 6, mpsQuality: "Alta" },
-  { name: "Pollo + Boniato + Espárragos", category: "comida", cal: 620, pro: 54, carb: 68, fat: 8, fiber: 8, mpsQuality: "Suficiente" },
-  { name: "Salmón + Arroz + Aguacate", category: "cena", cal: 740, pro: 48, carb: 62, fat: 26, fiber: 6, mpsQuality: "Suficiente" },
-  { name: "Avena + Huevos + Fruta", category: "desayuno", cal: 520, pro: 34, carb: 62, fat: 15, fiber: 8, mpsQuality: "Suficiente" },
-  { name: "Yogur Griego + Granola + Frutos Rojos", category: "desayuno", cal: 420, pro: 32, carb: 48, fat: 10, fiber: 5, mpsQuality: "Alta" },
-  { name: "Bife Magro + Papa + Ensalada", category: "comida", cal: 680, pro: 52, carb: 70, fat: 18, fiber: 7, mpsQuality: "Suficiente" },
-  { name: "Tostada Integral + Atún + Palta", category: "snack", cal: 460, pro: 36, carb: 40, fat: 18, fiber: 6, mpsQuality: "Suficiente" },
-  { name: "Pechuga + Quinoa + Verduras al Wok", category: "comida", cal: 580, pro: 50, carb: 65, fat: 12, fiber: 9, mpsQuality: "Suficiente" },
-  { name: "Cottage + Frutos Secos + Miel", category: "snack", cal: 450, pro: 30, carb: 35, fat: 22, fiber: 4, mpsQuality: "Suficiente" },
-  { name: "Banana + Pan con Miel + Whey", category: "pre_post", cal: 420, pro: 28, carb: 72, fat: 4, fiber: 3, mpsQuality: "Alta" },
-  { name: "Pescado Blanco + Ensalada + Aceite de Oliva", category: "cena", cal: 460, pro: 44, carb: 18, fat: 26, fiber: 5, mpsQuality: "Suficiente" },
-  { name: "Requesón + Arroz Integral + Huevo", category: "snack", cal: 560, pro: 42, carb: 60, fat: 16, fiber: 6, mpsQuality: "Alta" },
-  // Presets KETO (bajos en carbos, altos en grasa)
-  { name: "Omelette + Palta + Espinaca (Keto)", category: "desayuno", cal: 520, pro: 34, carb: 8, fat: 40, fiber: 6, mpsQuality: "Suficiente" },
-  { name: "Costillas de Cerdo + Brócoli en Mantequilla (Keto)", category: "comida", cal: 720, pro: 52, carb: 10, fat: 52, fiber: 7, mpsQuality: "Suficiente" },
-  { name: "Salmón + Espárragos + Mantequilla (Keto)", category: "cena", cal: 640, pro: 46, carb: 8, fat: 46, fiber: 6, mpsQuality: "Suficiente" },
-  { name: "Almendras + Queso + Aceitunas (Keto)", category: "snack", cal: 380, pro: 18, carb: 6, fat: 34, fiber: 5, mpsQuality: "Suficiente" },
-  { name: "Carne Picada + Palta + Huevo (Keto)", category: "comida", cal: 680, pro: 48, carb: 9, fat: 50, fiber: 6, mpsQuality: "Suficiente" },
-  { name: "Whey + Mantequilla de Maní + Leche de Almendras (Keto)", category: "pre_post", cal: 340, pro: 32, carb: 8, fat: 22, fiber: 3, mpsQuality: "Alta" },
+  { name: "Omelette + Palta + Espinaca", category: "desayuno", cal: 520, pro: 34, carb: 8, fat: 40, fiber: 6, mpsQuality: "Suficiente" },
+  { name: "Huevos Revueltos + Panceta + Palta", category: "desayuno", cal: 560, pro: 32, carb: 6, fat: 44, fiber: 4, mpsQuality: "Suficiente" },
+  { name: "Yogur Griego Natural + Nueces + Cacao", category: "desayuno", cal: 420, pro: 28, carb: 9, fat: 30, fiber: 4, mpsQuality: "Suficiente" },
+  { name: "Tortilla de Espinaca + Queso + Jamón", category: "desayuno", cal: 480, pro: 34, carb: 7, fat: 34, fiber: 4, mpsQuality: "Suficiente" },
+  { name: "Costillas de Cerdo + Brócoli en Mantequilla", category: "comida", cal: 720, pro: 52, carb: 10, fat: 52, fiber: 7, mpsQuality: "Suficiente" },
+  { name: "Carne Picada + Palta + Huevo", category: "comida", cal: 680, pro: 48, carb: 9, fat: 50, fiber: 6, mpsQuality: "Suficiente" },
+  { name: "Pollo + Mayonesa + Apio + Nueces", category: "comida", cal: 620, pro: 48, carb: 7, fat: 44, fiber: 4, mpsQuality: "Suficiente" },
+  { name: "Bife + Huevo Frito + Queso", category: "comida", cal: 690, pro: 52, carb: 4, fat: 52, fiber: 2, mpsQuality: "Suficiente" },
+  { name: "Bondiola + Chucrut + Mostaza", category: "comida", cal: 590, pro: 46, carb: 6, fat: 42, fiber: 4, mpsQuality: "Suficiente" },
+  { name: "Salmón + Espárragos + Mantequilla", category: "cena", cal: 640, pro: 46, carb: 8, fat: 46, fiber: 6, mpsQuality: "Suficiente" },
+  { name: "Pollo al Horno + Brócoli + Queso + Crema", category: "cena", cal: 640, pro: 50, carb: 9, fat: 44, fiber: 5, mpsQuality: "Alta" },
+  { name: "Atún + Huevo + Aceite de Oliva + Lechuga", category: "cena", cal: 480, pro: 42, carb: 5, fat: 32, fiber: 3, mpsQuality: "Suficiente" },
+  { name: "Camarones al Ajillo + Palta", category: "cena", cal: 460, pro: 38, carb: 6, fat: 30, fiber: 4, mpsQuality: "Suficiente" },
+  { name: "Matambre + Ensalada + Oliva", category: "cena", cal: 580, pro: 48, carb: 5, fat: 40, fiber: 3, mpsQuality: "Suficiente" },
+  { name: "Almendras + Queso + Aceitunas", category: "snack", cal: 380, pro: 18, carb: 6, fat: 34, fiber: 5, mpsQuality: "Suficiente" },
+  { name: "Fiambre + Queso + Aceitunas", category: "snack", cal: 400, pro: 24, carb: 4, fat: 32, fiber: 2, mpsQuality: "Suficiente" },
+  { name: "Whey + Mantequilla de Maní + Leche de Almendras", category: "pre_post", cal: 340, pro: 32, carb: 8, fat: 22, fiber: 3, mpsQuality: "Alta" },
+  { name: "Whey + Crema + Frutillas", category: "pre_post", cal: 320, pro: 30, carb: 9, fat: 18, fiber: 3, mpsQuality: "Alta" },
 ];
 
 // Evidence-based supplement guide (educational reference, 100% offline).

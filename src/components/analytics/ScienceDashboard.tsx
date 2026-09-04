@@ -33,6 +33,7 @@ import {
 import { MuscleGroup, Exercise } from "../../types";
 import { EXERCISES_DATABASE } from "../../data/exercisesData";
 import { MuscleRanksPanel } from "./MuscleRanksPanel";
+import { ManualPrForm, DeletePrButton } from "./ManualPrForm";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -57,6 +58,7 @@ export const ScienceDashboard: React.FC = () => {
   // Auto-Progression section states
   const [progressionFilter, setProgressionFilter] = useState<"all" | "push" | "pull" | "legs" | "increase">("all");
   const [expandedExerciseId, setExpandedExerciseId] = useState<string | null>(null);
+  const [showPrForm, setShowPrForm] = useState(false);
 
   // Simulator states
   const [simExerciseId, setSimExerciseId] = useState<string>("barbell-bench-press");
@@ -137,7 +139,7 @@ export const ScienceDashboard: React.FC = () => {
   const avgDeltaWeight = useMemo(() =>
     readyToIncreaseCount > 0
       ? Math.round((autoProgressions.filter((a) => a.deltaWeight > 0).reduce((acc, a) => acc + a.deltaWeight, 0) / readyToIncreaseCount) * 10) / 10
-      : 2.5,
+      : 0,
     [autoProgressions, readyToIncreaseCount]
   );
 
@@ -258,7 +260,7 @@ export const ScienceDashboard: React.FC = () => {
             </div>
             <div className="p-3.5 rounded-2xl bg-neutral-950 border border-neutral-800 text-center min-w-[100px]">
               <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block">Salto Promedio</span>
-              <span className="text-xl font-black text-cyan-400">+{avgDeltaWeight} {weightUnit}</span>
+              <span className="text-xl font-black text-cyan-400">{readyToIncreaseCount > 0 ? `+${avgDeltaWeight} ${weightUnit}` : "—"}</span>
             </div>
           </div>
         </div>
@@ -294,6 +296,12 @@ export const ScienceDashboard: React.FC = () => {
 
         {/* Auto-Progression Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {filteredProgressions.length === 0 && (
+            <p className="text-xs text-neutral-500 leading-relaxed col-span-full p-4 rounded-2xl bg-neutral-950 border border-neutral-800">
+              Sin sesiones registradas todavía: completá un entrenamiento real (peso + reps + RIR) y acá vas a ver
+              la recomendación de carga para cada ejercicio. Nada se estima sin datos.
+            </p>
+          )}
           {filteredProgressions.map((prog) => {
             const isExpanded = expandedExerciseId === prog.exerciseId;
             const fullEx = EXERCISES_DATABASE.find((e) => e.id === prog.exerciseId);
@@ -309,18 +317,18 @@ export const ScienceDashboard: React.FC = () => {
               >
                 {/* Top Info Header */}
                 <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-neutral-800 text-neutral-300 border border-neutral-700">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-neutral-800 text-neutral-300 border border-neutral-700 break-words">
                         {prog.category.toUpperCase()} • {prog.equipment.toUpperCase()}
                       </span>
                       {prog.isCompound && (
-                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shrink-0">
                           Multiarticular
                         </span>
                       )}
                     </div>
-                    <h3 className="text-base font-black text-white">{prog.exerciseName}</h3>
+                    <h3 className="text-base font-black text-white break-words">{prog.exerciseName}</h3>
                   </div>
 
                   <span
@@ -844,44 +852,62 @@ export const ScienceDashboard: React.FC = () => {
       {/* Section: Rangos por Músculo (gamificación LoL) */}
       <MuscleRanksPanel />
 
-      {/* Section 3: Personal Records Wall */}
+      {/* Section 3: Personal Records Wall (solo datos reales: sesiones o carga manual) */}
       <div className="p-6 rounded-3xl bg-neutral-900 border border-neutral-800 shadow-xl space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="p-2.5 rounded-2xl bg-amber-500/10 text-amber-400 border border-amber-500/20 shrink-0">
               <Trophy className="w-6 h-6" />
             </div>
-            <div>
-              <h3 className="text-xl font-black text-white tracking-tight">Muro de Récords Personales (1RM & Hitos)</h3>
-              <p className="text-xs text-neutral-400">Estimados con las fórmulas científicas de Brzycki y Epley</p>
+            <div className="min-w-0">
+              <h3 className="text-xl font-black text-white tracking-tight break-words">Muro de Récords Personales (1RM & Hitos)</h3>
+              <p className="text-xs text-neutral-400">De tus sesiones o cargados a mano. Nada estimado sin datos.</p>
             </div>
           </div>
+          <button
+            onClick={() => setShowPrForm((v) => !v)}
+            className="px-3 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold transition-colors shrink-0"
+          >
+            {showPrForm ? "Cerrar" : "+ Cargar 1RM"}
+          </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
-          {personalRecords.map((pr) => (
-            <div
-              key={pr.id}
-              className="p-5 rounded-2xl bg-neutral-950 border border-neutral-800 hover:border-amber-500/40 transition-all duration-300 space-y-2 group hover:shadow-lg hover:shadow-amber-500/5"
-            >
-              <div className="flex justify-between items-center text-xs">
-                <span className="font-bold text-amber-400 uppercase tracking-wider">{pr.type}</span>
-                <span className="text-[10px] text-neutral-500">{pr.date}</span>
-              </div>
-              <h4 className="text-sm font-bold text-white group-hover:text-amber-300 transition-colors">
-                {pr.exerciseName}
-              </h4>
-              <div className="text-2xl font-black text-white">
-                {pr.value} <span className="text-sm font-normal text-neutral-400">{weightUnit}</span>
-              </div>
-              {pr.previousValue && (
-                <div className="text-[11px] font-bold text-emerald-400">
-                  +{Math.round((pr.value - pr.previousValue) * 10) / 10} {weightUnit} progreso
+        {showPrForm && <ManualPrForm onDone={() => setShowPrForm(false)} />}
+
+        {personalRecords.length === 0 ? (
+          <p className="text-xs text-neutral-500 leading-relaxed p-4 rounded-2xl bg-neutral-950 border border-neutral-800">
+            Todavía no hay récords: se crean solos al superar tu 1RM en una sesión, o cargalos manualmente con
+            el botón de arriba.
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+            {personalRecords.map((pr) => (
+              <div
+                key={pr.id}
+                className="p-5 rounded-2xl bg-neutral-950 border border-neutral-800 hover:border-amber-500/40 transition-all duration-300 space-y-2 group hover:shadow-lg hover:shadow-amber-500/5 min-w-0"
+              >
+                <div className="flex justify-between items-center gap-2 text-xs">
+                  <span className="font-bold text-amber-400 uppercase tracking-wider truncate">{pr.type}</span>
+                  <span className="flex items-center gap-1 shrink-0">
+                    <span className="text-[10px] text-neutral-500">{pr.date}</span>
+                    <DeletePrButton prId={pr.id} prName={pr.exerciseName} />
+                  </span>
                 </div>
-              )}
-            </div>
-          ))}
-        </div>
+                <h4 className="text-sm font-bold text-white group-hover:text-amber-300 transition-colors break-words">
+                  {pr.exerciseName}
+                </h4>
+                <div className="text-2xl font-black text-white break-words">
+                  {pr.value} <span className="text-sm font-normal text-neutral-400">{weightUnit}</span>
+                </div>
+                {pr.previousValue && (
+                  <div className="text-[11px] font-bold text-emerald-400 break-words">
+                    +{Math.round((pr.value - pr.previousValue) * 10) / 10} {weightUnit} progreso
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
