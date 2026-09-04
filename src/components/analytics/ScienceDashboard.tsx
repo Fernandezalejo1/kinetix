@@ -34,6 +34,22 @@ import { MuscleGroup, Exercise } from "../../types";
 import { EXERCISES_DATABASE } from "../../data/exercisesData";
 import { MuscleRanksPanel } from "./MuscleRanksPanel";
 import { ManualPrForm, DeletePrButton } from "./ManualPrForm";
+
+/** Etiquetas cortas en español para los badges (el catálogo usa códigos en inglés). */
+const EQUIPMENT_ES: Record<string, string> = {
+  barbell: "Barra",
+  dumbbell: "Mancuerna",
+  cable: "Polea",
+  machine: "Máquina",
+  smith: "Smith",
+  bodyweight: "Corporal",
+};
+const CATEGORY_ES: Record<string, string> = {
+  push: "Empuje",
+  pull: "Tracción",
+  legs: "Piernas",
+  core: "Core",
+};
 import {
   ResponsiveContainer,
   AreaChart,
@@ -320,7 +336,7 @@ export const ScienceDashboard: React.FC = () => {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-neutral-800 text-neutral-300 border border-neutral-700 break-words">
-                        {prog.category.toUpperCase()} • {prog.equipment.toUpperCase()}
+                        {(CATEGORY_ES[prog.category] ?? prog.category).toUpperCase()} • {(EQUIPMENT_ES[prog.equipment] ?? prog.equipment).toUpperCase()}
                       </span>
                       {prog.isCompound && (
                         <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shrink-0">
