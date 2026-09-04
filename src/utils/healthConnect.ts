@@ -27,6 +27,8 @@ export interface StepsOfDay {
   source: "healthconnect" | "manual" | null;
   /** Desglose por fuente (solo Health Connect). */
   sources?: StepsSourceTotal[];
+  /** Fuente usada para el total (la más alta, anti-duplicado). */
+  countedSource?: string | null;
 }
 
 const READ_TYPES: HealthDataType[] = ["steps", "totalCalories"];
@@ -86,19 +88,23 @@ export async function requestHealthAuthorization(): Promise<boolean> {
 type AggSample = { value?: number | null; startDate?: string; endDate?: string; sourceName?: string | null };
 
 /**
- * Suma samples de un queryAggregated acotando al rango [rangeStartMs, rangeEndMs).
+ * Totaliza samples de un queryAggregated acotando al rango [rangeStartMs, rangeEndMs).
  * Se queda con los samples que se SOLAPAN con el rango (no exige que arranquen
  * dentro: los buckets diarios pueden alinearse a UTC y empezar antes de la
- * medianoche local; excluirlos daría 0). Además arma el desglose por fuente
- * para que el usuario vea QUÉ app aportó cada parte del total.
+ * medianoche local; excluirlos daría 0).
+ *
+ * ANTI-DUPLICADO: cada fuente (reloj, Samsung Health, teléfono) intenta contar
+ * el DÍA COMPLETO por su cuenta. Sumarlas duplicaría los mismos pasos físicos.
+ * Por eso el total del día es el MÁXIMO entre fuentes (la que más capturó es la
+ * más cercana a la realidad, igual que hacen Samsung Health y Google Fit), y se
+ * devuelve el desglose para transparencia.
  */
 function summarizeSamples(
   samples: AggSample[] | undefined,
   rangeStartMs: number,
   rangeEndMs: number
-): { steps: number; sources: StepsSourceTotal[] } {
+): { steps: number; sources: StepsSourceTotal[]; countedSource: string | null } {
   const bySource = new Map<string, number>();
-  let total = 0;
   for (const s of samples ?? []) {
     const v = s.value || 0;
     if (!(v > 0)) continue;
@@ -109,14 +115,14 @@ function summarizeSamples(
     if (Number.isFinite(sStart) && Number.isFinite(sEnd) && (sEnd <= rangeStartMs || sStart >= rangeEndMs)) {
       continue;
     }
-    total += v;
     const name = (s.sourceName || "Teléfono").trim() || "Teléfono";
     bySource.set(name, (bySource.get(name) ?? 0) + v);
   }
   const sources = [...bySource.entries()]
     .map(([name, steps]) => ({ name, steps: Math.round(steps) }))
     .sort((a, b) => b.steps - a.steps);
-  return { steps: Math.round(total), sources };
+  const best = sources[0];
+  return { steps: best ? best.steps : 0, sources, countedSource: best ? best.name : null };
 }
 
 /**
@@ -143,12 +149,12 @@ export async function readTodaySteps(): Promise<StepsOfDay> {
       bucket: "day",
       aggregation: "sum",
     });
-    const { steps, sources } = summarizeSamples(
+    const { steps, sources, countedSource } = summarizeSamples(
       res.samples as AggSample[] | undefined,
       start.getTime(),
       now.getTime()
     );
-    return { steps, asOf: new Date().toISOString(), source: "healthconnect", sources };
+    return { steps, asOf: new Date().toISOString(), source: "healthconnect", sources, countedSource };
   } catch {
     return { steps: 0, asOf: new Date().toISOString(), source: null };
   }
@@ -235,6 +241,8 @@ export interface StoredDay {
   asOf: string;
   /** Desglose por fuente de la última lectura de Health Connect. */
   sources?: StepsSourceTotal[];
+  /** Fuente usada para el total (la más alta, anti-duplicado). */
+  countedSource?: string | null;
   /** Targets BASE del día (sin ajuste). Se congelan al primer ajuste para
    *  que recalcular con más pasos revierta correctamente (idempotente). */
   base?: {

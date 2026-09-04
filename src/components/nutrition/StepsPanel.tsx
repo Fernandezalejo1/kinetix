@@ -66,10 +66,13 @@ export const StepsPanel: React.FC<StepsPanelProps> = ({ compact }) => {
     source: "healthconnect" | "manual" | null;
     asOf?: string;
     sources?: StepsSourceTotal[];
+    countedSource?: string | null;
   } | null>(
     () => {
       const d = readStoredDay();
-      return d ? { date: d.date, steps: d.steps, source: d.source, asOf: d.asOf, sources: d.sources } : null;
+      return d
+        ? { date: d.date, steps: d.steps, source: d.source, asOf: d.asOf, sources: d.sources, countedSource: d.countedSource }
+        : null;
     }
   );
   const [baseToday, setBaseToday] = useState<BaseTargets | null>(() => readStoredDay()?.base ?? null);
@@ -103,7 +106,11 @@ export const StepsPanel: React.FC<StepsPanelProps> = ({ compact }) => {
   useEffect(() => {
     const refresh = () => {
       const d = readStoredDay();
-      setToday(d ? { date: d.date, steps: d.steps, source: d.source, asOf: d.asOf, sources: d.sources } : null);
+      setToday(
+        d
+          ? { date: d.date, steps: d.steps, source: d.source, asOf: d.asOf, sources: d.sources, countedSource: d.countedSource }
+          : null
+      );
       setBaseToday(d?.base ?? null);
     };
     refresh();
@@ -113,7 +120,7 @@ export const StepsPanel: React.FC<StepsPanelProps> = ({ compact }) => {
   /** Guarda en el día lo leído de Health Connect (con desglose por fuente). */
   const storeHcDay = useCallback((d: StepsOfDay) => {
     const date = localDateKey();
-    setToday({ date, steps: d.steps, source: "healthconnect", asOf: d.asOf, sources: d.sources });
+    setToday({ date, steps: d.steps, source: "healthconnect", asOf: d.asOf, sources: d.sources, countedSource: d.countedSource });
     const stored = readStoredDay();
     saveStoredDay({
       date,
@@ -121,6 +128,7 @@ export const StepsPanel: React.FC<StepsPanelProps> = ({ compact }) => {
       source: "healthconnect",
       asOf: d.asOf,
       sources: d.sources,
+      countedSource: d.countedSource,
       base: stored?.base,
       adjustment: stored?.adjustment ?? null,
     });
@@ -224,7 +232,7 @@ export const StepsPanel: React.FC<StepsPanelProps> = ({ compact }) => {
       return;
     }
     const date = localDateKey();
-    setToday({ date, steps: n, source: "manual", asOf: new Date().toISOString(), sources: undefined });
+    setToday({ date, steps: n, source: "manual", asOf: new Date().toISOString(), sources: undefined, countedSource: undefined });
     const stored = readStoredDay();
     saveStoredDay({
       date,
@@ -291,11 +299,20 @@ export const StepsPanel: React.FC<StepsPanelProps> = ({ compact }) => {
               </p>
               {today?.source === "healthconnect" && today.sources && today.sources.length > 0 && (
                 <div className="mt-1.5 space-y-0.5">
-                  {today.sources.map((s) => (
-                    <p key={s.name} className="text-[10px] text-neutral-500 font-mono truncate">
-                      {s.name}: <span className="text-neutral-300">{s.steps.toLocaleString("es-AR")}</span>
-                    </p>
-                  ))}
+                  {today.sources.map((s) => {
+                    const counted = today.countedSource === s.name;
+                    return (
+                      <p key={s.name} className="text-[10px] text-neutral-500 font-mono truncate">
+                        {counted ? "✓ " : ""}{s.name}:{" "}
+                        <span className={counted ? "text-emerald-300 font-bold" : "text-neutral-300"}>
+                          {s.steps.toLocaleString("es-AR")}
+                        </span>
+                      </p>
+                    );
+                  })}
+                  {today.sources.length > 1 && (
+                    <p className="text-[9px] text-neutral-600">Se cuenta la fuente más alta (sin duplicar).</p>
+                  )}
                 </div>
               )}
             </div>
@@ -428,6 +445,7 @@ export const StepsPanel: React.FC<StepsPanelProps> = ({ compact }) => {
               <li>• Samsung Health: Ajustes → Health Connect → permitir Pasos.</li>
               <li>• Zepp: abrí la app para forzar la sincronización del reloj, y activá el enlace con Health Connect / Google Fit.</li>
               <li>• El reloj suele contar más porque registra sin el teléfono encima; al sincronizar se iguala.</li>
+              <li>• Con varias fuentes activas (reloj + Samsung + teléfono) se cuenta la más alta para no duplicar los mismos pasos.</li>
               <li>• Si necesitás el valor exacto del reloj ya: ingresalo manualmente abajo (vale hasta el próximo refresco).</li>
             </ul>
           </details>

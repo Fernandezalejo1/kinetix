@@ -78,6 +78,7 @@ export const StepsEngine: React.FC = () => {
         source,
         asOf: new Date().toISOString(),
         sources: prevStored?.sources,
+        countedSource: prevStored?.countedSource,
         base,
         adjustment: { caloriesDelta: adj.caloriesDelta, bandLabel: adj.bandLabel, message: adj.message },
       });
