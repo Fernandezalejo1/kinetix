@@ -331,8 +331,10 @@ export const ScienceDashboard: React.FC = () => {
                     : "bg-neutral-950/80 border-neutral-800 hover:border-neutral-700"
                 }`}
               >
-                {/* Top Info Header */}
-                <div className="flex items-start justify-between gap-3">
+                {/* Top Info Header: en móvil se apila (nombre a ancho completo
+                    arriba, píldora debajo) para que ningún nombre quede
+                    comprimido letra por letra. */}
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-neutral-800 text-neutral-300 border border-neutral-700 break-words">
@@ -348,7 +350,7 @@ export const ScienceDashboard: React.FC = () => {
                   </div>
 
                   <span
-                    className={`px-2.5 py-1 rounded-xl text-xs font-black shrink-0 border ${
+                    className={`px-2.5 py-1 rounded-xl text-xs font-black self-start sm:shrink-0 border text-center max-w-full ${
                       prog.action === "increase"
                         ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/30"
                         : prog.action === "micro_increase"
@@ -422,10 +424,10 @@ export const ScienceDashboard: React.FC = () => {
 
                 {/* RIR Gauge Visual Bar */}
                 <div className="space-y-1.5">
-                  <div className="flex justify-between items-center text-[11px]">
-                    <span className="font-bold text-neutral-300 flex items-center gap-1.5">
-                      <Gauge className="w-3.5 h-3.5 text-cyan-400" />
-                      Esfuerzo Percibido: <strong className="text-white font-mono">RIR {prog.averageRir} (RPE {prog.averageRpe})</strong>
+                  <div className="flex flex-wrap justify-between items-center gap-2 text-[11px]">
+                    <span className="font-bold text-neutral-300 flex items-center gap-1.5 min-w-0">
+                      <Gauge className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                      <span className="break-words">Esfuerzo Percibido: <strong className="text-white font-mono">RIR {prog.averageRir} (RPE {prog.averageRpe})</strong></span>
                     </span>
                     <span
                       className={`font-black text-[10px] uppercase tracking-wider px-2 py-0.5 rounded ${
