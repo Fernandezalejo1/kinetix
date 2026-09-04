@@ -36,6 +36,17 @@ export interface DeloadRecommendation {
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
+/** Umbrales parametrizables (defaults = comportamiento actual).
+ *  Permite endurecer/suavizar la detección por nivel sin tocar la lógica. */
+export const DELOAD_THRESHOLDS = {
+  rirLow: 1.2,
+  rirTrendDrop: -0.3,
+  hardRateHigh: 60,
+  failureRateHigh: 30,
+  weeklyOverloadRir: 1.5,
+  weeklyOverloadHardRate: 40,
+};
+
 function weekBounds(now: number, weeksBack: number): [number, number] {
   const start = now - (weeksBack + 1) * WEEK_MS;
   const end = now - weeksBack * WEEK_MS;
@@ -111,17 +122,17 @@ export function analyzeDeload(history: CompletedWorkout[], weeks: number = 4): D
   }
 
   // Señal 1: RIR bajo sostenido en la semana reciente (entreno cerca del fallo)
-  if (recent && recent.workouts > 0 && recent.averageRir < 1.2) {
+  if (recent && recent.workouts > 0 && recent.averageRir < DELOAD_THRESHOLDS.rirLow) {
     reasons.push(`RIR promedio muy bajo (${recent.averageRir}) la semana pasada`);
   }
 
   // Señal 2: el RIR está bajando semana a semana (acumulando fatiga)
-  if (recent && prev && prev.workouts > 0 && rirTrend < -0.3) {
+  if (recent && prev && prev.workouts > 0 && rirTrend < DELOAD_THRESHOLDS.rirTrendDrop) {
     reasons.push(`El RIR cayó ${Math.abs(rirTrend)} pts semana a semana (fatiga en aumento)`);
   }
 
   // Señal 3: alta tasa de fallos o fuera de reserva
-  if (recent && (recent.hardRate >= 60 || recent.failureRate >= 30)) {
+  if (recent && (recent.hardRate >= DELOAD_THRESHOLDS.hardRateHigh || recent.failureRate >= DELOAD_THRESHOLDS.failureRateHigh)) {
     reasons.push(
       `El ${recent.hardRate}% de las series recientes se hizo con RIR ≤ 1 (máxima intensidad)`
     );
@@ -138,7 +149,7 @@ export function analyzeDeload(history: CompletedWorkout[], weeks: number = 4): D
   let consecutiveOverloadWeeks = 0;
   for (const m of trainedWeeks) {
     const overloaded =
-      m.averageRir < 1.5 && m.hardRate >= 40;
+      m.averageRir < DELOAD_THRESHOLDS.weeklyOverloadRir && m.hardRate >= DELOAD_THRESHOLDS.weeklyOverloadHardRate;
     if (overloaded) consecutiveOverloadWeeks++;
     else break;
   }

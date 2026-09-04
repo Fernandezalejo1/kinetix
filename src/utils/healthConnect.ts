@@ -7,6 +7,7 @@
 
 import { Capacitor } from "@capacitor/core";
 import { Health, HealthDataType } from "@capgo/capacitor-health";
+import { localDateKey } from "./dateUtils";
 
 export interface StepsStatus {
   available: boolean;
@@ -200,7 +201,9 @@ interface StoredDay {
 }
 
 function todayKey(): string {
-  return new Date().toISOString().split("T")[0];
+  // Clave LOCAL (no UTC): coincide con el rango local que usamos al
+  // leer Health Connect y evita descartar datos cerca de la medianoche.
+  return localDateKey();
 }
 
 export function readStoredDay(): StoredDay | null {

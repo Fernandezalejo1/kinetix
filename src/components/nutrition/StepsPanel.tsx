@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useWorkout } from "../../context/WorkoutContext";
 import { useToast } from "../../context/ToastContext";
+import { localDateKey } from "../../utils/dateUtils";
 import { computeStepAdjustment, isLunchPassed, lunchAlreadyLogged, stepBadge, BaseTargets } from "../../utils/stepsRules";
 import {
   getHealthStatus,
@@ -54,7 +55,7 @@ export const StepsPanel: React.FC<StepsPanelProps> = ({ compact }) => {
   const [baseToday, setBaseToday] = useState<BaseTargets | null>(() => readStoredDay()?.base ?? null);
   const [refreshing, setRefreshing] = useState(false);
 
-  const todayKey = new Date().toISOString().split("T")[0];
+  const todayKey = localDateKey();
   const dayIsToday = today?.date === todayKey;
 
   // Base targets del día: usamos el base CONGELADO (del primer ajuste) si existe;
@@ -112,7 +113,7 @@ export const StepsPanel: React.FC<StepsPanelProps> = ({ compact }) => {
         saveStepsConfig(nextCfg);
         const d = await readTodaySteps();
         if (d.source === "healthconnect") {
-          const date = new Date().toISOString().split("T")[0];
+          const date = localDateKey();
           setToday({ date, steps: d.steps, source: "healthconnect" });
           const stored = readStoredDay();
           saveStoredDay({
@@ -143,7 +144,7 @@ export const StepsPanel: React.FC<StepsPanelProps> = ({ compact }) => {
       await refreshStatus();
       const d = await readTodaySteps();
       if (d.source === "healthconnect") {
-        const date = new Date().toISOString().split("T")[0];
+        const date = localDateKey();
         setToday({ date, steps: d.steps, source: "healthconnect" });
         const stored = readStoredDay();
         saveStoredDay({
@@ -178,7 +179,7 @@ export const StepsPanel: React.FC<StepsPanelProps> = ({ compact }) => {
       showToast("Ingresá un número válido de pasos.", "error");
       return;
     }
-    const date = new Date().toISOString().split("T")[0];
+    const date = localDateKey();
     setToday({ date, steps: n, source: "manual" });
     const stored = readStoredDay();
     saveStoredDay({

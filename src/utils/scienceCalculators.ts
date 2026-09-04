@@ -383,11 +383,20 @@ export function calculateAutoProgression(
   const currentWeight = Math.round((totalWeight / workingSets.length) * 10) / 10;
   const avgReps = Math.round((workingSets.reduce((sum, s) => sum + s.reps, 0) / workingSets.length) * 10) / 10;
 
-  // Compute average RIR (convert RPE to RIR if RIR is missing)
+  // Compute average RIR (convert RPE to RIR if RIR is missing).
+  // Si ninguna serie trae RIR/RPE real, NO inventamos RIR=2: se marca
+  // rirMissing para que la recomendación pida el dato en vez de progresar a ciegas.
+  let rirMissing = true;
   const rirValues = workingSets.map((s) => {
-    if (s.rir !== undefined) return s.rir;
-    if (s.rpe !== undefined) return Math.max(0, 10 - s.rpe);
-    return 2; // default
+    if (s.rir !== undefined) {
+      rirMissing = false;
+      return s.rir;
+    }
+    if (s.rpe !== undefined) {
+      rirMissing = false;
+      return Math.max(0, 10 - s.rpe);
+    }
+    return 2; // fallback solo para el promedio provisorio
   });
   const avgRir = Math.round((rirValues.reduce((sum, r) => sum + r, 0) / rirValues.length) * 10) / 10;
   const avgRpe = Math.round((10 - avgRir) * 10) / 10;
@@ -494,6 +503,20 @@ export function calculateAutoProgression(
     targetRepsNext = `${Math.round(avgReps + 2)} reps`;
     targetRirNext = 2;
     confidenceScore = 88;
+  }
+
+  // Sin RIR/RPE real en ninguna serie: no se progresa a ciegas.
+  if (rirMissing) {
+    action = "maintain";
+    actionLabel = "Registrar RIR primero";
+    deltaWeight = 0;
+    targetRirNext = 2;
+    scientificRationale =
+      "Sin RIR registrado en las series no se puede estimar la reserva real: se mantiene la carga y se pide cargar el RIR (0-4) serie por serie para habilitar la progresión.";
+    confidenceScore = 60;
+    progressionType = "Dato insuficiente";
+    fatigueStatus = "optima";
+    nextSessionTip = "Cargá el RIR de cada serie al completar para habilitar la sobrecarga automática.";
   }
 
   const recommendedWeight = Math.max(0, Math.round((currentWeight + deltaWeight) * 10) / 10);

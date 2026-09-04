@@ -75,6 +75,8 @@ interface WorkoutContextType {
   setNutritionProfile: (profile: NutritionProfile) => void;
   addWater: (ml: number) => void;
   removeWater: (ml: number) => void;
+  addElectrolyte: (nutrient: "sodium" | "potassium" | "magnesium", mg: number) => void;
+  removeElectrolyte: (nutrient: "sodium" | "potassium" | "magnesium", mg: number) => void;
   saveCustomRoutine: (routine: CustomRoutine) => void;
   deleteCustomRoutine: (routineId: string) => void;
   deleteWorkoutHistory: (workoutId: string) => void;
@@ -213,6 +215,9 @@ const INITIAL_NUTRITION: NutritionLog = {
   carbsTarget: 25,
   fatsTarget: 180,
   waterMl: 0,
+  sodiumMg: 0,
+  potassiumMg: 0,
+  magnesiumMg: 0,
   meals: [],
 };
 
@@ -299,6 +304,38 @@ const safeParse = <T,>(key: string, fallback: T): T => {
   }
 };
 
+/** Limita un historial en localStorage para no agotar la cuota (~5 MB).
+ *  Mantiene las entradas más recientes (los arrays se prependen). */
+function capForStorage<T>(arr: T[], max: number): T[] {
+  if (!Array.isArray(arr) || arr.length <= max) return arr;
+  return arr.slice(0, max);
+}
+
+// Migración silenciosa: recorta historiales ya existentes que superen el tope.
+(() => {
+  try {
+    for (const [key, max] of [
+      ["kinetix_workout_history", 400],
+      ["kinetix_exercise_history", 2000],
+      ["kinetix_body_metrics", 1000],
+    ] as const) {
+      const raw = localStorage.getItem(key);
+      if (!raw) continue;
+      let arr: unknown;
+      try {
+        arr = JSON.parse(raw);
+      } catch {
+        continue;
+      }
+      if (Array.isArray(arr) && arr.length > max) {
+        localStorage.setItem(key, JSON.stringify(arr.slice(0, max)));
+      }
+    }
+  } catch {
+    /* ignorar */
+  }
+})();
+
 export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [activeSession, setActiveSession] = useState<ActiveWorkoutSession | null>(() => {
     return safeParse<ActiveWorkoutSession | null>("kinetix_active_workout", null);
@@ -373,7 +410,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
   }, [activeSession]);
 
   useEffect(() => {
-    localStorage.setItem("kinetix_workout_history", JSON.stringify(workoutHistory));
+    localStorage.setItem("kinetix_workout_history", JSON.stringify(capForStorage(workoutHistory, 400)));
   }, [workoutHistory]);
 
   useEffect(() => {
@@ -381,7 +418,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
   }, [nutritionLog]);
 
   useEffect(() => {
-    localStorage.setItem("kinetix_body_metrics", JSON.stringify(bodyMetrics));
+    localStorage.setItem("kinetix_body_metrics", JSON.stringify(capForStorage(bodyMetrics, 1000)));
   }, [bodyMetrics]);
 
   useEffect(() => {
@@ -397,7 +434,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
   }, [personalRecords]);
 
   useEffect(() => {
-    localStorage.setItem("kinetix_exercise_history", JSON.stringify(exerciseHistory));
+    localStorage.setItem("kinetix_exercise_history", JSON.stringify(capForStorage(exerciseHistory, 2000)));
   }, [exerciseHistory]);
 
   useEffect(() => {
@@ -1012,6 +1049,35 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
     [ensureTodayLogic]
   );
 
+  const electrolyteField = (nutrient: "sodium" | "potassium" | "magnesium") =>
+    nutrient === "sodium" ? "sodiumMg" : nutrient === "potassium" ? "potassiumMg" : "magnesiumMg";
+
+  const addElectrolyte = useCallback(
+    (nutrient: "sodium" | "potassium" | "magnesium", mg: number) => {
+      const field = electrolyteField(nutrient);
+      setNutritionLog((prev) => {
+        const { today, targets } = ensureTodayLogic();
+        const base = prev.date === today ? prev : { ...INITIAL_NUTRITION, ...targets, date: today, meals: [], waterMl: 0 };
+        const current = (base as unknown as Record<string, number>)[field] ?? 0;
+        return { ...base, [field]: Math.min(20000, current + mg) };
+      });
+    },
+    [ensureTodayLogic]
+  );
+
+  const removeElectrolyte = useCallback(
+    (nutrient: "sodium" | "potassium" | "magnesium", mg: number) => {
+      const field = electrolyteField(nutrient);
+      setNutritionLog((prev) => {
+        const { today, targets } = ensureTodayLogic();
+        const base = prev.date === today ? prev : { ...INITIAL_NUTRITION, ...targets, date: today, meals: [], waterMl: 0 };
+        const current = (base as unknown as Record<string, number>)[field] ?? 0;
+        return { ...base, [field]: Math.max(0, current - mg) };
+      });
+    },
+    [ensureTodayLogic]
+  );
+
   const saveCustomRoutine = useCallback((routine: CustomRoutine) => {
     setCustomRoutines((prev) => {
       const existing = prev.findIndex((r) => r.id === routine.id);
@@ -1114,6 +1180,8 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
         setNutritionProfile,
         addWater,
         removeWater,
+        addElectrolyte,
+        removeElectrolyte,
         saveCustomRoutine,
         deleteCustomRoutine,
         deleteWorkoutHistory,

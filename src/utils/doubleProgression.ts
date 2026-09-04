@@ -136,10 +136,17 @@ export function analyzeDoubleProgression(wEx: WorkoutExercise): DoubleProgressio
   base.rirMet = rirMet;
 
   if (topReached && rirMet) {
-    const suggestedWeight = roundWeight(currentWeight + deltaWeight);
+    // Sobrecarga por % del RM estimado (Epley) con piso fijo: ~2.5% del e1RM,
+    // nunca menos que el salto clásico (2.5 kg compuestos / 1.25 kg aislamiento).
+    // Así un press de 20 kg no salta 6% y una sentadilla de 200 kg no se estanca en 1.25%.
+    const e1rmEst = currentWeight > 0 ? currentWeight * (1 + maxReps / 30) : 0;
+    const pctDelta = e1rmEst > 0 ? Math.round(e1rmEst * 0.025 * 4) / 4 : deltaWeight;
+    const smartDelta = Math.max(deltaWeight, pctDelta);
+    const suggestedWeight = roundWeight(currentWeight + smartDelta);
     base.status = "target_reached";
     base.suggestedWeight = suggestedWeight;
-    base.message = `¡Tope del rango logrado (${maxReps}/${range.max} reps en ${setsAtTop}/${completedSets} series) a RIR ${avgRir} (objetivo ${targetRir})! Sobrecargá la próxima sesión a ${suggestedWeight} kg (+${deltaWeight}) en ${range.min}–${range.max} reps.`;
+    base.deltaWeight = smartDelta;
+    base.message = `¡Tope del rango logrado (${maxReps}/${range.max} reps en ${setsAtTop}/${completedSets} series) a RIR ${avgRir} (objetivo ${targetRir})! Sobrecargá la próxima sesión a ${suggestedWeight} kg (+${smartDelta}) en ${range.min}–${range.max} reps.`;
   } else if (setsAtTop >= 1 && !rirMet) {
     base.status = "in_progress";
     base.message = avgRir === null

@@ -112,14 +112,24 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
     showToast("Backup exportado correctamente", "success");
   };
 
+  const IMPORT_VERSION = 1;
+
   const importFile = (file: File) => {
     const reader = new FileReader();
     reader.onload = () => {
       try {
         const parsed = JSON.parse(String(reader.result));
-        const data = parsed?.data;
-        if (!data || typeof data !== "object") {
+        // Validación de esquema: debe ser un backup real de KINETIX.
+        if (!parsed || parsed.app !== "KINETIX" || parsed.version !== IMPORT_VERSION) {
           showToast("El archivo no es un backup válido de KINETIX", "error");
+          return;
+        }
+        const data = parsed?.data;
+        if (!data || typeof data !== "object" || Array.isArray(data)) {
+          showToast("El archivo no es un backup válido de KINETIX", "error");
+          return;
+        }
+        if (!window.confirm("Se reemplazarán TODOS tus datos actuales con los del backup. ¿Continuar?")) {
           return;
         }
         // Clear all previous kinetix keys, then write new ones
@@ -133,7 +143,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
         keysToRemove.forEach((k) => localStorage.removeItem(k));
         Object.entries(data).forEach(([key, value]) => {
           if (key.startsWith("kinetix_")) {
-            localStorage.setItem(key, JSON.stringify(value));
+            // Solo datos JSON-serializables; evita inyectar basura.
+            try {
+              localStorage.setItem(key, JSON.stringify(value));
+            } catch {
+              /* skip entries that can't be serialized */
+            }
           }
         });
         showToast("Datos restaurados. Recargando…", "success");
@@ -198,6 +213,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
             <p className="text-[11px] text-neutral-400 leading-relaxed">
               Tu historial de entrenamiento, PRs, nutrición y métricas se guardan en este dispositivo.
               Exportalos para respaldarlos o transferirlos a otro dispositivo.
+            </p>
+            <p className="text-[10px] text-amber-400/90 leading-relaxed flex items-start gap-1.5">
+              <ShieldAlert className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+              El backup contiene datos personales (peso, medidas, historial). Guardalo en un lugar seguro y no lo compartas.
             </p>
             <div className="grid grid-cols-2 gap-2">
               <button

@@ -302,6 +302,10 @@ export interface NutritionLog {
   proteinTarget: number;
   carbsTarget: number;
   fatsTarget: number;
+  /** Electrolitos diarios (clave en keto). En miligramos. */
+  sodiumMg?: number;
+  potassiumMg?: number;
+  magnesiumMg?: number;
 }
 
 export interface BodyMetricEntry {

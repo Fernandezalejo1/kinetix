@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { localDateKey } from "../../utils/dateUtils";
 import { computeStepAdjustment, isLunchPassed, lunchAlreadyLogged, BaseTargets } from "../../utils/stepsRules";
 import {
   isNativePlatform,
@@ -30,7 +31,7 @@ export const StepsEngine: React.FC = () => {
   ctxRef.current = { nutritionLog, nutritionProfile, nutritionGoal, bodyMetrics, updateMacroTargets };
 
   useEffect(() => {
-    const todayKey = new Date().toISOString().split("T")[0];
+    const todayKey = localDateKey();
 
     const apply = (steps: number, source: "healthconnect" | "manual" | null) => {
       const cfg = readStepsConfig();

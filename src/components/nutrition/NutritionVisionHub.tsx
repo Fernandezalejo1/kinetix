@@ -22,6 +22,7 @@ import { ActivityLevel, MealItem, NutritionGoal, NutritionProfile } from "../../
 import { MealSchedulerPanel } from "./MealSchedulerPanel";
 import { StepsPanel } from "./StepsPanel";
 import { WaterTracker } from "./WaterTracker";
+import { ElectrolytesTracker } from "./ElectrolytesTracker";
 import { SupplementGuide } from "./SupplementGuide";
 import {
   NUTRITION_GOALS,
@@ -494,6 +495,8 @@ export const NutritionVisionHub: React.FC = () => {
       </div>
 
       <WaterTracker />
+
+      <ElectrolytesTracker />
 
       {/* Edit targets modal */}
       {editingTargets && (

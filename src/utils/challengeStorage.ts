@@ -2,6 +2,8 @@
 // KINETIX — Reto 21 Días: persistencia + lógica.
 // =============================================================
 
+import { localDateKey } from "./dateUtils";
+
 const CHALLENGE_KEY = "kinetix_challenge";
 
 export type Rank = "bronze" | "gold" | "master" | "challenger";
@@ -48,7 +50,9 @@ export interface ChallengeState {
 }
 
 function dateKey(d: Date): string {
-  return d.toISOString().split("T")[0];
+  // Día local (YYYY-MM-DD) para que coincida con la lectura local de
+  // Health Connect y con el calendario de la UI.
+  return localDateKey(d);
 }
 
 function defaultState(): ChallengeState {

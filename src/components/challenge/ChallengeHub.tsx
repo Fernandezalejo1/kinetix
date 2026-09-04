@@ -20,6 +20,7 @@ import {
   type ChallengeState,
 } from "../../utils/challengeStorage";
 import { readTodaySteps, readStepsForDate, isNativePlatform, getHealthStatus, requestHealthAuthorization } from "../../utils/healthConnect";
+import { localDateKey } from "../../utils/dateUtils";
 
 // ─── Rank Emblem Image ──────────────────────────────────────────
 // Uses the official League of Legends rank emblems bundled locally.
@@ -174,11 +175,11 @@ export const ChallengeHub: React.FC = () => {
   const calendarDays = useMemo(() => {
     const days: { day: number; completed: boolean; isToday: boolean; isFuture: boolean }[] = [];
     const today = new Date();
-    const todayKey = today.toISOString().split("T")[0];
+    const todayKey = localDateKey(today);
     for (let i = 1; i <= CHALLENGE_DAYS; i++) {
       const dayDate = new Date(challenge.startDate || today);
       dayDate.setDate(dayDate.getDate() + i - 1);
-      const dayKey = dayDate.toISOString().split("T")[0];
+      const dayKey = localDateKey(dayDate);
       days.push({
         day: i,
         completed: challenge.completedDates.includes(dayKey),

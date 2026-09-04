@@ -32,6 +32,7 @@ import {
 } from "../../utils/scienceCalculators";
 import { MuscleGroup, Exercise } from "../../types";
 import { EXERCISES_DATABASE } from "../../data/exercisesData";
+import { MuscleRanksPanel } from "./MuscleRanksPanel";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -839,6 +840,9 @@ export const ScienceDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Section: Rangos por Músculo (gamificación LoL) */}
+      <MuscleRanksPanel />
 
       {/* Section 3: Personal Records Wall */}
       <div className="p-6 rounded-3xl bg-neutral-900 border border-neutral-800 shadow-xl space-y-4">
