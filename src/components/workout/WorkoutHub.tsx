@@ -17,7 +17,8 @@ import {
   Target,
   Trash2,
   X,
-  Zap
+  Zap,
+  AlertTriangle
 } from "lucide-react";
 import { useWorkout } from "../../context/WorkoutContext";
 import { useToast } from "../../context/ToastContext";
@@ -36,6 +37,8 @@ import {
   getDeloadWeekState,
   setDeloadWeekState,
 } from "../../utils/deloadDetection";
+import { getUndoneExercisesFromSession } from "../../utils/pendingExercises";
+import { localDateKey } from "../../utils/dateUtils";
 
 interface WorkoutHubProps {
   onGoToPrograms: () => void;
@@ -56,6 +59,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
     clearWorkoutHistory,
     clearGhostSessions,
     getExerciseHistory,
+    carryOverPendingExercise,
     weightUnit,
     nutritionLog,
   } = useWorkout();
@@ -143,6 +147,27 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
     };
   }, [workoutHistory, nutritionLog]);
 
+  // Última sesión (no de hoy) con ejercicios sin completar, para poder
+  // retomarlos en el día actual ("sumar a hoy").
+  const pendingCarryover = useMemo(() => {
+    const today = localDateKey();
+    const nonToday = workoutHistory
+      .filter((w) => localDateKey(new Date(w.date)) !== today)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    for (const session of nonToday) {
+      const undone = getUndoneExercisesFromSession(session);
+      if (undone.length > 0) {
+        return { session, undone };
+      }
+    }
+    return null;
+  }, [workoutHistory]);
+
+  const handleCarryOver = (exercise: any, pending?: any) => {
+    carryOverPendingExercise(exercise, pending);
+    showToast(`${exercise?.nameEs || "Ejercicio"} sumado a la sesión de hoy`, "success");
+  };
+
   // IDEA 2: Deload automático por acumulación real de sobrecarga.
   const deload = useMemo(() => analyzeDeload(workoutHistory, 4), [workoutHistory]);
   const deloadRoutine = useMemo<Routine | null>(
@@ -221,6 +246,64 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Pendientes de la última sesión (ejercicios no completados) */}
+      {pendingCarryover && pendingCarryover.undone.length > 0 && (
+        <div className="p-5 rounded-3xl bg-gradient-to-br from-amber-500/10 via-neutral-900 to-neutral-950 border border-amber-500/40 space-y-3">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="p-3 rounded-2xl bg-amber-500/15 text-amber-300 border border-amber-500/30 shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    NO COMPLETO
+                  </span>
+                  <span className="text-[10px] text-neutral-400 font-bold">
+                    {new Date(pendingCarryover.session.date).toLocaleDateString("es-ES", { day: "numeric", month: "short" })}
+                  </span>
+                </div>
+                <h3 className="text-lg font-black text-white mt-2">Ejercicios sin terminar</h3>
+                <p className="text-xs text-neutral-300 leading-relaxed mt-1">
+                  Dejaste series incompletas en "{pendingCarryover.session.routineName}". Sumá los que te faltaron a la sesión de hoy.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            {pendingCarryover.undone.map(({ wEx, incompleteSets }) => (
+              <div
+                key={wEx.id}
+                className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-neutral-950 border border-amber-500/20"
+              >
+                <div className="min-w-0 flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center shrink-0">
+                    <Clock className="w-4 h-4 text-amber-300" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-white truncate">
+                      {wEx.exercise?.nameEs || wEx.exerciseId}
+                    </p>
+                    <p className="text-[11px] text-neutral-400">
+                      {incompleteSets} serie{incompleteSets > 1 ? "s" : ""} sin completar
+                      {wEx.targetSets ? ` · plan ${wEx.targetSets}` : ""}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleCarryOver(wEx.exercise, wEx)}
+                  className="px-3.5 py-2.5 bg-amber-600 hover:bg-amber-500 text-white text-[11px] font-black rounded-xl transition-colors shadow-lg shadow-amber-600/20 flex items-center gap-1.5 shrink-0 press-scale"
+                >
+                  <Plus className="w-4 h-4" />
+                  Sumar a hoy
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* IDEA 2: Deload automático por acumulación real */}
       {deloadWeek.active ? (
@@ -553,14 +636,21 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
           </div>
         ) : (
           <div className="space-y-3">
-            {workoutHistory.map((log) => (
+            {workoutHistory.map((log) => {
+              const undone = getUndoneExercisesFromSession(log);
+              const hasPending = undone.length > 0;
+              return (
               <div
                 key={log.id}
                 onClick={() => setSelectedSession(log)}
                 className="p-3.5 sm:p-5 rounded-2xl bg-neutral-900 border border-neutral-800 hover:border-cyan-500/30 hover:bg-neutral-800/50 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 cursor-pointer press-scale"
               >
                 <div className="flex items-start gap-3 sm:gap-4 min-w-0">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 flex items-center justify-center font-black text-sm shrink-0">
+                  <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center font-black text-sm shrink-0 ${
+                    hasPending
+                      ? "bg-amber-500/10 text-amber-400 border border-amber-500/25"
+                      : "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"
+                  }`}>
                     <Dumbbell className="w-5 h-5 sm:w-6 sm:h-6" />
                   </div>
                   <div className="min-w-0">
@@ -588,6 +678,12 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0 pl-[52px] sm:pl-0">
+                  {hasPending && (
+                    <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/25 px-2.5 py-1 rounded-xl text-amber-300 text-[11px] font-bold">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      {undone.reduce((acc, u) => acc + u.incompleteSets, 0)} sin completar
+                    </div>
+                  )}
                   {log.prCount > 0 && (
                     <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-xl text-amber-300 text-[11px] font-bold">
                       <Trophy className="w-3.5 h-3.5" />
@@ -603,7 +699,8 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
                   </button>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -667,11 +764,22 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
             <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-4 overscroll-contain scrollbar-thin">
               {selectedSession.exercises?.map((wEx: any, idx: number) => {
                 const isTime = isTimeBased(wEx.exercise, wEx.targetReps);
+                const incompleteSets = wEx.sets?.filter(
+                  (s: any) => !s.completed && s.type !== "warmup" && s.type !== "cardio"
+                ).length ?? 0;
                 return (
                 <div key={wEx.id || idx} className="rounded-2xl bg-neutral-950 border border-neutral-800 overflow-hidden">
-                  <div className="px-4 py-3 bg-neutral-900/50 border-b border-neutral-800 flex items-center justify-between cursor-pointer hover:bg-neutral-800/50 transition-colors" onClick={() => wEx.exerciseId && setSelectedExHistory({ id: wEx.exerciseId, name: wEx.exercise?.nameEs || wEx.exerciseId })}>
+                  <div className={`px-4 py-3 border-b flex items-center justify-between cursor-pointer hover:bg-neutral-800/50 transition-colors ${
+                    incompleteSets > 0
+                      ? "bg-amber-500/5 border-amber-500/20"
+                      : "bg-neutral-900/50 border-neutral-800"
+                  }`} onClick={() => wEx.exerciseId && setSelectedExHistory({ id: wEx.exerciseId, name: wEx.exercise?.nameEs || wEx.exerciseId })}>
                     <div className="flex items-center gap-3">
-                      <span className="w-7 h-7 rounded-lg bg-cyan-500/10 text-cyan-400 text-xs font-black flex items-center justify-center border border-cyan-500/20">
+                      <span className={`w-7 h-7 rounded-lg text-xs font-black flex items-center justify-center border ${
+                        incompleteSets > 0
+                          ? "bg-amber-500/15 text-amber-300 border-amber-500/30"
+                          : "bg-cyan-500/10 text-cyan-400 border-cyan-500/20"
+                      }`}>
                         {idx + 1}
                       </span>
                       <div>
@@ -679,6 +787,11 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
                         <p className="text-[10px] text-neutral-500">{wEx.exercise?.equipment || ''} • {wEx.exercise?.category || ''}</p>
                       </div>
                     </div>
+                    {incompleteSets > 0 && (
+                      <span className="ml-3 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-300 border border-amber-500/30 whitespace-nowrap">
+                        NO COMPLETO · {incompleteSets} serie{incompleteSets > 1 ? "s" : ""}
+                      </span>
+                    )}
                   </div>
                   <div className="relative">
                     <div className="absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-neutral-950 to-transparent pointer-events-none z-10 hidden sm:block" />

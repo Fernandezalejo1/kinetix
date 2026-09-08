@@ -85,6 +85,7 @@ interface WorkoutContextType {
   clearGhostSessions: () => void;
   getExerciseHistory: (exerciseId: string) => ExerciseHistoryEntry[];
   getNextWeight: (exerciseId: string) => number;
+  carryOverPendingExercise: (exercise: Exercise, pending?: WorkoutExercise | null) => void;
   addPersonalRecord: (pr: Omit<PersonalRecord, "id">) => void;
   deletePersonalRecord: (prId: string) => void;
   logImportedSession: (
@@ -606,6 +607,76 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
       };
     });
   }, [exerciseHistory]);
+
+  /**
+   * Lleva un ejercicio que quedó sin completar en una sesión previa hacia la
+   * sesión activa actual. Si no hay sesión activa, crea una nueva ("Retomando
+   * pendientes") con ese ejercicio listo para completar. Reusa la configuración
+   * objetivo original (targetSets / targetReps / targetRir / targetTempo).
+   */
+  const carryOverPendingExercise = useCallback(
+    (exercise: Exercise, pending?: WorkoutExercise | null) => {
+      const lastHistory = exerciseHistory
+        .filter((h) => h.exerciseId === exercise.id)
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+      const prevWeight = lastHistory
+        ? lastHistory.weight
+        : exercise.category === "legs"
+        ? 80
+        : 40;
+      const prevReps = lastHistory
+        ? Math.round(lastHistory.reps.reduce((a, b) => a + b, 0) / lastHistory.reps.length)
+        : pending?.targetReps
+        ? parseInt(pending.targetReps.split("-")[0], 10) || 10
+        : 10;
+      const targetSets = pending?.targetSets ?? 3;
+      const targetReps = pending?.targetReps ?? undefined;
+      const targetRir = pending?.targetRir ?? exercise.defaultRir;
+      const targetTempo = pending?.targetTempo || exercise.defaultTempo;
+      const targetRest = pending?.targetRestSeconds ?? 120;
+
+      const initialSets: WorkoutSet[] = Array.from({ length: targetSets }).map((_, sIdx) => ({
+        id: `set-${Date.now()}-${sIdx}`,
+        setNumber: sIdx + 1,
+        type: "normal",
+        weight: prevWeight,
+        reps: prevReps,
+        rir: targetRir,
+        tempo: targetTempo,
+        completed: false,
+        previousWeight: prevWeight,
+        previousReps: prevReps,
+        previousRir: 1,
+      }));
+
+      const newWEx: WorkoutExercise = {
+        id: `wex-${Date.now()}`,
+        exerciseId: exercise.id,
+        exercise,
+        targetRestSeconds: targetRest,
+        targetSets,
+        targetReps,
+        targetRir,
+        targetTempo,
+        sets: initialSets,
+      };
+
+      if (!activeSession) {
+        setActiveSession({
+          id: `session-${Date.now()}`,
+          routineName: "Retomando pendientes",
+          startTime: Date.now(),
+          exercises: [newWEx],
+        });
+      } else if (!activeSession.exercises.some((wEx) => wEx.exerciseId === exercise.id)) {
+        setActiveSession((prev) =>
+          prev ? { ...prev, exercises: [...prev.exercises, newWEx] } : prev
+        );
+      }
+      setIsWorkoutModalOpen(true);
+    },
+    [exerciseHistory, activeSession]
+  );
 
   const removeExerciseFromActiveWorkout = useCallback((workoutExerciseId: string) => {
     setActiveSession((prev) => {
@@ -1222,6 +1293,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
         clearGhostSessions,
         getExerciseHistory,
         getNextWeight,
+        carryOverPendingExercise,
         addPersonalRecord,
         deletePersonalRecord,
         logImportedSession,
