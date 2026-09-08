@@ -316,3 +316,196 @@ export function subscribeStepsChanged(cb: () => void): () => void {
     return () => {};
   }
 }
+
+// -------------------------------------------------------------
+// Sueño + Peso (Health Connect) — sincronización del Plan de Fases.
+// Se leen las últimas noches dormidas y la última pesada de la
+// balanza para alimentar el Goal Hub. Las reglas de fusión (no
+// pisar datos manuales) viven en HealthSyncEngine.
+// -------------------------------------------------------------
+
+export interface SleepSourceDay {
+  date: string; // YYYY-MM-DD (día local en que se durmió la mayor parte)
+  bed: string; // "23:30"
+  wake: string; // "07:30"
+}
+
+export interface WeightSample {
+  date: string; // YYYY-MM-DD
+  weightKg: number;
+}
+
+const SLEEP_WEIGHT_EVENT = "kinetix-health-sync-requested";
+
+/** Dispara una sincronización bajo demanda (ej. tras conectar Health Connect). */
+export function requestHealthSyncNow(): void {
+  try {
+    window.dispatchEvent(new Event(SLEEP_WEIGHT_EVENT));
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Se suscribe al evento de sincronización bajo demanda. */
+export function subscribeHealthSyncRequested(cb: () => void): () => void {
+  try {
+    window.addEventListener(SLEEP_WEIGHT_EVENT, cb);
+    return () => window.removeEventListener(SLEEP_WEIGHT_EVENT, cb);
+  } catch {
+    return () => {};
+  }
+}
+
+const SLEEP_WEIGHT_TYPES: HealthDataType[] = ["sleep", "weight"];
+
+/**
+ * Permisos de lectura de sueño y peso. Devuelve el estado por tipo
+ * (Health Connect puede autorizar uno y no el otro).
+ */
+export async function hasSleepWeightPermission(): Promise<{
+  sleep: boolean;
+  weight: boolean;
+}> {
+  if (!isNativePlatform()) return { sleep: false, weight: false };
+  try {
+    const auth = await Health.checkAuthorization({ read: SLEEP_WEIGHT_TYPES });
+    const granted = new Set(auth.readAuthorized);
+    return { sleep: granted.has("sleep"), weight: granted.has("weight") };
+  } catch {
+    return { sleep: false, weight: false };
+  }
+}
+
+/**
+ * Lee las noches de sueño de los últimos `days` días y las agrupa por
+ * día: bed = inicio de la sesión de sueño, wake = fin. Si un día tiene
+ * varios segmentos, toma el más temprano como bed y el más tardío como
+ * wake. Devuelve solo días con datos válidos (2–14 h de cama).
+ */
+export async function readRecentSleep(days: number): Promise<SleepSourceDay[]> {
+  if (!isNativePlatform()) return [];
+  try {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - days, 0, 0, 0, 0);
+    const res = await Health.readSamples({
+      dataType: "sleep",
+      startDate: start.toISOString(),
+      endDate: now.toISOString(),
+      limit: 200,
+      ascending: true,
+    });
+    const byDay = new Map<string, { earliest: number; latest: number }>();
+    for (const s of res.samples ?? []) {
+      const sStart = Date.parse(s.startDate);
+      const sEnd = Date.parse(s.endDate);
+      if (!Number.isFinite(sStart) || !Number.isFinite(sEnd)) continue;
+      // El día local del segmento: el de su inicio (una noche cruza el dia siguiente
+      // como mucho hasta el despertar, que debe caer en el mismo día del "bed" real).
+      const d = new Date(sStart);
+      const key = localDateKey(d);
+      const cur = byDay.get(key) ?? { earliest: Infinity, latest: -Infinity };
+      cur.earliest = Math.min(cur.earliest, sStart);
+      cur.latest = Math.max(cur.latest, sEnd);
+      byDay.set(key, cur);
+    }
+    return [...byDay.entries()]
+      .map(([date, { earliest, latest }]) => {
+        const bed = new Date(earliest);
+        const wake = new Date(latest);
+        const pad = (n: number) => `${n}`.padStart(2, "0");
+        const bedT = `${pad(bed.getHours())}:${pad(bed.getMinutes())}`;
+        const wakeT = `${pad(wake.getHours())}:${pad(wake.getMinutes())}`;
+        return { date, bed: bedT, wake: wakeT };
+      })
+      .filter((s) => {
+        const h = sleepHoursOf(s.bed, s.wake);
+        return h >= 2 && h <= 14;
+      });
+  } catch {
+    return [];
+  }
+}
+
+/** Horas de sueño para validar (copia local para no acoplar import circular). */
+function sleepHoursOf(bed: string, wake: string): number {
+  const [bh, bm = 0] = bed.split(":").map(Number);
+  const [wh, wm = 0] = wake.split(":").map(Number);
+  if (Number.isNaN(bh) || Number.isNaN(wh)) return 0;
+  let mins = wh * 60 + wm - (bh * 60 + bm);
+  if (mins < 0) mins += 24 * 60;
+  return Math.round((mins / 60) * 10) / 10;
+}
+
+/**
+ * Última pesada de la balanza en los últimos `days` días (por hora de
+ * registro, la más reciente). Devuelve null si no hay ninguna.
+ */
+export async function readLatestWeight(days: number): Promise<WeightSample | null> {
+  if (!isNativePlatform()) return null;
+  try {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - days, 0, 0, 0, 0);
+    const res = await Health.readSamples({
+      dataType: "weight",
+      startDate: start.toISOString(),
+      endDate: now.toISOString(),
+      limit: 50,
+      ascending: true,
+    });
+    const samples = res.samples ?? [];
+    if (samples.length === 0) return null;
+    const best = samples[samples.length - 1];
+    const d = new Date(best.endDate || best.startDate);
+    const kg = Number(best.value);
+    if (!Number.isFinite(kg) || !(kg > 0)) return null;
+    return { date: localDateKey(d), weightKg: Math.round(kg * 100) / 100 };
+  } catch {
+    return null;
+  }
+}
+
+export function requestSleepWeightAuthorization(): Promise<{
+  sleep: boolean;
+  weight: boolean;
+}> {
+  if (!isNativePlatform()) return Promise.resolve({ sleep: false, weight: false });
+  return Health.requestAuthorization({
+    read: SLEEP_WEIGHT_TYPES,
+    requestHistoryAccess: true,
+  })
+    .then((auth) => {
+      const granted = new Set(auth.readAuthorized);
+      return { sleep: granted.has("sleep"), weight: granted.has("weight") };
+    })
+    .catch(() => ({ sleep: false, weight: false }));
+}
+
+// -------------------------------------------------------------
+// Historial de pasos por día (para el reto / seed alpha):
+// guarda los días con pasos en una clave aparte, indexada por fecha.
+// -------------------------------------------------------------
+const STEPS_HISTORY_KEY = "kinetix_health_steps_history";
+
+export function saveStepsHistoryDay(day: StoredDay): void {
+  try {
+    const raw = localStorage.getItem(STEPS_HISTORY_KEY);
+    const map: Record<string, StoredDay> = raw ? JSON.parse(raw) : {};
+    map[day.date] = day;
+    localStorage.setItem(STEPS_HISTORY_KEY, JSON.stringify(map));
+    emitStepsChanged();
+  } catch {
+    /* ignore */
+  }
+}
+
+export function readStoredDayForDate(date: string): StoredDay | null {
+  try {
+    const raw = localStorage.getItem(STEPS_HISTORY_KEY);
+    if (!raw) return null;
+    const map = JSON.parse(raw) as Record<string, StoredDay>;
+    const day = map[date];
+    return day && day.date === date ? day : null;
+  } catch {
+    return null;
+  }
+}

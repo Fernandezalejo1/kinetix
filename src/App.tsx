@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback, Suspense } from "react";
 import { WorkoutProvider, useWorkout } from "./context/WorkoutContext";
+import { GoalProvider } from "./context/GoalContext";
 import { Navigation, NavTab } from "./components/Navigation";
 import { LiveWorkoutLogger } from "./components/workout/LiveWorkoutLogger";
 import { SettingsModal } from "./components/SettingsModal";
 import { StepsEngine } from "./components/nutrition/StepsEngine";
+import { HealthSyncEngine } from "./components/health/HealthSyncEngine";
 
 // Eagerly load the first screen (workout hub) for instant display
 import { WorkoutHub } from "./components/workout/WorkoutHub";
@@ -24,8 +26,11 @@ const NutritionVisionHub = React.lazy(() =>
 const ChallengeHub = React.lazy(() =>
   import("./components/challenge/ChallengeHub").then((m) => ({ default: m.ChallengeHub }))
 );
+const GoalHub = React.lazy(() =>
+  import("./components/goal/GoalHub").then((m) => ({ default: m.GoalHub }))
+);
 
-const TAB_ORDER: NavTab[] = ["workout", "programs", "exercises", "analytics", "nutrition", "reto"];
+const TAB_ORDER: NavTab[] = ["workout", "programs", "exercises", "analytics", "nutrition", "reto", "objetivo"];
 
 /** Reads the PWA deep-link target (?tab=...) from the URL (manifest shortcuts). */
 const getTabFromURL = (): NavTab => {
@@ -124,6 +129,7 @@ const AppContent: React.FC = () => {
           {currentTab === "analytics" && <ScienceDashboard />}
           {currentTab === "nutrition" && <NutritionVisionHub />}
           {currentTab === "reto" && <ChallengeHub />}
+          {currentTab === "objetivo" && <GoalHub onGoToPrograms={() => setCurrentTab("programs")} />}
         </Suspense>
       </main>
 
@@ -143,8 +149,11 @@ function AppWithPin() {
 export default function App() {
   return (
     <WorkoutProvider>
-      <StepsEngine />
-      <AppWithPin />
+      <GoalProvider>
+        <StepsEngine />
+        <HealthSyncEngine />
+        <AppWithPin />
+      </GoalProvider>
     </WorkoutProvider>
   );
 }

@@ -34,6 +34,7 @@ import { MuscleGroup, Exercise } from "../../types";
 import { EXERCISES_DATABASE } from "../../data/exercisesData";
 import { MuscleRanksPanel } from "./MuscleRanksPanel";
 import { ManualPrForm, DeletePrButton } from "./ManualPrForm";
+import { AbsEstimatePanel } from "./AbsEstimatePanel";
 
 /** Etiquetas cortas en español para los badges (el catálogo usa códigos en inglés). */
 const EQUIPMENT_ES: Record<string, string> = {
@@ -248,6 +249,8 @@ export const ScienceDashboard: React.FC = () => {
           </span>
         </div>
       </div>
+
+      <AbsEstimatePanel />
 
       {/* ========================================================================= */}
       {/* SECTION: PROGRESIÓN AUTOMÁTICA BASADA EN RIR/RPE */}

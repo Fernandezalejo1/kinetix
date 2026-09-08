@@ -356,6 +356,8 @@ export interface ExerciseHistoryEntry {
   sets: number;
   reps: number[];
   rpe?: number;
+  rir?: number;
+  bestSet?: { weight: number; reps: number; rir?: number };
   difficulty?: DifficultyLevel;
   notes?: string;
   volumeKg: number;
@@ -394,5 +396,44 @@ export interface DashboardMetrics {
   consecutiveDays: number;
   strengthProgress: number;
   physiqueProgress: number;
+}
+
+// ---------------------------------------------------------------------------
+// Objetivo / Plan de Fases (Cut → Mantenimiento → Lean Bulk)
+// ---------------------------------------------------------------------------
+
+export type GoalPhase = "cut" | "maintenance" | "lean_bulk";
+
+export interface GoalPhaseState {
+  id: GoalPhase;
+  setAt: number;
+}
+
+export interface SleepEntry {
+  id: string;
+  date: string; // YYYY-MM-DD
+  bed: string; // "23:30"
+  wake: string; // "07:30"
+  quality: number; // 1-5
+  source?: "manual" | "healthconnect";
+}
+
+export type ReadinessVerdict = "dale" | "moderado" | "descanso";
+
+export interface ReadinessEntry {
+  id: string;
+  date: string; // YYYY-MM-DD
+  fatigue: number; // 1-5 (5 = muy fatigado)
+  soreness: number; // 1-5 (DOMS)
+  sleepHours: number;
+  score: number; // 0-100
+  verdict: ReadinessVerdict;
+}
+
+export interface CardioEntry {
+  id: string;
+  date: string; // YYYY-MM-DD
+  type: "liss" | "hiit";
+  minutes: number;
 }
 

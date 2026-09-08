@@ -66,4 +66,12 @@ export const VALIDATORS: Record<string, (v: unknown) => boolean> = {
   kinetix_auto_start_timer: isBoolean,
   kinetix_health_steps: isPlainObject,
   kinetix_steps_config: isPlainObject,
+  kinetix_goal_phase: (v) =>
+    v !== null &&
+    typeof v === "object" &&
+    !Array.isArray(v) &&
+    (v as { id?: unknown }).id != null,
+  kinetix_sleep_log: isArray,
+  kinetix_readiness: isArray,
+  kinetix_cardio_log: isArray,
 };

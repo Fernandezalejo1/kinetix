@@ -354,5 +354,79 @@ export const PREBUILT_PROGRAMS: Program[] = [
         ]
       }
     ]
+  },
+  {
+    id: "fbeod-full-body",
+    title: "FBEOD · Full Body (3-4 Días)",
+    subtitle: "Cuerpo completo alternado A/B con frecuencia 3x por grupo en 4 días",
+    scienceBasis: "Sesiones de cuerpo completo alternadas (A: empuje + pierna dominante · B: tracción + pierna posterior) entrenadas cada 48h (3-4 días/semana). Frecuencia real 3x por grupo muscular por semana, ideal para maximizar la MPS y el estímulo en déficit calórico sin exceder el MEV del primer día. RIR controlado (1-2) y tempo excéntrico en alargamiento para hipertrofia basada en evidencia.",
+    level: "Intermedio",
+    daysPerWeek: 4,
+    durationWeeks: 8,
+    focus: "Full Body, Frecuencia 3x, Adaptación a Déficit Keto",
+    routines: [
+      {
+        id: "fbeod-d1-a",
+        name: "Día 1 · Full Body A (Empuje + Pierna Anterior)",
+        description: "Bloque de empuje (pecho, hombros, tríceps) con sentadilla y gemelos. RIR 1 en básicos, RIR 0 en aisladores.",
+        targetSplit: "Full Body A",
+        estimatedDurationMin: 60,
+        exercises: [
+          { exerciseId: "barbell-hack-or-squat", targetSets: 3, targetReps: "6-12", targetRir: 1, targetTempo: "3-1-0-1", restSeconds: 120 },
+          { exerciseId: "barbell-bench-press", targetSets: 3, targetReps: "6-12", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 120 },
+          { exerciseId: "incline-dumbbell-press", targetSets: 3, targetReps: "6-12", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 90 },
+          { exerciseId: "standing-military-press", targetSets: 3, targetReps: "6-12", targetRir: 1, targetTempo: "3-1-0-1", restSeconds: 90 },
+          { exerciseId: "cable-lateral-raise", targetSets: 3, targetReps: "15-20", targetRir: 0, targetTempo: "3-0-1-1", restSeconds: 45 },
+          { exerciseId: "overhead-cable-triceps-extension", targetSets: 3, targetReps: "6-12", targetRir: 0, targetTempo: "3-1-1-0", restSeconds: 60 },
+          { exerciseId: "standing-calf-raise", targetSets: 3, targetReps: "15-20", targetRir: 0, targetTempo: "3-2-1-1", restSeconds: 45 }
+        ]
+      },
+      {
+        id: "fbeod-d2-b",
+        name: "Día 2 · Full Body B (Tracción + Pierna Posterior)",
+        description: "Jalones, remos y bíceps con RDL y core. Estiramiento en alargamiento para espalda y bíceps.",
+        targetSplit: "Full Body B",
+        estimatedDurationMin: 60,
+        exercises: [
+          { exerciseId: "romanian-deadlift", targetSets: 3, targetReps: "6-12", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 150 },
+          { exerciseId: "neutral-grip-lat-pulldown", targetSets: 3, targetReps: "6-12", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 90 },
+          { exerciseId: "chest-supported-t-bar-row", targetSets: 3, targetReps: "6-12", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 90 },
+          { exerciseId: "single-arm-cable-row", targetSets: 3, targetReps: "6-12", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 90 },
+          { exerciseId: "dumbbell-biceps-curl", targetSets: 3, targetReps: "6-12", targetRir: 0, targetTempo: "3-1-1-0", restSeconds: 60 },
+          { exerciseId: "seated-leg-curl", targetSets: 3, targetReps: "6-12", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 60 },
+          { exerciseId: "cable-crunch", targetSets: 3, targetReps: "15", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 45 }
+        ]
+      },
+      {
+        id: "fbeod-d3-a",
+        name: "Día 3 · Full Body A (Variante Pecho/hombros)",
+        description: "Variante del bloque A: press inclinado con mancuernas, moscas y fondos para cambiar el ángulo de tensión.",
+        targetSplit: "Full Body A",
+        estimatedDurationMin: 55,
+        exercises: [
+          { exerciseId: "incline-dumbbell-press", targetSets: 3, targetReps: "6-12", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 120 },
+          { exerciseId: "cable-chest-flye", targetSets: 3, targetReps: "10-15", targetRir: 1, targetTempo: "3-1-1-1", restSeconds: 90 },
+          { exerciseId: "chest-dip", targetSets: 3, targetReps: "6-12", targetRir: 1, targetTempo: "3-1-0-1", restSeconds: 90 },
+          { exerciseId: "barbell-hack-or-squat", targetSets: 3, targetReps: "8-12", targetRir: 1, targetTempo: "3-1-0-1", restSeconds: 120 },
+          { exerciseId: "dumbbell-lateral-raise", targetSets: 3, targetReps: "15-20", targetRir: 0, targetTempo: "3-0-1-1", restSeconds: 45 },
+          { exerciseId: "bench-dip", targetSets: 3, targetReps: "6-12", targetRir: 1, targetTempo: "3-1-0-1", restSeconds: 60 }
+        ]
+      },
+      {
+        id: "fbeod-d4-b",
+        name: "Día 4 · Full Body B (Variante Espalda)",
+        description: "Variante del bloque B: pull — dominadas, remo inclinado y lifting posterior.",
+        targetSplit: "Full Body B",
+        estimatedDurationMin: 55,
+        exercises: [
+          { exerciseId: "barbell-bent-over-row", targetSets: 3, targetReps: "6-12", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 120 },
+          { exerciseId: "cable-bar-lateral-pulldown", targetSets: 3, targetReps: "6-12", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 90 },
+          { exerciseId: "hyperextension", targetSets: 3, targetReps: "12-15", targetRir: 1, targetTempo: "3-0-2-0", restSeconds: 60 },
+          { exerciseId: "cable-hammer-curl", targetSets: 3, targetReps: "6-12", targetRir: 0, targetTempo: "3-1-1-0", restSeconds: 60 },
+          { exerciseId: "front-plank", targetSets: 3, targetReps: "60s", targetRir: 1, targetTempo: "Sostén isométrico", restSeconds: 45 },
+          { exerciseId: "superman-hold", targetSets: 2, targetReps: "20-30s", targetRir: 1, targetTempo: "Sostén isométrico", restSeconds: 45 }
+        ]
+      }
+    ]
   }
 ];

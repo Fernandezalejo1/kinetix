@@ -75,6 +75,13 @@ export const NUTRITION_GOALS: Record<
 
 export const NUTRITION_GOAL_KEYS = ["keto"] as NutritionGoal[];
 
+/**
+ * Peso corporal por defecto (kg) cuando el usuario todavía no registró
+ * ninguna medición: se usa para calcular objetivos macro/"phase targets"
+ * sin inventar historial. Coherente con DEFAULT_NUTRITION_PROFILE (175 cm).
+ */
+export const DEFAULT_WEIGHT_KG = 75;
+
 // ---------------------------------------------------------------------------
 // Perfil personal → metabolismo exacto (Mifflin-St Jeor) + factor de actividad
 // ---------------------------------------------------------------------------

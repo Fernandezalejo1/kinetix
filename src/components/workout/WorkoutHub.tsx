@@ -27,6 +27,7 @@ import { EXERCISES_DATABASE } from "../../data/exercisesData";
 import { PlateCalculatorModal } from "./PlateCalculatorModal";
 import { WarmupGeneratorModal } from "./WarmupGeneratorModal";
 import { TempoMetronomeModal } from "./TempoMetronomeModal";
+import { SessionImportModal } from "./SessionImportModal";
 import { Program, Routine } from "../../types";
 import { isTimeBased } from "../../utils/exerciseMode";
 import {
@@ -62,6 +63,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
   const [isPlateOpen, setIsPlateOpen] = useState(false);
   const [isWarmupOpen, setIsWarmupOpen] = useState(false);
   const [isTempoOpen, setIsTempoOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
   const [selectedSession, setSelectedSession] = useState<any | null>(null);
   const [selectedExHistory, setSelectedExHistory] = useState<any | null>(null);
   const [confirmAction, setConfirmAction] = useState<null | {
@@ -385,7 +387,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
       </div>
 
       {/* Science Quick Tools Bar */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
         <button
           onClick={() => setIsPlateOpen(true)}
           className="p-4 rounded-2xl bg-neutral-900 border border-neutral-800 hover:border-blue-500/40 transition-all flex items-center gap-3 text-left group"
@@ -428,6 +430,21 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
               Metrónomo de Tempo
             </h4>
             <p className="text-[11px] text-neutral-400">Control excéntrico de tensión mecánica</p>
+          </div>
+        </button>
+
+        <button
+          onClick={() => setIsImportOpen(true)}
+          className="p-4 rounded-2xl bg-neutral-900 border border-neutral-800 hover:border-emerald-500/40 transition-all flex items-center gap-3 text-left group"
+        >
+          <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 group-hover:scale-105 transition-transform">
+            <Trophy className="w-5 h-5" />
+          </div>
+          <div>
+            <h4 className="text-sm font-bold text-white group-hover:text-emerald-300 transition-colors">
+              Importar Sesión
+            </h4>
+            <p className="text-[11px] text-neutral-400">Carga sesiones reales previas (SBS v28)</p>
           </div>
         </button>
       </div>
@@ -592,6 +609,10 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
       <TempoMetronomeModal
         isOpen={isTempoOpen}
         onClose={() => setIsTempoOpen(false)}
+      />
+      <SessionImportModal
+        isOpen={isImportOpen}
+        onClose={() => setIsImportOpen(false)}
       />
 
       {/* Session Detail Modal */}

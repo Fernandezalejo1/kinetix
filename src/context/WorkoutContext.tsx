@@ -87,6 +87,12 @@ interface WorkoutContextType {
   getNextWeight: (exerciseId: string) => number;
   addPersonalRecord: (pr: Omit<PersonalRecord, "id">) => void;
   deletePersonalRecord: (prId: string) => void;
+  logImportedSession: (
+    exercise: Exercise,
+    date: string,
+    sets: { weight: number; reps: number; rir?: number }[],
+    difficulty?: DifficultyLevel
+  ) => void;
 }
 
 const WorkoutContext = createContext<WorkoutContextType | undefined>(undefined);
@@ -908,6 +914,84 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
     setPersonalRecords((prev) => prev.filter((p) => p.id !== prId));
   }, []);
 
+  /** Importa una sesión pasada (modal de la app alpha): agrega las series al
+   *  historial del ejercicio (con bestSet/1RM estimado + PR si supera el récord)
+   *  y alimenta las cargas de arranque. Nunca toca sesiones ni pisa datos nuevos. */
+  const logImportedSession = useCallback(
+    (
+      exercise: Exercise,
+      date: string,
+      sets: { weight: number; reps: number; rir?: number }[],
+      difficulty?: DifficultyLevel
+    ) => {
+      if (!Math.floor(sets.length)) return;
+
+      let maxWeight = 0;
+      let volumeKg = 0;
+      let bestSet: { weight: number; reps: number; rir?: number } | undefined;
+      let bestE1rm = -1;
+      let rirAcc = 0;
+      let rirCount = 0;
+      const reps: number[] = [];
+      for (const s of sets) {
+        const w = Number(s.weight) || 0;
+        const r = Math.max(1, Math.round(Number(s.reps) || 0));
+        const rir = s.rir != null && Number.isFinite(s.rir) && s.rir >= 0 ? Number(s.rir) : undefined;
+        if (!(w > 0)) continue;
+        reps.push(r);
+        maxWeight = Math.max(maxWeight, w);
+        volumeKg += w * r;
+        if (rir !== undefined) {
+          rirAcc += rir;
+          rirCount++;
+        }
+        const hasRir = rir !== undefined;
+        const effectiveReps = hasRir ? Math.min(r + Math.min(rir as number, 10), 12) : r;
+        const est = calculate1RM(w, effectiveReps);
+        if (est.valid && est.average > bestE1rm) {
+          bestE1rm = est.average;
+          bestSet = { weight: w, reps: r, rir };
+        }
+      }
+      if (reps.length === 0) return;
+
+      const avgRir = rirCount > 0 ? Math.round((rirAcc / rirCount) * 10) / 10 : undefined;
+
+      const entry: ExerciseHistoryEntry = {
+        id: `imp-${Date.now()}-${exercise.id}-${Math.floor(Math.random() * 1000)}`,
+        exerciseId: exercise.id,
+        date,
+        weight: maxWeight,
+        sets: reps.length,
+        reps,
+        rpe: avgRir !== undefined ? Math.round((10 - avgRir) * 10) / 10 : undefined,
+        rir: avgRir,
+        bestSet,
+        difficulty,
+        volumeKg: Math.round(volumeKg * 10) / 10,
+      };
+      setExerciseHistory((prev) => [entry, ...prev]);
+
+      if (bestSet && bestE1rm > 0) {
+        setPersonalRecords((prev) => {
+          const existing = prev.find((p) => p.exerciseId === exercise.id && p.type === "1RM");
+          if (existing && existing.value >= Math.round(bestE1rm)) return prev;
+          const prItem: PersonalRecord = {
+            id: `imp-pr-${Date.now()}-${exercise.id}`,
+            exerciseId: exercise.id,
+            exerciseName: exercise.nameEs || exercise.name,
+            type: "1RM",
+            value: Math.round(bestE1rm),
+            reps: bestSet.reps,
+            date,
+          };
+          return [prItem, ...prev.filter((p) => p.exerciseId !== exercise.id || p.type !== "1RM")];
+        });
+      }
+    },
+    []
+  );
+
   const ensureTodayLogic = useCallback((): { today: string; targets: { calories: number; protein: number; carbs: number; fats: number } } => {
     const today = new Date().toISOString().split("T")[0];
     const savedMetrics = safeParse<BodyMetricEntry[] | null>("kinetix_body_metrics", null, isArrayOrNull);
@@ -1140,6 +1224,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
         getNextWeight,
         addPersonalRecord,
         deletePersonalRecord,
+        logImportedSession,
       }}
     >
       {children}
