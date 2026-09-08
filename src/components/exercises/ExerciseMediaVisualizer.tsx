@@ -232,7 +232,7 @@ export const ExerciseMediaVisualizer: React.FC<ExerciseMediaVisualizerProps> = (
                   loop
                   muted
                   playsInline
-                  className="w-full h-auto max-h-[500px] object-contain"
+                  className="w-full h-auto max-h-[40dvh] object-contain"
                   poster={exercise.videoPosterUrl}
                 />
                 <div className="px-4 py-2.5 bg-neutral-900/80 border-t border-neutral-800 flex items-center justify-between text-xs">
@@ -259,7 +259,7 @@ export const ExerciseMediaVisualizer: React.FC<ExerciseMediaVisualizerProps> = (
                 <img
                   src={exercise.gifUrl}
                   alt={`${exercise.nameEs} - Animación GIF`}
-                  className="w-full h-auto max-h-[500px] object-contain"
+                  className="w-full h-auto max-h-[40dvh] object-contain"
                   loading="lazy"
                 />
                 <div className="px-4 py-2.5 bg-neutral-900/80 border-t border-neutral-800 flex items-center justify-between text-xs">

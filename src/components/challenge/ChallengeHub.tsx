@@ -60,15 +60,15 @@ const ProgressRing: React.FC<{ progress: number; size?: number; strokeWidth?: nu
 const DayCell: React.FC<{ day: number; completed: boolean; isToday: boolean; isFuture: boolean }> = ({
   day, completed, isToday, isFuture,
 }) => (
-  <div className={`relative w-full aspect-square rounded-xl flex items-center justify-center text-xs font-bold transition-all duration-300 ${
+  <div className={`relative w-full aspect-square min-h-[36px] min-w-[36px] rounded-xl flex items-center justify-center text-xs font-bold transition-all duration-300 ${
     completed
       ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-[0_0_8px_rgba(16,185,129,0.15)]"
       : isToday
-        ? "bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 animate-pulse"
+        ? "bg-cyan-500/20 text-cyan-300 border-2 border-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.3)] ring-2 ring-cyan-400/20"
         : isFuture
           ? "bg-neutral-900/50 text-neutral-600 border border-neutral-800/50"
           : "bg-neutral-900 text-neutral-500 border border-neutral-800"
-  }`}>
+  }`} style={{ minHeight: 36, minWidth: 36 }}>
     {completed ? (
       <svg className="w-4 h-4 text-emerald-400" viewBox="0 0 20 20" fill="currentColor">
         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -76,6 +76,7 @@ const DayCell: React.FC<{ day: number; completed: boolean; isToday: boolean; isF
     ) : (
       day
     )}
+    {isToday && !completed && <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />}
   </div>
 );
 
@@ -224,7 +225,7 @@ export const ChallengeHub: React.FC = () => {
             <div className="grid grid-cols-4 gap-2 pt-2">
               {(["bronze", "gold", "master", "challenger"] as Rank[]).map((r) => (
                 <div key={r} className="flex flex-col items-center gap-1">
-                  <RankEmblem rank={r} size={36} />
+                  <RankEmblem rank={r} size={40} />
                   <span className="text-[9px] text-neutral-500 font-bold">{RANK_LABELS[r]}</span>
                   <span className="text-[8px] text-neutral-600">{(RANK_THRESHOLDS[r] / 1000).toFixed(0)}k+</span>
                 </div>
@@ -249,7 +250,7 @@ export const ChallengeHub: React.FC = () => {
           {/* Today's Rank */}
           <div className="rounded-2xl bg-neutral-900 border border-neutral-800 p-6 text-center space-y-3">
             <div className={`transition-all duration-500 ${animatingRank ? "scale-110 animate-bounce" : ""}`}>
-              <RankEmblem rank={currentRank} size={100} />
+              <RankEmblem rank={currentRank} size={112} className="drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)]" />
             </div>
             <div>
               <p className="text-xs text-neutral-400 font-bold uppercase tracking-wider">Tu rango hoy</p>
@@ -276,12 +277,12 @@ export const ChallengeHub: React.FC = () => {
             </p>
           </div>
 
-          {/* Progress */}
+          {/* Progress — 48px radius ring (=96 size) stroke 6 */}
           <div className="rounded-2xl bg-neutral-900 border border-neutral-800 p-5 flex items-center gap-5">
             <div className="relative shrink-0">
-              <ProgressRing progress={progress} size={80} strokeWidth={7} />
+              <ProgressRing progress={progress} size={96} strokeWidth={6} />
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-xl font-black text-white">{challenge.completedDates.length}</span>
+                <span className="text-xl font-black text-white tabular-nums">{challenge.completedDates.length}</span>
                 <span className="text-[9px] text-neutral-500 font-bold">/ {CHALLENGE_DAYS}</span>
               </div>
             </div>
@@ -322,26 +323,43 @@ export const ChallengeHub: React.FC = () => {
             </div>
           </div>
 
-          {/* Rank Thresholds */}
+          {/* Rank Thresholds — icons 40px + progress to next */}
           <div className="rounded-2xl bg-neutral-900 border border-neutral-800 p-4 space-y-3">
             <p className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Sistema de Rangos</p>
-            {(["challenger", "master", "gold", "bronze"] as Rank[]).map((r) => (
-              <div key={r} className={`flex items-center gap-3 p-2 rounded-xl transition-all ${
-                currentRank === r ? "bg-neutral-800/60 border border-neutral-700" : "opacity-60"
-              }`}>
-                <RankEmblem rank={r} size={32} />
-                <div className="flex-1">
-                  <p className="text-xs font-bold text-white">{RANK_LABELS[r]}</p>
-                  <p className="text-[10px] text-neutral-500">{RANK_THRESHOLDS[r].toLocaleString("es-AR")}+ pasos</p>
+            {(["challenger", "master", "gold", "bronze"] as Rank[]).map((r) => {
+              const threshold = RANK_THRESHOLDS[r];
+              const nextRankMap: Record<Rank, Rank | null> = { bronze: "gold", gold: "master", master: "challenger", challenger: null };
+              const next = nextRankMap[r];
+              const nextThreshold = next ? RANK_THRESHOLDS[next] : null;
+              const isCurrent = currentRank === r;
+              const progressToNext = nextThreshold ? Math.min(100, Math.max(0, ((todaySteps - threshold) / (nextThreshold - threshold)) * 100)) : 100;
+              const showProgress = isCurrent && nextThreshold !== null;
+              return (
+                <div key={r} className={`flex items-center gap-3 p-2.5 rounded-xl transition-all ${
+                  isCurrent ? "bg-neutral-800/60 border border-neutral-700" : "opacity-60"
+                }`}>
+                  <RankEmblem rank={r} size={40} className={isCurrent ? "drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]" : ""} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-white">{RANK_LABELS[r]}</p>
+                    <p className="text-[10px] text-neutral-500">{threshold.toLocaleString("es-AR")}+ pasos</p>
+                    {showProgress && (
+                      <div className="mt-1.5 h-1.5 bg-neutral-800 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${progressToNext}%`, background: `linear-gradient(90deg, ${rankColors.from}, ${rankColors.to})` }} />
+                      </div>
+                    )}
+                    {showProgress && next && (
+                      <p className="text-[9px] text-neutral-500 mt-1">{Math.max(0, nextThreshold! - todaySteps).toLocaleString("es-AR")} pasos para {RANK_LABELS[next]}</p>
+                    )}
+                  </div>
+                  {isCurrent && (
+                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0"
+                      style={{ background: `${rankColors.from}20`, color: rankColors.from, border: `1px solid ${rankColors.from}40` }}>
+                      ACTUAL
+                    </span>
+                  )}
                 </div>
-                {currentRank === r && (
-                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full"
-                    style={{ background: `${rankColors.from}20`, color: rankColors.from, border: `1px solid ${rankColors.from}40` }}>
-                    ACTUAL
-                  </span>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Controls */}

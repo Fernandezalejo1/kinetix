@@ -63,23 +63,6 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
     { id: "analytics", label: "Historial & Analytics", icon: BarChart2, badge: "Fuerza, PRs & Volumen" },
   ];
 
-  // Requested checklist items
-  const CHECKLIST_ITEMS = [
-    { name: "Video HD & Qué hace", tab: "media" as ModalTab },
-    { name: "Músculos principales", tab: "anatomy" as ModalTab },
-    { name: "Músculos secundarios", tab: "anatomy" as ModalTab },
-    { name: "Anatomía", tab: "anatomy" as ModalTab },
-    { name: "Técnica", tab: "technique" as ModalTab },
-    { name: "Errores frecuentes", tab: "mistakes" as ModalTab },
-    { name: "Consejos", tab: "mistakes" as ModalTab },
-    { name: "Variantes", tab: "variations" as ModalTab },
-    { name: "Regresiones", tab: "variations" as ModalTab },
-    { name: "Progresiones", tab: "variations" as ModalTab },
-    { name: "Movilidad previa", tab: "mobility" as ModalTab },
-    { name: "Estiramientos posteriores", tab: "mobility" as ModalTab },
-    { name: "Historial & PRs", tab: "analytics" as ModalTab },
-  ];
-
   return (
     <div
       id="exercise-detail-modal"
@@ -124,59 +107,33 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
               <X className="w-5 h-5" />
             </button>
           </div>
-
-          {/* 15 Component Quick Badges */}
-          <div className="mt-4 pt-3 border-t border-neutral-800/80">
-            <div className="text-[10px] uppercase font-bold text-neutral-400 mb-2 flex items-center gap-1.5">
-              <Sparkles className="w-3 h-3 text-cyan-400" />
-              15 Módulos Biomecánicos Integrados
-            </div>
-            <div className="flex gap-1.5 overflow-x-auto scrollbar-thin pb-1 -mb-1">
-              {CHECKLIST_ITEMS.map((item, idx) => {
-                const isActive = activeTab === item.tab;
-                return (
-                  <button
-                    key={idx}
-                    onClick={() => setActiveTab(item.tab)}
-                    className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 whitespace-nowrap shrink-0 ${
-                      isActive
-                        ? "bg-cyan-500 text-black shadow-sm"
-                        : "bg-neutral-950 text-neutral-300 hover:text-white hover:bg-neutral-800 border border-neutral-800"
-                    }`}
-                  >
-                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isActive ? "bg-black" : "bg-cyan-400"}`} />
-                    {item.name}
-                  </button>
-                );
-              })}
-            </div>
+        </div>
+        <div className="relative">
+          <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-neutral-950 to-transparent pointer-events-none z-10" />
+          <div className="flex border-b border-neutral-800 bg-neutral-950 px-4 sm:px-6 gap-1 overflow-x-auto text-xs font-semibold scrollbar-thin snap-x snap-mandatory">
+            {TABS.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`py-3 px-3 border-b-2 flex items-center gap-2 whitespace-nowrap transition-all snap-start ${
+                    isActive
+                      ? "border-cyan-400 text-cyan-400 font-bold bg-neutral-900/40"
+                      : "border-transparent text-neutral-400 hover:text-neutral-200"
+                  }`}
+                >
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Tab Navigation Bar */}
-        <div className="flex border-b border-neutral-800 bg-neutral-950 px-4 sm:px-6 gap-1 overflow-x-auto text-xs font-semibold scrollbar-thin">
-          {TABS.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`py-3 px-3 border-b-2 flex items-center gap-2 whitespace-nowrap transition-all ${
-                  isActive
-                    ? "border-cyan-400 text-cyan-400 font-bold bg-neutral-900/40"
-                    : "border-transparent text-neutral-400 hover:text-neutral-200"
-                }`}
-              >
-                <Icon className="w-4 h-4 shrink-0" />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
-
         {/* Content Body Container */}
-        <div className="p-4 sm:p-6 overflow-y-auto scrollbar-thin flex-1 min-h-0 overscroll-contain space-y-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+        <div className="p-4 sm:p-6 overflow-y-auto scrollbar-thin flex-1 min-h-0 overscroll-contain space-y-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] snap-y snap-mandatory">
           {/* TAB: MEDIA & VIDEOS */}
           {activeTab === "media" && (
             <div className="space-y-6">
@@ -215,21 +172,10 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
           )}
         </div>
 
-        {/* Modal Footer */}
-        <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-neutral-950 border-t border-neutral-800 flex flex-wrap items-center justify-between gap-3 shrink-0">
-          <div className="hidden sm:flex items-center gap-2 text-xs text-neutral-400">
-            <Shield className="w-4 h-4 text-cyan-400" />
-            <span>Ficha Biomecánica KINETIX validada por fisiología del ejercicio</span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onClose}
-              className="px-6 py-2 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-cyan-600/20"
-            >
-              Cerrar Ficha
-            </button>
-          </div>
+        {/* Modal Footer — safe-area, no fixed covering button */}
+        <div className="p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] bg-neutral-950 border-t border-neutral-800 flex items-center justify-center gap-2 shrink-0">
+          <Shield className="w-3.5 h-3.5 text-cyan-400" />
+          <span className="text-[11px] text-neutral-500">Ficha Biomecánica KINETIX · usa la X arriba para cerrar</span>
         </div>
       </div>
     </div>

@@ -274,24 +274,24 @@ export const NutritionVisionHub: React.FC = () => {
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           <div className="p-3 rounded-2xl bg-neutral-950 border border-neutral-800">
-            <div className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">BMR</div>
-            <div className="text-xl font-black text-amber-300 font-mono mt-0.5">{bmr} kcal</div>
-            <div className="text-[10px] text-neutral-500">basal / día</div>
+            <div className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-1">BMR <span title="Tasa Metabólica Basal · Mifflin-St Jeor · calorías en reposo absoluto" className="cursor-help text-cyan-400">ⓘ</span></div>
+            <div className="text-xl font-black text-amber-300 font-mono mt-0.5 tabular-nums break-words">{bmr} kcal</div>
+            <div className="text-[11px] text-neutral-500">basal / día</div>
           </div>
           <div className="p-3 rounded-2xl bg-neutral-950 border border-neutral-800">
             <div className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Gasto (TDEE)</div>
-            <div className="text-xl font-black text-emerald-300 font-mono mt-0.5">{tdee} kcal</div>
-            <div className="text-[10px] text-neutral-500">{ACTIVITY_FACTORS[nutritionProfile.activityLevel].short}</div>
+            <div className="text-xl font-black text-emerald-300 font-mono mt-0.5 tabular-nums break-words">{tdee} kcal</div>
+            <div className="text-[11px] text-neutral-500">{ACTIVITY_FACTORS[nutritionProfile.activityLevel].short}</div>
           </div>
           <div className="p-3 rounded-2xl bg-neutral-950 border border-neutral-800">
             <div className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Objetivo hoy</div>
-            <div className="text-xl font-black text-cyan-300 font-mono mt-0.5">{targetCalories} kcal</div>
-            <div className="text-[10px] text-amber-400">déficit −{nutritionProfile.deficitPercent}%</div>
+            <div className="text-xl font-black text-cyan-300 font-mono mt-0.5 tabular-nums break-words">{targetCalories} kcal</div>
+            <div className="text-[11px] text-amber-400">déficit −{nutritionProfile.deficitPercent}%</div>
           </div>
           <div className="p-3 rounded-2xl bg-neutral-950 border border-neutral-800">
             <div className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Turno de trabajo</div>
-            <div className="text-xl font-black text-white font-mono mt-0.5 whitespace-nowrap">{nutritionProfile.workStart}–{nutritionProfile.workEnd}</div>
-            <div className="text-[10px] text-neutral-500">sentado en PC</div>
+            <div className="text-xl font-black text-white font-mono mt-0.5 whitespace-nowrap break-words">{nutritionProfile.workStart}–{nutritionProfile.workEnd}</div>
+            <div className="text-[11px] text-neutral-500">sentado en PC</div>
           </div>
         </div>
 
@@ -415,8 +415,9 @@ export const NutritionVisionHub: React.FC = () => {
                 <span className="truncate">{card.label}</span>
                 <span className="shrink-0">{card.icon}</span>
               </div>
-              <div className={`text-xl sm:text-3xl font-black ${over ? "text-red-400" : card.color} whitespace-nowrap truncate`}>
-                {card.value} <span className="text-xs sm:text-sm font-normal text-neutral-400">/ {card.target}{card.unit}</span>
+              <div className="flex flex-wrap items-end gap-2">
+                <span className={`text-xl sm:text-3xl font-black tabular-nums leading-none ${over ? "text-red-400" : card.color}`}>{card.value}<span className="text-sm font-bold ml-1">{card.unit}</span></span>
+                <span className="px-2.5 py-1 rounded-full bg-neutral-800 border border-neutral-700 text-[11px] font-bold text-neutral-300 tabular-nums">/ {card.target}{card.unit}</span>
               </div>
               <div className="h-2 bg-neutral-800 rounded-full overflow-hidden">
                 <div
@@ -791,12 +792,12 @@ export const NutritionVisionHub: React.FC = () => {
                   <span className="line-clamp-2 leading-snug">{meal.name}</span>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-x-2.5 gap-y-0.5 font-mono text-[11px] text-neutral-500">
-                <span className="text-amber-400 font-bold">{meal.cal} kcal</span>
-                <span className="text-cyan-400">{meal.pro}g P</span>
-                <span className="text-purple-400">{meal.carb}g C</span>
-                <span className="text-emerald-400">{meal.fat}g G</span>
-                <span>{meal.fiber}g fibra</span>
+              <div className="flex flex-wrap gap-1.5 font-mono text-[11px]">
+                <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold">{meal.cal} kcal</span>
+                <span className="px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">P:{meal.pro}g</span>
+                <span className="px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20">C:{meal.carb}g</span>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">G:{meal.fat}g</span>
+                <span className="px-2 py-0.5 rounded-full bg-neutral-800 text-neutral-400 border border-neutral-700">{meal.fiber}g fibra</span>
               </div>
             </button>
           ))}
@@ -840,25 +841,16 @@ export const NutritionVisionHub: React.FC = () => {
 
                     <div className="space-y-1 min-w-0">
                       <h4 className="text-base font-bold text-white break-words">{meal.dishName}</h4>
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-                        <span className="font-extrabold text-amber-400">{meal.calories} kcal</span>
-                        <span>•</span>
-                        <span className="font-bold text-cyan-400">{meal.protein}g Proteína</span>
-                        <span>•</span>
-                        <span className="font-bold text-purple-400">{meal.carbs}g Carbs</span>
-                        <span>•</span>
-                        <span className="font-bold text-emerald-400">{meal.fats}g Grasas</span>
+                      <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-mono">
+                        <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold">{meal.calories} kcal</span>
+                        <span className="px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-bold">P:{meal.protein}g</span>
+                        <span className="px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20 font-bold">C:{meal.carbs}g</span>
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">G:{meal.fats}g</span>
                         {meal.fiber !== undefined && meal.fiber > 0 && (
-                          <>
-                            <span>•</span>
-                            <span className="font-bold text-emerald-300">{meal.fiber}g Fibra</span>
-                          </>
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-bold">{meal.fiber}g Fibra</span>
                         )}
                         {meal.mpsQuality && (
-                          <>
-                            <span>•</span>
-                            <span className="font-bold text-blue-400">{meal.mpsQuality}</span>
-                          </>
+                          <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 font-bold">{meal.mpsQuality}</span>
                         )}
                       </div>
                       {meal.description && (

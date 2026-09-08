@@ -224,8 +224,8 @@ export const MealSchedulerPanel: React.FC = () => {
         </button>
       </div>
 
-      {/* Schedule selector */}
-      <div className="grid grid-cols-2 gap-2 p-1 bg-neutral-900 rounded-2xl border border-neutral-800">
+      {/* Schedule selector - clarified with Turno noche context */}
+      <div className="grid grid-cols-2 gap-2 p-1.5 bg-neutral-900 rounded-2xl border border-neutral-800">
         {(Object.keys(SCHEDULES) as ScheduleType[]).map((key) => {
           const s = SCHEDULES[key];
           const isActive = schedule === key;
@@ -233,14 +233,16 @@ export const MealSchedulerPanel: React.FC = () => {
             <button
               key={key}
               onClick={() => setSchedule(key)}
-              className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all ${
+              className={`flex flex-col items-center justify-center gap-1 min-h-[56px] py-2.5 px-2 rounded-xl text-xs font-bold transition-all ${
                 isActive
                   ? "bg-cyan-600 text-white shadow-lg shadow-cyan-600/20"
-                  : "text-neutral-400 hover:text-white"
+                  : "text-neutral-400 hover:text-white hover:bg-neutral-800"
               }`}
             >
-              {s.icon}
-              {s.short}
+              <span className="flex items-center gap-1.5">{s.icon} {s.short}</span>
+              <span className="text-[10px] font-normal opacity-80 leading-none">
+                {key === "nocturno" ? "🌙 Turno noche · 22:00–08:00" : "☀️ Turno día · 08:00–22:00"}
+              </span>
             </button>
           );
         })}

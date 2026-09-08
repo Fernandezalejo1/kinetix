@@ -6,6 +6,7 @@ import { LiveWorkoutLogger } from "./components/workout/LiveWorkoutLogger";
 import { SettingsModal } from "./components/SettingsModal";
 import { StepsEngine } from "./components/nutrition/StepsEngine";
 import { HealthSyncEngine } from "./components/health/HealthSyncEngine";
+import { OnboardingIntro } from "./components/OnboardingIntro";
 
 // Eagerly load the first screen (workout hub) for instant display
 import { WorkoutHub } from "./components/workout/WorkoutHub";
@@ -137,6 +138,9 @@ const AppContent: React.FC = () => {
 
       {/* SettingsModal stays mounted so the workout reminder keeps active while closed */}
       <SettingsModal open={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+
+      {/* Primer-uso: mini tutorial de RIR / tempo / sobrecarga (una sola vez) */}
+      <OnboardingIntro />
 
     </div>
   );

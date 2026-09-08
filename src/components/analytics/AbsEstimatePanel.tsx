@@ -142,7 +142,7 @@ export const AbsEstimatePanel: React.FC = () => {
         </div>
         <button
           onClick={() => setFormOpen((v) => !v)}
-          className="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-black transition-colors shadow-lg shadow-amber-600/20 flex items-center justify-center gap-1.5 shrink-0"
+          className="min-h-[48px] px-4 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-black transition-colors shadow-lg shadow-cyan-600/20 flex items-center justify-center gap-1.5 shrink-0"
         >
           <Scale className="w-3.5 h-3.5" />
           {formOpen ? "Cerrar" : "Registrar medición"}
@@ -226,7 +226,7 @@ export const AbsEstimatePanel: React.FC = () => {
           </div>
           <button
             type="submit"
-            className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-black transition-colors shadow-lg shadow-amber-600/20"
+            className="min-h-[48px] w-full sm:w-auto px-5 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-black transition-colors shadow-lg shadow-cyan-600/20"
           >
             Guardar medición
           </button>

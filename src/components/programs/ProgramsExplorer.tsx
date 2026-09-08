@@ -75,28 +75,28 @@ export const ProgramsExplorer: React.FC = () => {
 
   return (
     <div id="programs-explorer" className="space-y-8 animate-fadeIn pb-16">
-      {/* Tab Switcher */}
-      <div className="flex gap-2 p-1 bg-neutral-900 rounded-2xl border border-neutral-800">
+      {/* Tab Switcher - enhanced contrast and touch targets */}
+      <div className="flex gap-2 p-1.5 bg-neutral-900 rounded-2xl border border-neutral-700 shadow-xl">
         <button
           onClick={() => setActiveTab("programs")}
-          className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all ${
+          className={`flex-1 min-h-[48px] py-2.5 px-3 rounded-xl text-[13px] sm:text-sm font-black transition-all flex items-center justify-center gap-2 ${
             activeTab === "programs"
-              ? "bg-cyan-600 text-white shadow-lg shadow-cyan-600/20"
-              : "text-neutral-400 hover:text-white"
+              ? "bg-gradient-to-br from-cyan-600 to-cyan-500 text-white shadow-lg shadow-cyan-600/25 ring-1 ring-cyan-400/30"
+              : "text-neutral-400 hover:text-white hover:bg-neutral-800"
           }`}
         >
-          <Layers className="w-4 h-4 inline mr-1.5" />
+          <Layers className="w-4 h-4 shrink-0" />
           Programas Científicos
         </button>
         <button
           onClick={() => setActiveTab("custom")}
-          className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all ${
+          className={`flex-1 min-h-[48px] py-2.5 px-3 rounded-xl text-[13px] sm:text-sm font-black transition-all flex items-center justify-center gap-2 ${
             activeTab === "custom"
-              ? "bg-cyan-600 text-white shadow-lg shadow-cyan-600/20"
-              : "text-neutral-400 hover:text-white"
+              ? "bg-gradient-to-br from-cyan-600 to-cyan-500 text-white shadow-lg shadow-cyan-600/25 ring-1 ring-cyan-400/30"
+              : "text-neutral-400 hover:text-white hover:bg-neutral-800"
           }`}
         >
-          <Edit3 className="w-4 h-4 inline mr-1.5" />
+          <Edit3 className="w-4 h-4 shrink-0" />
           Mis Rutinas ({customRoutines.length})
         </button>
       </div>
@@ -119,22 +119,25 @@ export const ProgramsExplorer: React.FC = () => {
           </div>
 
           {customRoutines.length === 0 ? (
-            <div className="p-10 text-center bg-neutral-900/50 rounded-3xl border border-dashed border-neutral-800 space-y-4">
-              <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 flex items-center justify-center mx-auto">
-                <Edit3 className="w-8 h-8" />
+            <div className="p-8 sm:p-12 text-center bg-gradient-to-br from-neutral-900 via-neutral-900 to-cyan-950/20 rounded-3xl border border-dashed border-neutral-700 shadow-xl space-y-5">
+              <div className="relative w-24 h-24 rounded-3xl bg-gradient-to-br from-cyan-500/20 to-purple-500/15 text-cyan-400 border border-cyan-500/20 flex items-center justify-center mx-auto shadow-lg">
+                <Dumbbell className="w-10 h-10" />
+                <span className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-cyan-600 text-white flex items-center justify-center border-2 border-neutral-900 shadow-lg">
+                  <Plus className="w-4 h-4" />
+                </span>
               </div>
               <div>
-                <h3 className="text-lg font-bold text-white">No tienes rutinas personalizadas</h3>
-                <p className="text-xs text-neutral-400 max-w-sm mx-auto mt-1">
-                  Crea tu primera rutina con ejercicios, series, repeticiones, tempo y superseries.
+                <h3 className="text-xl font-black text-white">No tienes rutinas personalizadas</h3>
+                <p className="text-[13px] text-neutral-400 max-w-sm mx-auto mt-2 leading-relaxed">
+                  Crea tu primera rutina con ejercicios, series, repeticiones, tempo y superseries. Tus rutinas aparecerán aquí.
                 </p>
               </div>
               <button
                 onClick={() => { setEditingRoutine(undefined); setIsEditorOpen(true); }}
-                className="px-6 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-cyan-600/20 transition-all"
+                className="min-h-[48px] px-6 py-3 bg-gradient-to-br from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white text-[13px] font-black rounded-xl shadow-lg shadow-cyan-600/20 transition-all inline-flex items-center gap-2"
               >
-                <Plus className="w-4 h-4 inline mr-1.5" />
-                Crear Mi Primera Rutina
+                <Plus className="w-4 h-4" />
+                + Crear Mi Primera Rutina
               </button>
             </div>
           ) : (
@@ -207,33 +210,37 @@ export const ProgramsExplorer: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {PREBUILT_PROGRAMS.map((prog) => {
             const isSelected = selectedProgram.id === prog.id;
             return (
               <div
                 key={prog.id}
                 onClick={() => handleSelectProgram(prog)}
-                className={`p-5 rounded-3xl border transition-all cursor-pointer flex flex-col justify-between space-y-3 ${
+                className={`p-5 rounded-3xl border transition-all cursor-pointer flex flex-col justify-between space-y-3 overflow-hidden ${
                   isSelected
                     ? "bg-neutral-900 border-cyan-500 shadow-xl shadow-cyan-500/10 ring-1 ring-cyan-500"
                     : "bg-neutral-950 border-neutral-800 hover:border-neutral-700"
                 }`}
               >
+                {/* Cover placeholder / icon for visual hierarchy */}
+                <div className="h-20 rounded-2xl bg-gradient-to-br from-cyan-500/15 via-purple-500/10 to-neutral-800 border border-cyan-500/10 flex items-center justify-center mb-1">
+                  <Dumbbell className="w-8 h-8 text-cyan-400/70" />
+                </div>
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shrink-0">
                       {prog.daysPerWeek} DÍAS / SEMANA
                     </span>
-                    <span className="text-[11px] font-bold text-neutral-400">
+                    <span className="text-[11px] font-black px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/20 shrink-0">
                       {prog.level}
                     </span>
                   </div>
-                  <h3 className="text-base font-black text-white">{prog.title}</h3>
-                  <p className="text-xs text-neutral-400 line-clamp-2 mt-1">{prog.subtitle}</p>
+                  <h3 className="text-[15px] font-black text-white leading-tight">{prog.title}</h3>
+                  <p className="text-[13px] text-neutral-400 line-clamp-2 mt-1 leading-relaxed">{prog.subtitle}</p>
                 </div>
 
-                <div className="text-[11px] font-semibold text-cyan-400 flex items-center gap-1 pt-2 border-t border-neutral-900">
+                <div className="text-[13px] font-semibold text-cyan-400 flex items-center gap-1.5 pt-3 border-t border-neutral-800/80">
                   <Layers className="w-3.5 h-3.5" />
                   {prog.routines.length} Rutinas Específicas
                 </div>
@@ -313,27 +320,30 @@ export const ProgramsExplorer: React.FC = () => {
                   key={idx}
                   className="p-4 sm:p-5 rounded-2xl bg-neutral-950 border border-neutral-800 hover:border-neutral-700 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                 >
-                  <div className="flex items-start gap-3">
-                    <span className="w-7 h-7 rounded-xl bg-neutral-900 text-neutral-300 font-black text-xs flex items-center justify-center border border-neutral-800 shrink-0">
+                  <div className="flex items-start gap-3 min-w-0">
+                    <span className="w-8 h-8 rounded-xl bg-neutral-900 text-neutral-300 font-black text-[13px] flex items-center justify-center border border-neutral-800 shrink-0">
                       {idx + 1}
                     </span>
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="text-base font-bold text-white">{ex.nameEs}</h4>
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                        <h4 className="text-[15px] font-bold text-white leading-tight">{ex.nameEs}</h4>
+                        <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shrink-0">
                           {ex.resistanceProfile === "lengthened" ? "Estiramiento" : "Contracción"}
                         </span>
                       </div>
-                      <p className="text-xs text-neutral-400">
-                        {primaryStr} • Tempo: <strong className="text-white font-mono">{re.targetTempo}</strong>
+                      <p className="text-[13px] text-neutral-300 leading-snug">
+                        {primaryStr}
+                      </p>
+                      <p className="text-[13px] text-neutral-400 flex items-center gap-1.5 mt-1">
+                        <span className="text-cyan-400">⏱</span> Tempo: <strong className="text-white font-mono text-[13px]">{re.targetTempo}</strong>
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between sm:justify-end gap-4 text-xs font-mono">
+                  <div className="flex items-center justify-between sm:justify-end gap-4 text-xs font-mono min-w-0">
                     <div className="text-right">
-                      <div className="text-sm font-extrabold text-cyan-400">{re.targetSets} series × {re.targetReps}</div>
-                      <div className="text-[11px] text-purple-300 font-bold">RIR {re.targetRir} • {re.restSeconds}s descanso</div>
+                      <div className="text-[15px] font-extrabold text-cyan-400 leading-tight">{re.targetSets} series × {re.targetReps}</div>
+                      <div className="text-[13px] text-purple-300 font-bold">RIR {re.targetRir} • {re.restSeconds}s descanso</div>
                     </div>
 
                     <button

@@ -54,7 +54,7 @@ export const ElectrolytesTracker: React.FC = () => {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => removeElectrolyte(key, cfg.step)}
-                className="flex items-center justify-center px-3 py-2 rounded-xl bg-neutral-900 border border-neutral-700 text-neutral-300 hover:text-white text-xs font-bold"
+                className="flex items-center justify-center min-h-[48px] min-w-[48px] px-4 py-3 rounded-xl bg-neutral-900 border border-neutral-700 text-neutral-300 hover:text-white text-xs font-bold"
                 aria-label={`Quitar ${cfg.step} ${cfg.unit} de ${cfg.label}`}
               >
                 <Minus className="w-4 h-4" />
@@ -64,7 +64,7 @@ export const ElectrolytesTracker: React.FC = () => {
                   addElectrolyte(key, cfg.step);
                   showToast(`+${cfg.step} ${cfg.unit} de ${cfg.label}`, "success");
                 }}
-                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold transition-colors"
+                className="flex-1 flex items-center justify-center gap-1.5 min-h-[48px] py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold transition-colors"
               >
                 <Plus className="w-4 h-4" /> +{cfg.step} {cfg.unit}
               </button>

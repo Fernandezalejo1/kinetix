@@ -40,8 +40,46 @@ interface GoalHubProps {
   onGoToPrograms?: () => void;
 }
 
-const QUALITY_LABELS = ["", "Muy mal", "Mal", "Regular", "Bien", "Excelente"];
+const QUALITY_LABELS = ["", "Muy mal", "Mal", "Regular", "Buena", "Excelente"];
+const QUALITY_EMOJIS = ["", "😫", "😴", "😐", "🙂", "😊"];
 const QUALITY_COLORS = ["", "text-rose-400", "text-orange-400", "text-amber-300", "text-emerald-300", "text-emerald-400"];
+const QUALITY_BG = ["", "bg-rose-500/20 border-rose-500/30", "bg-orange-500/20 border-orange-500/30", "bg-amber-500/20 border-amber-500/30", "bg-emerald-500/20 border-emerald-500/30", "bg-emerald-500/25 border-emerald-400/40"];
+
+const READINESS_HEX: Record<string, string> = {
+  dale: "#34d399",
+  moderado: "#fbbf24",
+  descanso: "#fb7185",
+};
+
+const ReadinessGauge: React.FC<{ score: number; verdict: string; size?: number }> = ({ score, verdict, size = 84 }) => {
+  const r = 34;
+  const c = 2 * Math.PI * r;
+  const pct = Math.max(0, Math.min(100, score));
+  const hex = READINESS_HEX[verdict] ?? "#34d399";
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }} role="img" aria-label={`Readiness ${score} de 100`}>
+      <svg viewBox="0 0 80 80" width={size} height={size}>
+        <circle cx="40" cy="40" r={r} fill="none" stroke="rgba(255,255,255,0.10)" strokeWidth="8" />
+        <circle
+          cx="40"
+          cy="40"
+          r={r}
+          fill="none"
+          stroke={hex}
+          strokeWidth="8"
+          strokeLinecap="round"
+          strokeDasharray={`${(pct / 100) * c} ${c}`}
+          transform="rotate(-90 40 40)"
+          style={{ transition: "stroke-dasharray 0.6s ease" }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="font-black font-mono text-white leading-none" style={{ fontSize: Math.max(14, size * 0.22) }}>{score}</span>
+        <span className="text-neutral-500 leading-none" style={{ fontSize: Math.max(8, size * 0.11) }}>/100</span>
+      </div>
+    </div>
+  );
+};
 
 export const GoalHub: React.FC<GoalHubProps> = ({ onGoToPrograms }) => {
   const {
@@ -271,9 +309,9 @@ export const GoalHub: React.FC<GoalHubProps> = ({ onGoToPrograms }) => {
             <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/25">
               <Moon className="w-5 h-5" />
             </div>
-            <div>
-              <h3 className="text-base font-black text-white tracking-tight">Sueño & Turno Nocturno</h3>
-              <p className="text-[11px] text-neutral-400">Clave para el déficit: dormí bien o la grasa no se va</p>
+            <div className="min-w-0">
+              <h3 className="text-base font-black text-white tracking-tight">Horario de sueño</h3>
+              <p className="text-[11px] text-neutral-400">Registrá tu descanso · turno {nutritionProfile.workStart}–{nutritionProfile.workEnd}</p>
             </div>
             <button
               onClick={() => {
@@ -284,7 +322,7 @@ export const GoalHub: React.FC<GoalHubProps> = ({ onGoToPrograms }) => {
                 showToast("Sincronizando sueño y peso desde Health Connect…", "info");
                 requestHealthSyncNow();
               }}
-              className="ml-auto shrink-0 px-3 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white text-[11px] font-bold transition-colors flex items-center gap-1.5"
+              className="ml-auto shrink-0 px-3 py-2 rounded-xl bg-transparent border border-neutral-700 hover:border-indigo-400 hover:bg-indigo-500/10 text-neutral-300 hover:text-indigo-300 text-[11px] font-bold transition-colors flex items-center gap-1.5"
               title="Leer sueño y peso de Health Connect"
             >
               <RefreshCw className="w-3.5 h-3.5" />
@@ -293,22 +331,22 @@ export const GoalHub: React.FC<GoalHubProps> = ({ onGoToPrograms }) => {
           </div>
 
           <div className="p-3 rounded-2xl bg-neutral-950 border border-neutral-800 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-[11px] text-neutral-300">
+            <div className="flex items-center gap-2 text-[11px] text-neutral-400">
               <BedDouble className="w-4 h-4 text-indigo-400" />
               <span>
-                Turno <strong className="text-white">{nutritionProfile.workStart}–{nutritionProfile.workEnd}</strong> → dormí
+                Ventana recomendada por tu turno <strong className="text-neutral-200">{nutritionProfile.workStart}–{nutritionProfile.workEnd}</strong>
               </span>
             </div>
-            <div className="text-right">
+            <div className="text-right shrink-0">
               <div className="text-sm font-black text-white font-mono">{sleepWindow.start} → {sleepWindow.end}</div>
-              <div className="text-[9px] text-neutral-500">≈{sleepWindow.hours} h recomendadas</div>
+              <div className="text-[9px] text-neutral-500">≈{sleepWindow.hours} h sugeridas</div>
             </div>
           </div>
 
           <form onSubmit={saveSleep} className="space-y-3">
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <label className="block">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Acostarse</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Hora de acostarse</span>
                 <input
                   type="time"
                   value={sBed}
@@ -317,7 +355,7 @@ export const GoalHub: React.FC<GoalHubProps> = ({ onGoToPrograms }) => {
                 />
               </label>
               <label className="block">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Despertar</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Hora de despertarse</span>
                 <input
                   type="time"
                   value={sWake}
@@ -326,27 +364,35 @@ export const GoalHub: React.FC<GoalHubProps> = ({ onGoToPrograms }) => {
                 />
               </label>
               <div className="block">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Calidad</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Calidad del sueño</span>
                 <div className="flex gap-1 mt-1">
                   {[1, 2, 3, 4, 5].map((q) => (
                     <button
                       key={q}
                       type="button"
                       onClick={() => setSQuality(q)}
-                      className={`flex-1 h-[42px] rounded-xl text-xs font-black transition-all ${
-                        sQuality === q ? "bg-indigo-600 text-white" : "bg-neutral-950 border border-neutral-800 text-neutral-500 hover:text-white"
+                      className={`flex-1 h-[42px] rounded-xl text-[13px] font-black transition-all flex flex-col items-center justify-center leading-none gap-0.5 ${
+                        sQuality === q ? "bg-indigo-600 text-white shadow-md scale-[1.02]" : "bg-neutral-950 border border-neutral-800 text-neutral-500 hover:text-white hover:border-neutral-600"
                       }`}
-                      title={QUALITY_LABELS[q]}
+                      title={`${QUALITY_EMOJIS[q]} ${QUALITY_LABELS[q]}`}
                     >
-                      {q}
+                      <span>{QUALITY_EMOJIS[q]}</span>
+                      <span className="text-[7px] font-bold uppercase tracking-wider opacity-80">{QUALITY_LABELS[q].slice(0,4)}</span>
                     </button>
                   ))}
                 </div>
               </div>
             </div>
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-[10px] text-neutral-500">{QUALITY_LABELS[sQuality]} · {sleepHoursOf(sBed, sWake)} h</span>
-              <button type="submit" className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black transition-colors shadow-lg shadow-indigo-600/20">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black border ${QUALITY_BG[sQuality] ?? "bg-neutral-800 border-neutral-700"} ${QUALITY_COLORS[sQuality]}`}>
+                  <span>{QUALITY_EMOJIS[sQuality]}</span> {QUALITY_LABELS[sQuality]}
+                </span>
+                <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 text-xs font-black font-mono">
+                  ⏱ {sleepHoursOf(sBed, sWake)} h
+                </span>
+              </div>
+              <button type="submit" className="px-5 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-black transition-colors shadow-lg shadow-cyan-600/25 flex items-center gap-1.5">
                 Registrar noche
               </button>
             </div>
@@ -394,13 +440,13 @@ export const GoalHub: React.FC<GoalHubProps> = ({ onGoToPrograms }) => {
           </div>
 
           {todayReadiness ? (
-            <div className={`p-4 rounded-2xl bg-neutral-950 border border-neutral-800 space-y-1 ${READINESS_VERDICTS[todayReadiness.verdict].color}`}>
-              <div className="flex items-center justify-between">
+            <div className={`p-4 rounded-2xl bg-neutral-950 border border-neutral-800 flex items-center gap-4 ${READINESS_VERDICTS[todayReadiness.verdict].color}`}>
+              <ReadinessGauge score={todayReadiness.score} verdict={todayReadiness.verdict} />
+              <div className="min-w-0 space-y-1">
                 <span className="text-xs font-black uppercase tracking-wider">{READINESS_VERDICTS[todayReadiness.verdict].label}</span>
-                <span className="text-2xl font-black font-mono">{todayReadiness.score}<span className="text-sm text-neutral-500">/100</span></span>
+                <p className="text-[11px] text-neutral-400 leading-relaxed">{READINESS_VERDICTS[todayReadiness.verdict].tip}</p>
+                <p className="text-[9px] text-neutral-500">registrado hoy · fatiga {todayReadiness.fatigue}/5 · agujetas {todayReadiness.soreness}/5 · sueño {todayReadiness.sleepHours} h</p>
               </div>
-              <p className="text-[11px] text-neutral-400">{READINESS_VERDICTS[todayReadiness.verdict].tip}</p>
-              <p className="text-[9px] text-neutral-500">registrado hoy · fatiga {todayReadiness.fatigue}/5 · agujetas {todayReadiness.soreness}/5 · sueño {todayReadiness.sleepHours} h</p>
             </div>
           ) : (
             <form onSubmit={saveReadiness} className="space-y-3">
@@ -440,13 +486,13 @@ export const GoalHub: React.FC<GoalHubProps> = ({ onGoToPrograms }) => {
                 />
               </label>
 
-              <div className={`p-3 rounded-2xl bg-neutral-950 border border-neutral-800 flex items-center justify-between gap-2 ${READINESS_VERDICTS[readinessPreview.verdict].color}`}>
-                <div>
-                  <span className="text-xs font-black uppercase tracking-wider">{READINESS_VERDICTS[readinessPreview.verdict].label}</span>
-                  <p className="text-[9px] text-neutral-500 mt-0.5">{READINESS_VERDICTS[readinessPreview.verdict].tip}</p>
+              <div className={`p-3 rounded-2xl bg-neutral-950 border border-neutral-800 flex items-center gap-3 ${READINESS_VERDICTS[readinessPreview.verdict].color}`}>
+                  <ReadinessGauge score={readinessPreview.score} verdict={readinessPreview.verdict} size={56} />
+                  <div className="min-w-0">
+                    <span className="text-xs font-black uppercase tracking-wider">{READINESS_VERDICTS[readinessPreview.verdict].label}</span>
+                    <p className="text-[9px] text-neutral-500 mt-0.5 leading-snug">{READINESS_VERDICTS[readinessPreview.verdict].tip}</p>
+                  </div>
                 </div>
-                <span className="text-xl font-black font-mono">{readinessPreview.score}</span>
-              </div>
 
               <button type="submit" className="w-full py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black transition-colors shadow-lg shadow-rose-600/20">
                 Guardar readiness de hoy

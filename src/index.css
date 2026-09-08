@@ -201,3 +201,38 @@ input[type="number"] {
 .muscle-color-shoulders { --muscle-color: #a855f7; }
 .muscle-color-arms { --muscle-color: #f59e0b; }
 .muscle-color-core { --muscle-color: #06b6d4; }
+
+/* Mobile-first touch & layout utilities */
+@utility line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+@utility line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+/* Prevent horizontal overflow from lazy images / cards */
+@utility contain-overflow {
+  overflow: hidden;
+  contain: layout style;
+}
+
+/* Smoother press feedback for mobile buttons */
+@utility press-scale {
+  transition: transform 0.1s ease, opacity 0.1s ease;
+  &:active {
+    transform: scale(0.97);
+    opacity: 0.9;
+  }
+}
+
+/* Safe bottom area for phones with gesture bars */
+@utility pb-nav {
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 60px);
+}

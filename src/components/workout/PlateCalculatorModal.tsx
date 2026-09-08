@@ -61,6 +61,14 @@ export const PlateCalculatorModal: React.FC<PlateCalculatorModalProps> = ({
                 Peso Objetivo Total
               </label>
               <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setTargetWeight(Math.max(Math.round((barWeight + 2.5) * 2) / 2, Math.round((targetWeight - 2.5) * 2) / 2))}
+                  className="min-w-[44px] min-h-[44px] rounded-xl bg-neutral-800 border border-neutral-700 text-white text-xl font-black hover:bg-neutral-700 transition-colors flex items-center justify-center"
+                  title="Bajar 2.5"
+                >
+                  −
+                </button>
                 <input
                   type="number"
                   inputMode="decimal"
@@ -71,6 +79,14 @@ export const PlateCalculatorModal: React.FC<PlateCalculatorModalProps> = ({
                   onChange={(e) => setTargetWeight(Math.max(barWeight, parseFloat(e.target.value) || barWeight))}
                   className="w-24 px-3 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-right font-bold text-white text-lg focus:outline-none focus:border-blue-500"
                 />
+                <button
+                  type="button"
+                  onClick={() => setTargetWeight(Math.min(400, targetWeight + 2.5))}
+                  className="min-w-[44px] min-h-[44px] rounded-xl bg-blue-600 border border-blue-500 text-white text-xl font-black hover:bg-blue-500 transition-colors flex items-center justify-center"
+                  title="Subir 2.5"
+                >
+                  +
+                </button>
                 <span className="text-sm font-semibold text-neutral-300">{weightUnit}</span>
               </div>
             </div>

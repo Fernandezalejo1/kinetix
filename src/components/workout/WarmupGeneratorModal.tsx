@@ -63,12 +63,20 @@ export const WarmupGeneratorModal: React.FC<WarmupGeneratorModalProps> = ({
         {/* Body */}
         <div className="p-4 sm:p-6 space-y-6 overflow-y-auto scrollbar-thin flex-1 min-h-0 overscroll-contain pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
           {/* Target Working Weight */}
-          <div className="p-4 rounded-xl bg-neutral-950 border border-neutral-800 flex flex-wrap items-center justify-between gap-3">
-            <div className="min-w-0">
-              <label className="text-xs font-semibold uppercase text-neutral-400">Peso de la 1ª Serie Efectiva</label>
-              <div className="text-xs text-neutral-500">Calcula la potenciación post-activación (PAP)</div>
+          <div className="p-4 rounded-xl bg-neutral-950 border border-neutral-800 flex flex-wrap items-center justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <label className="text-xs font-semibold uppercase tracking-wider text-neutral-300">Peso de la 1ª Serie Efectiva</label>
+              <div className="text-xs text-neutral-500 mt-0.5 leading-relaxed">Calcula la potenciación post-activación (PAP)</div>
             </div>
-            <div className="flex items-center gap-2 ml-auto">
+            <div className="flex items-center gap-1.5 ml-auto w-full sm:w-auto justify-end">
+              <button
+                type="button"
+                aria-label="Disminuir peso"
+                onClick={() => setWorkingWeight((w) => Math.max(20, Number((w - 2.5).toFixed(1))))}
+                className="min-w-[48px] min-h-[48px] w-12 h-12 flex items-center justify-center rounded-xl bg-neutral-900 border border-neutral-700 text-white text-xl font-bold hover:bg-neutral-800 active:bg-neutral-700 transition-colors shrink-0"
+              >
+                −
+              </button>
               <input
                 type="number"
                 inputMode="decimal"
@@ -77,17 +85,25 @@ export const WarmupGeneratorModal: React.FC<WarmupGeneratorModalProps> = ({
                 max="400"
                 value={workingWeight}
                 onChange={(e) => setWorkingWeight(Math.max(20, parseFloat(e.target.value) || 20))}
-                className="w-24 px-3 py-2 bg-neutral-900 border border-neutral-700 rounded-lg text-right font-bold text-white text-lg focus:outline-none focus:border-amber-500"
+                className="w-28 min-h-[48px] px-3 py-3 bg-neutral-900 border border-neutral-700 rounded-xl text-center font-bold text-white text-[16px] leading-none focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
               />
-              <span className="text-sm font-semibold text-neutral-300">{weightUnit}</span>
+              <button
+                type="button"
+                aria-label="Aumentar peso"
+                onClick={() => setWorkingWeight((w) => Math.min(400, Number((w + 2.5).toFixed(1))))}
+                className="min-w-[48px] min-h-[48px] w-12 h-12 flex items-center justify-center rounded-xl bg-neutral-900 border border-neutral-700 text-white text-xl font-bold hover:bg-neutral-800 active:bg-neutral-700 transition-colors shrink-0"
+              >
+                +
+              </button>
+              <span className="text-sm font-semibold text-neutral-300 min-w-[32px] text-center">{weightUnit}</span>
             </div>
           </div>
 
           {/* Scientific Note */}
-          <div className="flex items-start gap-2.5 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-xs text-blue-300">
-            <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5" />
+          <div className="flex items-start gap-3 p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs leading-relaxed text-blue-200">
+            <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5 text-blue-300" />
             <span>
-              <strong>Principio de Eric Helms & Dr. Israetel:</strong> Calienta para potenciar el sistema nervioso central (SNC) y lubricar articulaciones, reduciendo las repeticiones a medida que sube la carga para acumular <strong>cero fatiga metabólica</strong> antes de las series efectivas.
+              <strong className="text-blue-100">Principio de Eric Helms & Dr. Israetel:</strong> Calienta para potenciar el sistema nervioso central (SNC) y lubricar articulaciones, reduciendo las repeticiones a medida que sube la carga para acumular <strong className="text-blue-100">cero fatiga metabólica</strong> antes de las series efectivas.
             </span>
           </div>
 
@@ -127,8 +143,8 @@ export const WarmupGeneratorModal: React.FC<WarmupGeneratorModalProps> = ({
                     </div>
                   </div>
 
-                  <div className="text-right ml-auto">
-                    <span className="text-base font-extrabold text-amber-400">
+                  <div className="text-right ml-auto shrink-0">
+                    <span className="text-base font-extrabold text-cyan-400">
                       {step.weight} {weightUnit}
                     </span>
                     <div className="text-xs font-semibold text-neutral-400">
@@ -142,10 +158,10 @@ export const WarmupGeneratorModal: React.FC<WarmupGeneratorModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-neutral-900/80 border-t border-neutral-800 flex justify-end shrink-0">
+        <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-neutral-900/80 border-t border-neutral-800 flex justify-end shrink-0 safe-area-bottom">
           <button
             onClick={onClose}
-            className="w-full sm:w-auto px-6 py-2.5 bg-amber-600 hover:bg-amber-500 text-white text-sm font-semibold rounded-xl transition-colors shadow-lg shadow-amber-600/20"
+            className="w-full sm:w-auto min-h-[48px] px-6 py-3 bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 text-black text-[15px] font-bold rounded-xl transition-colors shadow-lg shadow-cyan-500/20"
           >
             Entendido, ¡A Entrenar!
           </button>

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Dumbbell,
   Layers,
@@ -11,7 +11,9 @@ import {
   Settings,
   Trophy,
   Zap,
-  Target
+  Target,
+  MoreHorizontal,
+  ChevronRight,
 } from "lucide-react";
 import { useWorkout } from "../context/WorkoutContext";
 
@@ -37,6 +39,18 @@ export const Navigation: React.FC<NavigationProps> = ({
     soundEnabled,
     setSoundEnabled,
   } = useWorkout();
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreRef = useRef<HTMLDivElement>(null);
+
+  // Close more menu on outside click
+  useEffect(() => {
+    if (!moreOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) setMoreOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [moreOpen]);
 
   const navItems = [
     { id: "workout", label: "Entrenar", shortLabel: "Entrenar", icon: Dumbbell },
@@ -47,6 +61,11 @@ export const Navigation: React.FC<NavigationProps> = ({
     { id: "reto", label: "Reto 21 Días", shortLabel: "Reto", icon: Trophy },
     { id: "objetivo", label: "Mi Objetivo", shortLabel: "Objetivo", icon: Target },
   ];
+
+  // Mobile: show 5 primary + overflow menu
+  const mobilePrimary = navItems.slice(0, 5);
+  const mobileOverflow = navItems.slice(5);
+  const isOverflowActive = mobileOverflow.some((i) => i.id === currentTab);
 
   return (
     <>
@@ -152,34 +171,80 @@ export const Navigation: React.FC<NavigationProps> = ({
         </div>
       </header>
 
-      {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-neutral-950 border-t border-neutral-800 safe-area-bottom">
-        <div className="flex items-stretch justify-around px-0.5">
-          {navItems.map((item) => {
+      {/* Mobile Bottom Navigation — 5 primary + overflow menu */}
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-neutral-950/95 backdrop-blur-md border-t border-neutral-800 safe-area-bottom">
+        <div className="flex items-stretch justify-around px-1">
+          {mobilePrimary.map((item) => {
             const Icon = item.icon;
             const isActive = currentTab === item.id;
             return (
               <button
                 key={item.id}
                 onClick={() => onSelectTab(item.id as NavTab)}
-                className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 min-h-[54px] relative transition-all touch-target ${
+                className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 min-h-[56px] relative transition-all press-scale ${
                   isActive ? "text-cyan-400" : "text-neutral-500 active:text-neutral-300"
                 }`}
               >
                 {isActive && (
-                  <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
+                  <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[3px] rounded-full bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.8)]" />
                 )}
                 <span
-                  className={`flex items-center justify-center w-11 h-7 rounded-full transition-all ${
-                    isActive ? "bg-cyan-500/12" : "bg-transparent"
+                  className={`flex items-center justify-center w-11 h-8 rounded-xl transition-all ${
+                    isActive ? "bg-cyan-500/15" : "bg-transparent"
                   }`}
                 >
                   <Icon className={`w-[22px] h-[22px] ${isActive ? "drop-shadow-[0_0_6px_rgba(34,211,238,0.6)]" : ""}`} />
                 </span>
-                <span className={`text-[9px] font-bold leading-none ${isActive ? "font-extrabold" : ""}`}>{item.shortLabel}</span>
+                <span className={`text-[10px] leading-none ${isActive ? "font-extrabold" : "font-bold"}`}>{item.shortLabel}</span>
               </button>
             );
           })}
+
+          {/* Overflow menu button */}
+          <div ref={moreRef} className="relative flex-1">
+            <button
+              onClick={() => setMoreOpen(!moreOpen)}
+              className={`w-full flex flex-col items-center justify-center gap-0.5 py-1.5 min-h-[56px] relative transition-all press-scale ${
+                isOverflowActive ? "text-cyan-400" : moreOpen ? "text-white" : "text-neutral-500 active:text-neutral-300"
+              }`}
+            >
+              {isOverflowActive && (
+                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[3px] rounded-full bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.8)]" />
+              )}
+              <span
+                className={`flex items-center justify-center w-11 h-8 rounded-xl transition-all ${
+                  isOverflowActive || moreOpen ? "bg-cyan-500/15" : "bg-transparent"
+                }`}
+              >
+                <MoreHorizontal className="w-[22px] h-[22px]" />
+              </span>
+              <span className="text-[10px] font-bold leading-none">Más</span>
+            </button>
+
+            {/* Dropdown panel */}
+            {moreOpen && (
+              <div className="absolute bottom-full right-0 mb-2 w-52 bg-neutral-900 border border-neutral-700 rounded-2xl shadow-2xl overflow-hidden animate-fadeIn">
+                {mobileOverflow.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = currentTab === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => { onSelectTab(item.id as NavTab); setMoreOpen(false); }}
+                      className={`w-full flex items-center gap-3 px-4 py-3.5 text-left transition-all ${
+                        isActive ? "bg-cyan-500/10 text-cyan-400" : "text-neutral-300 hover:bg-neutral-800"
+                      }`}
+                    >
+                      <Icon className="w-5 h-5 shrink-0" />
+                      <span className="text-sm font-bold flex-1">{item.label}</span>
+                      {isActive && <span className="w-2 h-2 rounded-full bg-cyan-400" />}
+                      <ChevronRight className="w-4 h-4 text-neutral-500" />
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       </nav>
     </>

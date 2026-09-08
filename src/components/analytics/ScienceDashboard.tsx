@@ -207,13 +207,13 @@ export const ScienceDashboard: React.FC = () => {
           </span>
         </div>
 
-        <div className="p-3 sm:p-5 rounded-2xl sm:rounded-3xl bg-neutral-900 border border-neutral-800 shadow-lg">
-          <div className="flex items-center justify-between text-neutral-400 mb-1">
-            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider">Tonelaje 7d</span>
-            <TrendingUp className="w-4 h-4 text-purple-400" />
+        <div className="p-3 sm:p-5 rounded-2xl sm:rounded-3xl bg-neutral-900 border border-neutral-800 shadow-lg min-w-0 overflow-hidden">
+          <div className="flex items-center justify-between text-neutral-400 mb-1 gap-2">
+            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider truncate">Tonelaje 7d</span>
+            <TrendingUp className="w-4 h-4 text-purple-400 shrink-0" />
           </div>
-          <div className="text-2xl sm:text-3xl font-black text-white truncate">
-            {weekStats.thisWeekVolume > 0 ? weekStats.thisWeekVolume.toLocaleString() : "—"}{" "}
+          <div className="text-xl sm:text-3xl font-black text-white min-w-0 tabular-nums break-words leading-tight">
+            {weekStats.thisWeekVolume > 0 ? weekStats.thisWeekVolume.toLocaleString("es-ES") : "—"}{" "}
             {weekStats.thisWeekVolume > 0 && <span className="text-sm font-normal text-neutral-400">{weightUnit}</span>}
           </div>
           <span className={`text-[10px] sm:text-[11px] font-bold mt-1 block ${weekStats.volumeDelta >= 0 ? "text-cyan-400" : "text-amber-400"}`}>
@@ -447,32 +447,40 @@ export const ScienceDashboard: React.FC = () => {
                     </span>
                   </div>
 
-                  {/* 4-Step RIR Visual Bar */}
-                  <div className="grid grid-cols-4 gap-1 h-2 rounded-full overflow-hidden bg-neutral-900 p-0.5 border border-neutral-800">
+                  {/* 4-Step RIR Visual Bar - 48px touch targets */}
+                  <div className="grid grid-cols-4 gap-1.5 min-h-[48px] rounded-xl overflow-hidden bg-neutral-900 p-1.5 border border-neutral-800">
                     <div
-                      className={`h-full rounded-sm transition-all ${
-                        prog.averageRir === 0 ? "bg-amber-500 shadow-sm" : "bg-neutral-800"
+                      className={`min-h-[40px] rounded-lg transition-all flex items-center justify-center text-[10px] font-black ${
+                        prog.averageRir === 0 ? "bg-amber-500 text-white shadow-sm" : "bg-neutral-800 text-neutral-500"
                       }`}
                       title="RIR 0 (Fallo Concéntrico)"
-                    />
+                    >
+                      RIR 0
+                    </div>
                     <div
-                      className={`h-full rounded-sm transition-all ${
-                        prog.averageRir === 1 ? "bg-purple-500 shadow-sm" : "bg-neutral-800"
+                      className={`min-h-[40px] rounded-lg transition-all flex items-center justify-center text-[10px] font-black ${
+                        prog.averageRir === 1 ? "bg-purple-500 text-white shadow-sm" : "bg-neutral-800 text-neutral-500"
                       }`}
                       title="RIR 1 (1 rep en reserva)"
-                    />
+                    >
+                      RIR 1
+                    </div>
                     <div
-                      className={`h-full rounded-sm transition-all ${
-                        prog.averageRir === 2 ? "bg-emerald-500 shadow-sm" : "bg-neutral-800"
+                      className={`min-h-[40px] rounded-lg transition-all flex items-center justify-center text-[10px] font-black ${
+                        prog.averageRir === 2 ? "bg-emerald-500 text-white shadow-sm" : "bg-neutral-800 text-neutral-500"
                       }`}
                       title="RIR 2 (Sweet spot hipertrofia)"
-                    />
+                    >
+                      RIR 2
+                    </div>
                     <div
-                      className={`h-full rounded-sm transition-all ${
-                        prog.averageRir >= 3 ? "bg-blue-500 shadow-sm" : "bg-neutral-800"
+                      className={`min-h-[40px] rounded-lg transition-all flex items-center justify-center text-[10px] font-black ${
+                        prog.averageRir >= 3 ? "bg-blue-500 text-white shadow-sm" : "bg-neutral-800 text-neutral-500"
                       }`}
                       title="RIR 3+ (Submáximo / Sobrecarga alta)"
-                    />
+                    >
+                      RIR 3+
+                    </div>
                   </div>
                   <div className="flex justify-between text-[9px] font-mono text-neutral-500 gap-0.5">
                     <span>RIR 0</span>
@@ -482,11 +490,34 @@ export const ScienceDashboard: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Scientific Rationale Accordion */}
+                {/* Scientific Rationale Accordion - progressive disclosure */}
                 <div className="pt-2 border-t border-neutral-900">
-                  <p className="text-xs text-neutral-300 leading-relaxed">
-                    <strong>Fundamento Científico:</strong> {prog.scientificRationale}
-                  </p>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setExpandedExerciseId(isExpanded ? null : prog.exerciseId)
+                    }
+                    className="w-full flex items-center justify-between gap-2 py-1.5 -my-1 text-left"
+                    aria-expanded={isExpanded}
+                  >
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400 flex items-center gap-1.5">
+                      <HelpCircle className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                      ¿Por qué este cambio? · Leer la ciencia
+                    </span>
+                    <span className="shrink-0">
+                      {isExpanded ? (
+                        <ChevronUp className="w-4 h-4 text-neutral-400" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-neutral-400" />
+                      )}
+                    </span>
+                  </button>
+
+                  {isExpanded && (
+                    <p className="mt-1 p-3 rounded-xl bg-neutral-900/80 border border-neutral-800 text-[11px] text-neutral-300 leading-relaxed">
+                      <strong>Fundamento Científico:</strong> {prog.scientificRationale}
+                    </p>
+                  )}
 
                   <div className="mt-2 p-2.5 rounded-xl bg-neutral-900 text-[11px] text-neutral-300 flex items-center justify-between gap-2">
                     <span className="flex items-center gap-1.5">
@@ -847,10 +878,12 @@ export const ScienceDashboard: React.FC = () => {
                 <XAxis dataKey="date" stroke="#737373" fontSize={10} tickLine={false} />
                 <YAxis stroke="#737373" fontSize={10} tickLine={false} width={45} />
                 <Tooltip
-                  contentStyle={{ backgroundColor: "#171717", borderColor: "#404040", borderRadius: "12px", color: "#fff", fontSize: "11px" }}
-                  formatter={(val: any) => [`${val.toLocaleString()} ${weightUnit}`, "Tonelaje"]}
+                  contentStyle={{ backgroundColor: "#171717", borderColor: "#404040", borderRadius: "12px", color: "#fff", fontSize: "12px", padding: "10px 12px" }}
+                  wrapperStyle={{ minWidth: "140px" } as any}
+                  cursor={{ stroke: "#52525b", strokeWidth: 1, strokeDasharray: "4 4" }}
+                  formatter={(val: any) => [`${Number(val).toLocaleString("es-ES")} ${weightUnit}`, "Tonelaje"]}
                 />
-                <Area type="monotone" dataKey="tonnage" stroke="#22d3ee" strokeWidth={2} fillOpacity={1} fill="url(#tonnageGrad)" />
+                <Area type="monotone" dataKey="tonnage" stroke="#22d3ee" strokeWidth={2} fillOpacity={1} fill="url(#tonnageGrad)" dot={false} activeDot={{ r: 6, strokeWidth: 2, stroke: "#22d3ee", fill: "#fff" }} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
