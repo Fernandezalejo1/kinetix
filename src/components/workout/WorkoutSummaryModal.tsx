@@ -9,9 +9,14 @@ import {
   Zap,
   ArrowRight,
   TrendingUp,
-  Award
+  TrendingDown,
+  Minus,
+  Award,
+  BrainCircuit
 } from "lucide-react";
 import { PersonalRecord, CompletedWorkout } from "../../types";
+import { calculateSmartNextWeight } from "../../utils/weightRecommendation";
+import { useWorkout } from "../../context/WorkoutContext";
 
 interface WorkoutSummaryModalProps {
   isOpen: boolean;
@@ -29,6 +34,7 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
   weightUnit,
 }) => {
   const [copied, setCopied] = useState(false);
+  const { exerciseHistory, personalRecords } = useWorkout();
 
   if (!isOpen || !workout) return null;
 
@@ -36,6 +42,22 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
   const formattedVolume = workout.totalVolumeKg.toLocaleString("es-ES", {
     maximumFractionDigits: 1,
   });
+
+  // Recomendaciones de carga para la próxima sesión por ejercicio completado
+  const recommendations = workout.exercises
+    .filter((wEx) => wEx.targetReps && wEx.exercise)
+    .map((wEx) => {
+      const rec = calculateSmartNextWeight(
+        wEx.exercise,
+        wEx.targetReps,
+        wEx.targetSets,
+        wEx.targetRir ?? 2,
+        exerciseHistory,
+        personalRecords
+      );
+      return { wEx, rec };
+    })
+    .filter(({ rec }) => rec.nextWeight > 0);
 
   const generateShareText = () => {
     let text = `⚡ KINETIX — ${workout.routineName}\n`;
@@ -196,6 +218,56 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* Recomendaciones de carga para la próxima sesión */}
+          {recommendations.length > 0 && (
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-violet-950/40 via-neutral-950 to-neutral-950 border border-violet-500/30 space-y-3">
+              <div className="flex items-center gap-2">
+                <BrainCircuit className="w-5 h-5 text-violet-400 shrink-0" />
+                <div>
+                  <h4 className="text-sm font-black text-violet-300">
+                    Próxima carga sugerida
+                  </h4>
+                  <p className="text-[11px] text-neutral-400">
+                    Ajuste automático según tu rendimiento de hoy
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                {recommendations.map((r) => {
+                  const current = r.rec.nextWeight - r.rec.adjustment;
+                  const delta = r.rec.adjustment;
+                  const isUp = delta > 0;
+                  const isDown = delta < 0;
+                  const Icon = isUp ? TrendingUp : isDown ? TrendingDown : Minus;
+                  const color = isUp ? "text-emerald-400" : isDown ? "text-amber-400" : "text-neutral-400";
+                  const iconBg = isUp ? "bg-emerald-500/15 border-emerald-500/30"
+                    : isDown ? "bg-amber-500/15 border-amber-500/30"
+                    : "bg-neutral-800 border-neutral-700";
+                  return (
+                    <div
+                      key={r.wEx.id}
+                      className="p-3 rounded-xl bg-neutral-900/90 border border-violet-500/15 space-y-2"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-bold text-white truncate">
+                          {r.wEx.exercise.nameEs}
+                        </span>
+                        <div className={`flex items-center gap-1 shrink-0 text-[11px] font-black font-mono ${color}`}>
+                          <Icon className={`w-3.5 h-3.5 ${isUp ? "fill-emerald-400/30" : isDown ? "fill-amber-400/30" : ""}`} />
+                          {delta === 0 ? "Mantener" : `${current} → ${r.rec.nextWeight}`} {weightUnit}
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-neutral-400 leading-snug">
+                        {r.rec.reason}
+                      </p>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}

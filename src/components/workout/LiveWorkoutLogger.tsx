@@ -888,7 +888,13 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                             {/* Ghost Rep Previous Performance */}
                             <td className="py-2.5 text-neutral-400 font-mono text-[11px]">
                               {set.previousWeight ? (
-                                <span>{set.previousWeight}k × {set.previousReps} @RIR{set.previousRir ?? 1}</span>
+                                <span>{set.previousWeight}k × {set.previousReps} @RIR{set.previousRir ?? 1}
+                                  {set.weight !== set.previousWeight && !set.completed && (
+                                    <span className={`ml-1 font-black ${set.weight > set.previousWeight ? "text-emerald-400" : "text-amber-400"}`}>
+                                      {set.weight > set.previousWeight ? "↑" : "↓"}{set.weight}k
+                                    </span>
+                                  )}
+                                </span>
                               ) : (
                                 <span className="text-neutral-600">—</span>
                               )}
@@ -1057,6 +1063,11 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                             {set.previousWeight ? (
                               <span className="text-[10px] font-mono text-neutral-500 truncate">
                                 antes {set.previousWeight}k × {set.previousReps} @RIR{set.previousRir ?? 1}
+                                {set.weight !== set.previousWeight && !set.completed && (
+                                  <span className={`ml-1 font-bold ${set.weight > set.previousWeight ? "text-emerald-400" : "text-amber-400"}`}>
+                                    · auto {set.weight > set.previousWeight ? "↑" : "↓"} {set.weight}k
+                                  </span>
+                                )}
                               </span>
                             ) : null}
                           </div>

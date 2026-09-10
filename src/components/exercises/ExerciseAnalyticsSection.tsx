@@ -1,8 +1,10 @@
 import React, { useState } from "react";
-import { Activity, BarChart2, Zap, Shield, Sparkles, TrendingUp, Calculator, Trophy, Layers } from "lucide-react";
+import { Activity, BarChart2, Zap, Shield, Sparkles, TrendingUp, TrendingDown, Minus, Calculator, Trophy, Layers, BrainCircuit } from "lucide-react";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, BarChart, Bar } from "recharts";
-import { Exercise } from "../../types";
+import { Exercise, ExerciseHistoryEntry, PersonalRecord } from "../../types";
 import { calculate1RM } from "../../utils/scienceCalculators";
+import { calculateSmartNextWeight } from "../../utils/weightRecommendation";
+import { useWorkout } from "../../context/WorkoutContext";
 import { ExerciseHistoryProgressionChart } from "./ExerciseHistoryProgressionChart";
 
 interface ExerciseAnalyticsSectionProps {
@@ -18,6 +20,7 @@ export const ExerciseAnalyticsSection: React.FC<ExerciseAnalyticsSectionProps> =
   const [calcReps, setCalcReps] = useState<number>(8);
   const [calcRir, setCalcRir] = useState<number>(1);
   const [activeSubView, setActiveSubView] = useState<"history" | "simulator">("history");
+  const { exerciseHistory, personalRecords } = useWorkout();
 
   // Total reps to failure = reps + rir
   const effectiveReps = calcReps + calcRir;
@@ -74,7 +77,15 @@ export const ExerciseAnalyticsSection: React.FC<ExerciseAnalyticsSectionProps> =
 
       {/* Primary Historical Progression Visual Graph Component */}
       {activeSubView === "history" && (
-        <ExerciseHistoryProgressionChart exercise={exercise} />
+        <div className="space-y-4">
+          <RecommendationCard
+            exercise={exercise}
+            history={exerciseHistory}
+            prs={personalRecords}
+            weightUnit={weightUnit}
+          />
+          <ExerciseHistoryProgressionChart exercise={exercise} />
+        </div>
       )}
 
       {/* 4 Biomechanical Score Cards (SFR, Tier, Axial Fatigue, Joint Stress) */}
@@ -249,6 +260,71 @@ export const ExerciseAnalyticsSection: React.FC<ExerciseAnalyticsSectionProps> =
           </div>
         </div>
       )}
+    </div>
+  );
+};
+
+interface RecommendationCardProps {
+  exercise: Exercise;
+  history: ExerciseHistoryEntry[];
+  prs: PersonalRecord[];
+  weightUnit: string;
+}
+
+const RecommendationCard: React.FC<RecommendationCardProps> = ({ exercise, history, prs, weightUnit }) => {
+  const lastSession = history
+    .filter((h) => h.exerciseId === exercise.id && h.weight > 0)
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+
+  if (!lastSession) return null;
+
+  const targetReps = lastSession.targetReps;
+  const rec = calculateSmartNextWeight(
+    exercise,
+    targetReps,
+    lastSession.targetSets,
+    lastSession.targetRir ?? exercise.defaultRir ?? 2,
+    history,
+    prs
+  );
+
+  if (rec.nextWeight <= 0) return null;
+
+  const current = rec.nextWeight - rec.adjustment;
+  const delta = rec.adjustment;
+  const isUp = delta > 0;
+  const isDown = delta < 0;
+  const Icon = isUp ? TrendingUp : isDown ? TrendingDown : Minus;
+  const color = isUp ? "text-emerald-400" : isDown ? "text-amber-400" : "text-neutral-400";
+  const iconBg = isUp
+    ? "bg-emerald-500/15 border-emerald-500/30"
+    : isDown
+    ? "bg-amber-500/15 border-amber-500/30"
+    : "bg-neutral-800 border-neutral-700";
+
+  return (
+    <div className="p-4 rounded-2xl bg-gradient-to-br from-violet-950/40 via-neutral-950 to-neutral-950 border border-violet-500/30 flex items-start gap-3">
+      <div className={`w-10 h-10 rounded-xl ${iconBg} border flex items-center justify-center shrink-0`}>
+        <Icon className={`w-5 h-5 ${color} ${isUp ? "fill-emerald-400/30" : isDown ? "fill-amber-400/30" : ""}`} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="text-[10px] uppercase tracking-wider font-black text-violet-300 flex items-center gap-1">
+            <BrainCircuit className="w-3.5 h-3.5" />
+            Próxima carga sugerida
+          </span>
+          <span className="text-[10px] text-neutral-500 font-medium uppercase" title={targetReps ? `Objetivo: ${targetReps} reps` : "Ejercicio por tiempo"}>
+            {targetReps ? `Objetivo ${targetReps}` : "Tiempo"} · última sesión {current} {weightUnit}
+          </span>
+        </div>
+        <div className={`text-xl font-black font-mono mt-0.5 ${color}`}>
+          {delta === 0 ? "Mantener carga" : `${current} → ${rec.nextWeight} ${weightUnit}`}
+          <span className="ml-2 text-[11px] font-bold lowercase text-neutral-400">
+            {delta > 0 ? `(+${delta})` : delta < 0 ? `(${delta})` : ""}
+          </span>
+        </div>
+        <p className="text-[11px] text-neutral-400 leading-snug mt-1">{rec.reason}</p>
+      </div>
     </div>
   );
 };
