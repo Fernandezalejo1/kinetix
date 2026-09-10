@@ -22,6 +22,7 @@ import { DEFAULT_NUTRITION_PROFILE, computePersonalTargets } from "../data/nutri
 import { calculate1RM, isCompoundExercise, unlockAudio, playRestTimerCompletedSound, playTickSound } from "../utils/scienceCalculators";
 import { detectExecutionMode, isTimeBased, parseTargetSeconds } from "../utils/exerciseMode";
 import { safeParse, safeSet, safeRemove, VALIDATORS, isArrayOrNull } from "../utils/storage";
+import { calculateSmartNextWeight, smartStartingWeight } from "../utils/weightRecommendation";
 import confetti from "canvas-confetti";
 
 interface RestTimerState {
@@ -445,7 +446,17 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
         // Medicine ball = 3kg default; legs = 80kg; else = 40kg
         const isMedicineBall = item.exerciseId === "medicine-ball-slam";
         const defaultWeight = isMedicineBall ? 3 : (exDef.category === "legs" ? 80 : 40);
-        let prevWeight = lastHistory ? lastHistory.weight : defaultWeight;
+        // Peso inicial inteligente: usa el algoritmo completo (RIR, % completado,
+        // tendencia e1RM, dificultad) o cae a estimación e1RM / genérico.
+        let prevWeight = isTime ? 0 : smartStartingWeight(
+          exDef,
+          item.targetReps,
+          item.targetSets,
+          item.targetRir,
+          exerciseHistory,
+          personalRecords,
+          defaultWeight
+        );
         // Semana de descarga: bajar la carga âˆ’10-15% para favorecer la recuperaciÃ³n.
         if ((routine as Routine).deload && !isTime) {
           prevWeight = Math.round(prevWeight * 0.9 * 4) / 4;
@@ -517,7 +528,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
     } catch (err) {
       console.error("[KINETIX] startWorkoutFromRoutine failed:", err);
     }
-  }, [exerciseHistory]);
+  }, [exerciseHistory, personalRecords]);
 
   const startEmptyWorkout = useCallback((name = "Entrenamiento Libre") => {
     try {
@@ -555,7 +566,18 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
       .filter((h) => h.exerciseId === exercise.id)
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
 
-    const prevWeight = lastHistory ? lastHistory.weight : (exercise.category === "legs" ? 80 : 40);
+    // Peso inicial inteligente (RIR / % completado / tendencia e1RM / dificultad).
+    const isMedicineBall = exercise.id === "medicine-ball-slam";
+    const defaultWeight = isMedicineBall ? 3 : (exercise.category === "legs" ? 80 : 40);
+    const prevWeight = smartStartingWeight(
+      exercise,
+      lastHistory?.targetReps,
+      lastHistory?.targetSets,
+      lastHistory?.targetRir ?? exercise.defaultRir,
+      exerciseHistory,
+      personalRecords,
+      defaultWeight
+    );
     const prevReps = lastHistory ? Math.round(lastHistory.reps.reduce((a, b) => a + b, 0) / lastHistory.reps.length) : 10;
 
     setActiveSession((prev) => {
@@ -615,7 +637,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
         exercises: [...prev.exercises, newWEx],
       };
     });
-  }, [exerciseHistory]);
+  }, [exerciseHistory, personalRecords]);
 
   /**
    * Lleva un ejercicio que quedó sin completar en una sesión previa hacia la
@@ -628,11 +650,17 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
       const lastHistory = exerciseHistory
         .filter((h) => h.exerciseId === exercise.id)
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
-      const prevWeight = lastHistory
-        ? lastHistory.weight
-        : exercise.category === "legs"
-        ? 80
-        : 40;
+      const isMedicineBallCarry = exercise.id === "medicine-ball-slam";
+      const defaultCarryWeight = isMedicineBallCarry ? 3 : exercise.category === "legs" ? 80 : 40;
+      const prevWeight = smartStartingWeight(
+        exercise,
+        pending?.targetReps,
+        pending?.targetSets,
+        pending?.targetRir ?? exercise.defaultRir,
+        exerciseHistory,
+        personalRecords,
+        defaultCarryWeight
+      );
       const prevReps = lastHistory
         ? Math.round(lastHistory.reps.reduce((a, b) => a + b, 0) / lastHistory.reps.length)
         : pending?.targetReps
@@ -684,7 +712,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
       }
       setIsWorkoutModalOpen(true);
     },
-    [exerciseHistory, activeSession]
+    [exerciseHistory, activeSession, personalRecords]
   );
 
   const removeExerciseFromActiveWorkout = useCallback((workoutExerciseId: string) => {
@@ -861,6 +889,8 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
       let exerciseRirTotal = 0;
       let exerciseRirCount = 0;
       let timeSeconds = 0;
+      let bestE1rm = 0;
+      let bestSetData: { weight: number; reps: number; rir?: number } | undefined;
       const timeBased = isTimeBased(wEx.exercise, wEx.targetReps);
 
       wEx.sets.forEach((s) => {
@@ -868,8 +898,6 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
           totalSets++;
           exerciseSets++;
           if (timeBased) {
-            // Time-based exercise: se acumula en un canal separado (segundos),
-            // NO se mezcla con tonelaje de fuerza (kg).
             const secs = s.durationSeconds ?? 0;
             timeSeconds += secs;
             totalSeconds += secs;
@@ -880,6 +908,15 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
             exerciseVolume += setVolume;
             exerciseReps.push(s.reps);
             maxWeight = Math.max(maxWeight, s.weight);
+
+            // Track best e1RM for bestSet
+            const e1rmCheck = calculate1RM(s.weight, s.reps);
+            const effectiveReps = s.rir != null ? Math.min(s.reps + Math.min(s.rir, 10), 12) : s.reps;
+            const bestE = calculate1RM(s.weight, effectiveReps);
+            if (bestE.valid && bestE.average > bestE1rm) {
+              bestE1rm = bestE.average;
+              bestSetData = { weight: s.weight, reps: s.reps, rir: s.rir };
+            }
           }
 
           if (s.rir !== undefined) {
@@ -896,7 +933,6 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
           if (e1rmObj.valid) {
             const currentPrIdx = newPrs.findIndex((np) => np.exerciseId === wEx.exerciseId && np.type === "1RM");
             if (currentPrIdx >= 0) {
-              // Si un set posterior en la misma sesión alcanza un 1RM mayor, actualizamos el récord al mejor valor
               if (current1RM > newPrs[currentPrIdx].value) {
                 newPrs[currentPrIdx].value = Math.round(current1RM);
                 newPrs[currentPrIdx].reps = s.reps;
@@ -920,6 +956,11 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
 
       if (exerciseSets > 0) {
         const difficultyStr = wEx.notes?.replace("difficulty:", "") as DifficultyLevel | undefined;
+        const avgRir = exerciseRirCount > 0 ? Math.round((exerciseRirTotal / exerciseRirCount) * 10) / 10 : undefined;
+        const completionRate = wEx.targetSets && wEx.targetSets > 0
+          ? Math.round((exerciseSets / wEx.targetSets) * 100) / 100
+          : undefined;
+
         newHistoryEntries.push({
           id: `eh-${Date.now()}-${wEx.exerciseId}`,
           exerciseId: wEx.exerciseId,
@@ -927,10 +968,15 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
           weight: maxWeight,
           sets: exerciseSets,
           reps: exerciseReps,
-          // RPE por ejercicio (no acumulado entre ejercicios)
-          rpe: exerciseRirCount > 0 ? Math.round((10 - exerciseRirTotal / exerciseRirCount) * 10) / 10 : undefined,
+          rpe: avgRir != null ? Math.round((10 - avgRir) * 10) / 10 : undefined,
+          rir: avgRir,
+          bestSet: bestSetData,
           difficulty: difficultyStr,
           volumeKg: exerciseVolume,
+          targetSets: wEx.targetSets,
+          targetReps: wEx.targetReps,
+          targetRir: wEx.targetRir,
+          completionRate,
         });
       }
     });
@@ -1269,19 +1315,23 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     if (history.length === 0) return 0;
     const last = history[0];
+    const ex = EXERCISES_DATABASE.find((e) => e.id === exerciseId);
 
-    if (last.difficulty === "had_more" || (last.reps.every((r) => r >= 10) && history[0].sets >= 3)) {
-      const ex = EXERCISES_DATABASE.find((e) => e.id === exerciseId);
-      // GramÃ¡tica de carga unificada con los demÃ¡s motores: compuestos (barra,
-      // mÃ¡quina, smith) saltan 2,5 kg; aislamientos micro-carga 1 kg.
-      const isCompound = ex ? isCompoundExercise(ex) : false;
-      return last.weight + (isCompound ? 2.5 : 1);
-    }
-    if (last.difficulty === "very_hard") {
-      return last.weight - (last.weight > 50 ? 2.5 : 1);
-    }
-    return last.weight;
-  }, [exerciseHistory]);
+    if (!ex) return last.weight;
+
+    const rec = calculateSmartNextWeight(
+      ex,
+      last.targetReps,
+      last.targetSets,
+      last.targetRir ?? ex.defaultRir ?? 2,
+      history,
+      personalRecords
+    );
+
+    // Si el algoritmo no pudo recomendar (sin targetReps y sin difficulty),
+    // conservar el último peso conocido.
+    return rec.nextWeight > 0 ? rec.nextWeight : last.weight;
+  }, [exerciseHistory, personalRecords]);
 
   return (
     <WorkoutContext.Provider

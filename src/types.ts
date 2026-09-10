@@ -361,6 +361,11 @@ export interface ExerciseHistoryEntry {
   difficulty?: DifficultyLevel;
   notes?: string;
   volumeKg: number;
+  // Campos para el algoritmo de recomendación de pesos
+  targetSets?: number;
+  targetReps?: string;
+  targetRir?: number;
+  completionRate?: number; // 0-1: sets completados / sets objetivo
 }
 
 export interface CustomRoutine {
