@@ -8,9 +8,12 @@ import {
   ShieldAlert,
   Database,
   Footprints,
+  FileText,
 } from "lucide-react";
 import { StepsPanel } from "./nutrition/StepsPanel";
 import { useToast } from "../context/ToastContext";
+import { useWorkout } from "../context/WorkoutContext";
+import { parseWorkoutCsv, ImportResult } from "../utils/csvImporter";
 import { VALIDATORS, isArray, isPlainObject } from "../utils/storage";
 
 interface SettingsModalProps {
@@ -39,7 +42,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
     } catch {}
     return { enabled: false, hour: 18, minute: 0, dayIndex: 0 };
   });
+  const { importBulkData } = useWorkout();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const csvInputRef = useRef<HTMLInputElement>(null);
+  const [csvPreview, setCsvPreview] = useState<ImportResult | null>(null);
   const isMounted = useRef(true);
 
   // Persist reminder config
@@ -219,6 +225,27 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
     }
   };
 
+  const handleCsvSelected = async (file: File) => {
+    try {
+      const text = await file.text();
+      const result = parseWorkoutCsv(text);
+      setCsvPreview(result);
+      showToast(`Archivo procesado: ${result.importedSetsCount} series detectadas`, "info");
+    } catch (err: any) {
+      showToast(err.message || "Error al leer el archivo CSV", "error");
+    }
+  };
+
+  const confirmCsvImport = () => {
+    if (!csvPreview) return;
+    importBulkData(csvPreview.historyEntries, csvPreview.newPrs);
+    showToast(
+      `¡${csvPreview.importedSessionsCount} sesiones y ${csvPreview.importedSetsCount} series añadidas al historial!`,
+      "success"
+    );
+    setCsvPreview(null);
+  };
+
   if (!open) return null;
 
   return (
@@ -280,6 +307,84 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
                 e.target.value = "";
               }}
             />
+          </section>
+
+          {/* Strong / Hevy CSV Migration section */}
+          <section className="space-y-3 pt-4 border-t border-neutral-800">
+            <div className="flex items-center gap-2">
+              <FileText className="w-4 h-4 text-purple-400" />
+              <h4 className="text-sm font-black text-white uppercase tracking-wider">
+                Migración Strong / Hevy (CSV)
+              </h4>
+            </div>
+            <p className="text-[11px] text-neutral-400 leading-relaxed">
+              Importa tu historial previo desde Strong o Hevy. KINETIX reconocerá tus ejercicios, marcas de 1RM y series efectivas automáticamente.
+            </p>
+            <button
+              onClick={() => csvInputRef.current?.click()}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-purple-950/40 hover:bg-purple-900/50 text-purple-300 text-xs font-bold border border-purple-500/30 transition-colors touch-target"
+            >
+              <Upload className="w-4 h-4" />
+              Seleccionar archivo CSV (Strong o Hevy)
+            </button>
+            <input
+              ref={csvInputRef}
+              type="file"
+              accept=".csv,text/csv"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleCsvSelected(file);
+                e.target.value = "";
+              }}
+            />
+
+            {/* Previsualización del CSV antes de importar */}
+            {csvPreview && (
+              <div className="p-4 rounded-2xl bg-neutral-950 border border-purple-500/30 space-y-3 animate-fadeIn">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-white">Vista previa de importación</span>
+                  <span className="text-[10px] text-purple-400 font-bold uppercase bg-purple-500/10 px-2 py-0.5 rounded-md border border-purple-500/20">
+                    Formato Válido
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                  <div className="p-2.5 rounded-xl bg-neutral-900 border border-neutral-800">
+                    <span className="text-[10px] text-neutral-500 block uppercase">Sesiones</span>
+                    <span className="font-mono font-black text-white text-base">{csvPreview.importedSessionsCount}</span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-neutral-900 border border-neutral-800">
+                    <span className="text-[10px] text-neutral-500 block uppercase">Series</span>
+                    <span className="font-mono font-black text-cyan-400 text-base">{csvPreview.importedSetsCount}</span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-neutral-900 border border-neutral-800">
+                    <span className="text-[10px] text-neutral-500 block uppercase">Ejercicios</span>
+                    <span className="font-mono font-black text-emerald-400 text-base">{csvPreview.recognizedExercises.length}</span>
+                  </div>
+                </div>
+
+                {csvPreview.newPrs.length > 0 && (
+                  <p className="text-[11px] text-amber-300 font-medium">
+                    🏆 Se detectaron {csvPreview.newPrs.length} marcas personales (1RM) para actualizar en tu perfil.
+                  </p>
+                )}
+
+                <div className="flex gap-2 pt-1">
+                  <button
+                    onClick={confirmCsvImport}
+                    className="flex-1 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-lg shadow-purple-600/25 transition-all touch-target"
+                  >
+                    Confirmar e Importar
+                  </button>
+                  <button
+                    onClick={() => setCsvPreview(null)}
+                    className="px-3 py-2.5 rounded-xl bg-neutral-800 text-neutral-400 hover:text-white text-xs font-bold transition-colors touch-target"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
           </section>
 
           {/* Reminder section */}

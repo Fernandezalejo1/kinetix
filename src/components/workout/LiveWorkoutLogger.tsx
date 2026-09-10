@@ -31,12 +31,23 @@ import {
 import { useWorkout } from "../../context/WorkoutContext";
 import { useToast } from "../../context/ToastContext";
 import { ConfirmDialog } from "../ConfirmDialog";
-import { SetType, Exercise, WorkoutExercise, DifficultyLevel } from "../../types";
-import { PlateCalculatorModal } from "./PlateCalculatorModal";
-import { WarmupGeneratorModal } from "./WarmupGeneratorModal";
-import { TempoMetronomeModal } from "./TempoMetronomeModal";
-import { ExerciseDetailModal } from "../exercises/ExerciseDetailModal";
-import { ExerciseLibraryModal } from "../exercises/ExerciseLibraryModal";
+import { SetType, Exercise, WorkoutExercise, DifficultyLevel, PersonalRecord, CompletedWorkout } from "../../types";
+const PlateCalculatorModal = React.lazy(() =>
+  import("./PlateCalculatorModal").then((m) => ({ default: m.PlateCalculatorModal }))
+);
+const WarmupGeneratorModal = React.lazy(() =>
+  import("./WarmupGeneratorModal").then((m) => ({ default: m.WarmupGeneratorModal }))
+);
+const TempoMetronomeModal = React.lazy(() =>
+  import("./TempoMetronomeModal").then((m) => ({ default: m.TempoMetronomeModal }))
+);
+const ExerciseDetailModal = React.lazy(() =>
+  import("../exercises/ExerciseDetailModal").then((m) => ({ default: m.ExerciseDetailModal }))
+);
+const ExerciseLibraryModal = React.lazy(() =>
+  import("../exercises/ExerciseLibraryModal").then((m) => ({ default: m.ExerciseLibraryModal }))
+);
+import { WorkoutSummaryModal } from "./WorkoutSummaryModal";
 import { analyzeDoubleProgression } from "../../utils/doubleProgression";
 import { isTimeBased, getTargetSeconds } from "../../utils/exerciseMode";
 
@@ -377,11 +388,51 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
   const [selectedExForTempo, setSelectedExForTempo] = useState<{ name: string; tempo: string } | null>(null);
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [replacingWExId, setReplacingWExId] = useState<string | null>(null);
-  const [finishedSummary, setFinishedSummary] = useState<{ prsAchieved: any[]; totalVolumeKg: number } | null>(null);
   const [difficultySurvey, setDifficultySurvey] = useState<{ exerciseId: string; exerciseName: string } | null>(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [confirmRemoveEx, setConfirmRemoveEx] = useState<string | null>(null);
+  const [summaryModal, setSummaryModal] = useState<{
+    isOpen: boolean;
+    workout: CompletedWorkout | null;
+    prs: PersonalRecord[];
+  }>({ isOpen: false, workout: null, prs: [] });
   const { showToast } = useToast();
+
+  // Screen Wake Lock API — evita que la pantalla se apague mientras entrenas
+  useEffect(() => {
+    let wakeLockSentinel: any = null;
+    let isReleased = false;
+
+    const requestWakeLock = async () => {
+      if (typeof navigator !== "undefined" && "wakeLock" in navigator && activeSession) {
+        try {
+          wakeLockSentinel = await (navigator as any).wakeLock.request("screen");
+        } catch {
+          // Ignorar si el usuario denegó o el sistema no lo permite
+        }
+      }
+    };
+
+    if (activeSession) {
+      requestWakeLock();
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible" && activeSession && !isReleased) {
+        requestWakeLock();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      isReleased = true;
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      if (wakeLockSentinel) {
+        wakeLockSentinel.release().catch(() => {});
+      }
+    };
+  }, [activeSession]);
 
   const handleCancelConfirmed = () => {
     cancelWorkout();
@@ -431,57 +482,18 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
   }, [difficultySurvey]);
 
   if (!activeSession || !isWorkoutModalOpen) {
-    if (finishedSummary) {
+    if (summaryModal.isOpen && summaryModal.workout) {
       return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-lg max-h-[90dvh] overflow-y-auto scrollbar-thin shadow-2xl p-6 sm:p-8 text-center space-y-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
-            <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center mx-auto">
-              <Trophy className="w-8 h-8" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-black text-white">¡Sesión Científica Completada!</h2>
-              <p className="text-sm text-neutral-400 mt-1">Estímulo anabólico y tensión mecánica registrados con éxito.</p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="p-4 rounded-2xl bg-neutral-950 border border-neutral-800">
-                <span className="text-xs text-neutral-400">Volumen de Tonelaje Total</span>
-                <div className="text-2xl font-extrabold text-cyan-400 mt-1">
-                  {finishedSummary.totalVolumeKg.toLocaleString()} <span className="text-sm text-neutral-400">kg</span>
-                </div>
-              </div>
-              <div className="p-4 rounded-2xl bg-neutral-950 border border-neutral-800">
-                <span className="text-xs text-neutral-400">Récords Personales (PR)</span>
-                <div className="text-2xl font-extrabold text-amber-400 mt-1">
-                  {finishedSummary.prsAchieved.length} PRs
-                </div>
-              </div>
-            </div>
-
-            {finishedSummary.prsAchieved.length > 0 && (
-              <div className="p-4 rounded-2xl bg-amber-950/20 border border-amber-500/30 text-left space-y-2">
-                <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">Hitos de Sobrecarga Progresiva</span>
-                {finishedSummary.prsAchieved.map((pr: any, i: number) => (
-                  <div key={i} className="flex justify-between items-center gap-2 text-xs text-neutral-200">
-                    <span className="min-w-0 truncate">{pr.exerciseName}</span>
-                    <span className="font-extrabold text-amber-300 shrink-0 whitespace-nowrap">1RM Estimado: {pr.value} {weightUnit}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <button
-              onClick={() => {
-                setFinishedSummary(null);
-                setIsWorkoutModalOpen(false);
-                onGoToAnalytics?.();
-              }}
-              className="w-full py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-cyan-600/20"
-            >
-              Ver Análisis en Dashboard
-            </button>
-          </div>
-        </div>
+        <WorkoutSummaryModal
+          isOpen={summaryModal.isOpen}
+          workout={summaryModal.workout}
+          prs={summaryModal.prs}
+          weightUnit={weightUnit}
+          onClose={() => {
+            setSummaryModal({ isOpen: false, workout: null, prs: [] });
+            onGoToAnalytics?.();
+          }}
+        />
       );
     }
     return null;
@@ -494,8 +506,34 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
   };
 
   const handleFinish = () => {
-    const summary = finishWorkout();
-    setFinishedSummary(summary);
+    if (!activeSession) return;
+    const durSecs = Math.max(60, Math.floor((Date.now() - activeSession.startTime) / 1000));
+    const effectiveSets = activeSession.exercises.reduce(
+      (acc, ex) => acc + ex.sets.filter((s) => s.completed).length,
+      0
+    );
+    const routineTitle = activeSession.routineName;
+    const exercisesSnapshot = [...activeSession.exercises];
+
+    const { prsAchieved, totalVolumeKg } = finishWorkout();
+
+    const completedObj: CompletedWorkout = {
+      id: `completed-${Date.now()}`,
+      routineName: routineTitle,
+      date: new Date().toISOString(),
+      durationSeconds: durSecs,
+      totalVolumeKg,
+      totalSets: effectiveSets,
+      exercises: exercisesSnapshot,
+      prCount: prsAchieved.length,
+      averageRir: null,
+    };
+
+    setSummaryModal({
+      isOpen: true,
+      workout: completedObj,
+      prs: prsAchieved,
+    });
   };
 
   const handleDifficultySelect = (difficulty: DifficultyLevel) => {
@@ -680,11 +718,30 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
             const firstWorkingSet = wEx.sets.find((s) => s.type !== "warmup") || wEx.sets[0];
             const currentWorkingWeight = firstWorkingSet ? firstWorkingSet.weight : 40;
 
+            const hasSuperset = Boolean(wEx.supersetGroupId);
+
             return (
               <div
                 key={wEx.id}
-                className="bg-neutral-900 border border-neutral-800 rounded-3xl overflow-hidden shadow-xl"
+                className={`bg-neutral-900 rounded-3xl overflow-hidden shadow-xl transition-all ${
+                  hasSuperset
+                    ? "border-2 border-purple-500/50 shadow-[0_0_20px_rgba(168,85,247,0.15)]"
+                    : "border border-neutral-800"
+                }`}
               >
+                {/* Banner de Superserie si aplica */}
+                {hasSuperset && (
+                  <div className="bg-gradient-to-r from-purple-950/90 via-neutral-900 to-cyan-950/90 border-b border-purple-500/40 px-4 py-1.5 flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 text-xs font-black text-purple-300">
+                      <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>SUPERSERIE — GRUPO {wEx.supersetGroupId}</span>
+                    </div>
+                    <span className="text-[10px] text-neutral-400 font-medium hidden sm:inline">
+                      Alternar series sin descanso
+                    </span>
+                  </div>
+                )}
+
                 {/* Exercise Header */}
                 <div className="p-4 sm:p-5 bg-neutral-950/60 border-b border-neutral-800 flex flex-wrap items-center justify-between gap-3">
                   <div>
@@ -1052,6 +1109,27 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                                 +
                               </button>
                             </div>
+                            {/* Chips de ajuste rápido de peso */}
+                            <div className="flex items-center gap-1 mt-1.5 overflow-x-auto scrollbar-none py-0.5">
+                              {[-5, -2.5, 1.25, 2.5, 5, 10].map((delta) => (
+                                <button
+                                  key={delta}
+                                  type="button"
+                                  onClick={() =>
+                                    updateSet(wEx.id, set.id, {
+                                      weight: Math.max(0, Math.round((set.weight + delta) * 100) / 100),
+                                    })
+                                  }
+                                  className={`px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold shrink-0 transition-colors ${
+                                    delta > 0
+                                      ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/25 active:bg-cyan-500/30"
+                                      : "bg-neutral-900 text-neutral-400 border border-neutral-800 active:bg-neutral-800"
+                                  }`}
+                                >
+                                  {delta > 0 ? `+${delta}` : delta}
+                                </button>
+                              ))}
+                            </div>
                           </div>
                           <div className="min-w-0">
                             <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1">Reps</label>
@@ -1092,16 +1170,37 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                                 +
                               </button>
                             </div>
+                            {/* Chips de ajuste rápido de reps */}
+                            <div className="flex items-center gap-1 mt-1.5 overflow-x-auto scrollbar-none py-0.5">
+                              {[-2, -1, 1, 2, 5].map((delta) => (
+                                <button
+                                  key={delta}
+                                  type="button"
+                                  onClick={() =>
+                                    updateSet(wEx.id, set.id, {
+                                      reps: Math.max(1, set.reps + delta),
+                                    })
+                                  }
+                                  className={`px-2 py-0.5 rounded-md text-[10px] font-mono font-bold shrink-0 transition-colors ${
+                                    delta > 0
+                                      ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/25 active:bg-cyan-500/30"
+                                      : "bg-neutral-900 text-neutral-400 border border-neutral-800 active:bg-neutral-800"
+                                  }`}
+                                >
+                                  {delta > 0 ? `+${delta}` : delta}
+                                </button>
+                              ))}
+                            </div>
                           </div>
                           <div className="col-span-2">
                             <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1">RIR (Reps en Reserva)</label>
-                            <div className="grid grid-cols-5 gap-1.5">
+                            <div className="grid grid-cols-5 gap-1 sm:gap-1.5">
                               {[0, 1, 2, 3, 4].map((r) => (
                                 <button
                                   key={r}
                                   type="button"
                                   onClick={() => updateSet(wEx.id, set.id, { rir: r })}
-                                  className={`min-h-[44px] rounded-xl text-xs font-bold transition-all ${
+                                  className={`min-h-[44px] rounded-xl text-[11px] sm:text-xs font-bold transition-all ${
                                     (set.rir ?? 1) === r
                                       ? r === 0
                                         ? "bg-red-500/20 border border-red-500/40 text-red-400"
@@ -1118,7 +1217,12 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
 
                         <button
                           type="button"
-                          onClick={() => completeSetAndTriggerTimer(wEx.id, set.id)}
+                          onClick={() => {
+                            if (typeof navigator !== "undefined" && navigator.vibrate) {
+                              navigator.vibrate(35);
+                            }
+                            completeSetAndTriggerTimer(wEx.id, set.id);
+                          }}
                           className={`w-full h-11 rounded-xl flex items-center justify-center gap-2 text-sm font-bold transition-all ${
                             set.completed
                               ? "bg-emerald-500 text-neutral-950 shadow-md shadow-emerald-500/30"
@@ -1240,60 +1344,62 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
         </div>
       )}
 
-      {/* Modals */}
-      {selectedExForPlate && (
-        <PlateCalculatorModal
-          isOpen={true}
-          onClose={() => setSelectedExForPlate(null)}
-          initialWeight={selectedExForPlate.weight}
-          weightUnit={weightUnit}
-        />
-      )}
+      {/* Modals con carga diferida (Suspense) */}
+      <React.Suspense fallback={null}>
+        {selectedExForPlate && (
+          <PlateCalculatorModal
+            isOpen={true}
+            onClose={() => setSelectedExForPlate(null)}
+            initialWeight={selectedExForPlate.weight}
+            weightUnit={weightUnit}
+          />
+        )}
 
-      {selectedExForWarmup && (
-        <WarmupGeneratorModal
-          isOpen={true}
-          onClose={() => setSelectedExForWarmup(null)}
-          exerciseName={selectedExForWarmup.name}
-          initialWorkingWeight={selectedExForWarmup.weight}
-          weightUnit={weightUnit}
-        />
-      )}
+        {selectedExForWarmup && (
+          <WarmupGeneratorModal
+            isOpen={true}
+            onClose={() => setSelectedExForWarmup(null)}
+            exerciseName={selectedExForWarmup.name}
+            initialWorkingWeight={selectedExForWarmup.weight}
+            weightUnit={weightUnit}
+          />
+        )}
 
-      {selectedExForTempo && (
-        <TempoMetronomeModal
-          isOpen={true}
-          onClose={() => setSelectedExForTempo(null)}
-          exerciseName={selectedExForTempo.name}
-          initialTempo={selectedExForTempo.tempo}
-        />
-      )}
+        {selectedExForTempo && (
+          <TempoMetronomeModal
+            isOpen={true}
+            onClose={() => setSelectedExForTempo(null)}
+            exerciseName={selectedExForTempo.name}
+            initialTempo={selectedExForTempo.tempo}
+          />
+        )}
 
-      {selectedExerciseForDetail && (
-        <ExerciseDetailModal
-          exercise={selectedExerciseForDetail}
-          onClose={() => setSelectedExerciseForDetail(null)}
-        />
-      )}
+        {selectedExerciseForDetail && (
+          <ExerciseDetailModal
+            exercise={selectedExerciseForDetail}
+            onClose={() => setSelectedExerciseForDetail(null)}
+          />
+        )}
 
-      <ExerciseLibraryModal
-        isOpen={isLibraryOpen}
-        onClose={() => {
-          setIsLibraryOpen(false);
-          setReplacingWExId(null);
-        }}
-        mode={replacingWExId ? "replace" : "select"}
-        onSelectExercise={(ex) => {
-          if (replacingWExId) {
-            replaceExerciseInActiveWorkout(replacingWExId, ex);
-          } else {
-            addExerciseToActiveWorkout(ex);
-          }
-          setIsLibraryOpen(false);
-          setReplacingWExId(null);
-        }}
-        onViewDetails={(ex) => setSelectedExerciseForDetail(ex)}
-      />
+        <ExerciseLibraryModal
+          isOpen={isLibraryOpen}
+          onClose={() => {
+            setIsLibraryOpen(false);
+            setReplacingWExId(null);
+          }}
+          mode={replacingWExId ? "replace" : "select"}
+          onSelectExercise={(ex) => {
+            if (replacingWExId) {
+              replaceExerciseInActiveWorkout(replacingWExId, ex);
+            } else {
+              addExerciseToActiveWorkout(ex);
+            }
+            setIsLibraryOpen(false);
+            setReplacingWExId(null);
+          }}
+          onViewDetails={(ex) => setSelectedExerciseForDetail(ex)}
+        />
+      </React.Suspense>
     </div>
   );
 };

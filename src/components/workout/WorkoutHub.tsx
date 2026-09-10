@@ -25,10 +25,18 @@ import { useToast } from "../../context/ToastContext";
 import { ConfirmDialog } from "../ConfirmDialog";
 import { PREBUILT_PROGRAMS } from "../../data/programsData";
 import { EXERCISES_DATABASE } from "../../data/exercisesData";
-import { PlateCalculatorModal } from "./PlateCalculatorModal";
-import { WarmupGeneratorModal } from "./WarmupGeneratorModal";
-import { TempoMetronomeModal } from "./TempoMetronomeModal";
-import { SessionImportModal } from "./SessionImportModal";
+const PlateCalculatorModal = React.lazy(() =>
+  import("./PlateCalculatorModal").then((m) => ({ default: m.PlateCalculatorModal }))
+);
+const WarmupGeneratorModal = React.lazy(() =>
+  import("./WarmupGeneratorModal").then((m) => ({ default: m.WarmupGeneratorModal }))
+);
+const TempoMetronomeModal = React.lazy(() =>
+  import("./TempoMetronomeModal").then((m) => ({ default: m.TempoMetronomeModal }))
+);
+const SessionImportModal = React.lazy(() =>
+  import("./SessionImportModal").then((m) => ({ default: m.SessionImportModal }))
+);
 import { Program, Routine } from "../../types";
 import { isTimeBased } from "../../utils/exerciseMode";
 import {
@@ -705,26 +713,36 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
         )}
       </div>
 
-      {/* Modals for Quick Tools */}
-      <PlateCalculatorModal
-        isOpen={isPlateOpen}
-        onClose={() => setIsPlateOpen(false)}
-        weightUnit={weightUnit}
-      />
-      <WarmupGeneratorModal
-        isOpen={isWarmupOpen}
-        onClose={() => setIsWarmupOpen(false)}
-        exerciseName="Press de Banca / Sentadilla"
-        weightUnit={weightUnit}
-      />
-      <TempoMetronomeModal
-        isOpen={isTempoOpen}
-        onClose={() => setIsTempoOpen(false)}
-      />
-      <SessionImportModal
-        isOpen={isImportOpen}
-        onClose={() => setIsImportOpen(false)}
-      />
+      {/* Modals for Quick Tools (carga diferida) */}
+      <React.Suspense fallback={null}>
+        {isPlateOpen && (
+          <PlateCalculatorModal
+            isOpen={isPlateOpen}
+            onClose={() => setIsPlateOpen(false)}
+            weightUnit={weightUnit}
+          />
+        )}
+        {isWarmupOpen && (
+          <WarmupGeneratorModal
+            isOpen={isWarmupOpen}
+            onClose={() => setIsWarmupOpen(false)}
+            exerciseName="Press de Banca / Sentadilla"
+            weightUnit={weightUnit}
+          />
+        )}
+        {isTempoOpen && (
+          <TempoMetronomeModal
+            isOpen={isTempoOpen}
+            onClose={() => setIsTempoOpen(false)}
+          />
+        )}
+        {isImportOpen && (
+          <SessionImportModal
+            isOpen={isImportOpen}
+            onClose={() => setIsImportOpen(false)}
+          />
+        )}
+      </React.Suspense>
 
       {/* Session Detail Modal */}
       {selectedSession && (

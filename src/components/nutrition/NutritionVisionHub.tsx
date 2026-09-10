@@ -193,16 +193,14 @@ export const NutritionVisionHub: React.FC = () => {
       icon: <Dna className="w-4 h-4 text-cyan-400" />,
     },
     {
-      label: "Carbos · Tope 25g",
+      label: nutritionGoal === "keto" ? "Carbos · Tope 25g" : "Carbohidratos",
       value: currentCarbs,
       target: targetCarbs,
       unit: "g",
       color: "text-purple-400",
       bar: "bg-purple-400",
       icon: <Zap className="w-4 h-4 text-purple-400 shrink-0" />,
-      // En keto los carbos NO son una meta a llenar: son un TETO a no superar
-      // para mantenerse en cetosis. Se muestran como presupuesto, no objetivo.
-      limit: true,
+      limit: nutritionGoal === "keto",
     },
     {
       label: "Grasas",

@@ -858,7 +858,7 @@ export const ScienceDashboard: React.FC = () => {
       {/* Section 2: Charts Grid (Tonnage & 1RM Progression) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Tonnage Trend Chart */}
-        <div className="lg:col-span-7 p-6 rounded-3xl bg-neutral-900 border border-neutral-800 shadow-xl space-y-4">
+        <div className="lg:col-span-7 p-4 sm:p-6 rounded-3xl bg-neutral-900 border border-neutral-800 shadow-xl space-y-4 min-w-0 overflow-hidden">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-black text-white tracking-tight">Sobrecarga de Tonelaje (Volumen de Carga)</h3>
@@ -866,7 +866,7 @@ export const ScienceDashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="h-56 w-full pt-4">
+          <div className="h-56 w-full pt-4 min-w-0 overflow-hidden">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={tonnageTrendData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
                 <defs>
@@ -890,13 +890,13 @@ export const ScienceDashboard: React.FC = () => {
         </div>
 
         {/* Muscle Balance Radar */}
-        <div className="lg:col-span-5 p-6 rounded-3xl bg-neutral-900 border border-neutral-800 shadow-xl space-y-4 flex flex-col justify-between">
+        <div className="lg:col-span-5 p-4 sm:p-6 rounded-3xl bg-neutral-900 border border-neutral-800 shadow-xl space-y-4 flex flex-col justify-between min-w-0 overflow-hidden">
           <div>
             <h3 className="text-lg font-black text-white tracking-tight">Equilibrio Estructural y Agonista-Antagonista</h3>
             <p className="text-xs text-neutral-400">Ratio empuje vs tracción y cadena posterior</p>
           </div>
 
-          <div className="h-52 w-full flex items-center justify-center">
+          <div className="h-52 w-full flex items-center justify-center min-w-0 overflow-hidden">
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart data={radarData} margin={{ top: 10, right: 30, bottom: 10, left: 30 }}>
                 <PolarGrid stroke="#404040" />

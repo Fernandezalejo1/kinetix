@@ -73,7 +73,13 @@ export const NUTRITION_GOALS: Record<
   },
 };
 
-export const NUTRITION_GOAL_KEYS = ["keto"] as NutritionGoal[];
+export const NUTRITION_GOAL_KEYS: NutritionGoal[] = [
+  "lean_bulk",
+  "maintenance",
+  "cut",
+  "bulk",
+  "keto",
+];
 
 /**
  * Peso corporal por defecto (kg) cuando el usuario todavía no registró

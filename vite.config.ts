@@ -16,9 +16,11 @@ export default defineConfig(() => {
       rollupOptions: {
         output: {
           manualChunks: {
-            // Only split chunks that actually help
+            'vendor-react': ['react', 'react-dom'],
+            'vendor-motion': ['motion'],
             'vendor-charts': ['recharts'],
             'vendor-lucide': ['lucide-react'],
+            'vendor-confetti': ['canvas-confetti'],
           },
         },
       },
