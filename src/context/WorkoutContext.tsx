@@ -464,6 +464,8 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
         const prevReps = lastHistory ? Math.round(lastHistory.reps.reduce((a, b) => a + b, 0) / lastHistory.reps.length) : parsedReps;
         // Peso real levantado la última vez (para mostrar el delta del auto-ajuste)
         const lastRealWeight = isTime ? 0 : (lastHistory ? lastHistory.weight : prevWeight);
+        // RIR real de la última sesión (ghost más fiel)
+        const lastRealRir = isTime ? 2 : (lastHistory?.rir ?? 1);
 
         const sets: WorkoutSet[] = Array.from({ length: item.targetSets }).map((_, sIdx) => ({
           id: `set-${idx}-${sIdx}-${Date.now()}`,
@@ -477,7 +479,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
           completed: false,
           previousWeight: lastRealWeight,
           previousReps: prevReps,
-          previousRir: 1,
+          previousRir: lastRealRir,
         }));
 
         return {
@@ -582,6 +584,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
     );
     const prevReps = lastHistory ? Math.round(lastHistory.reps.reduce((a, b) => a + b, 0) / lastHistory.reps.length) : 10;
     const lastRealWeight = lastHistory ? lastHistory.weight : prevWeight;
+    const lastRealRir = lastHistory?.rir ?? 1;
 
     setActiveSession((prev) => {
       if (!prev) return prev;
@@ -597,7 +600,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
           completed: false,
           previousWeight: lastRealWeight,
           previousReps: prevReps,
-          previousRir: 1,
+          previousRir: lastRealRir,
         },
         {
           id: `set-${Date.now()}-2`,
@@ -610,7 +613,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
           completed: false,
           previousWeight: lastRealWeight,
           previousReps: prevReps,
-          previousRir: 1,
+          previousRir: lastRealRir,
         },
         {
           id: `set-${Date.now()}-3`,
@@ -623,7 +626,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
           completed: false,
           previousWeight: lastRealWeight,
           previousReps: prevReps,
-          previousRir: 1,
+          previousRir: lastRealRir,
         },
       ];
 
@@ -670,6 +673,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
         ? parseInt(pending.targetReps.split("-")[0], 10) || 10
         : 10;
       const lastRealWeight = lastHistory ? lastHistory.weight : prevWeight;
+      const lastRealRir = lastHistory?.rir ?? 1;
       const targetSets = pending?.targetSets ?? 3;
       const targetReps = pending?.targetReps ?? undefined;
       const targetRir = pending?.targetRir ?? exercise.defaultRir;
@@ -687,7 +691,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
         completed: false,
         previousWeight: lastRealWeight,
         previousReps: prevReps,
-        previousRir: 1,
+        previousRir: lastRealRir,
       }));
 
       const newWEx: WorkoutExercise = {
