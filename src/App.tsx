@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, Suspense } from "react";
+import React, { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { WorkoutProvider, useWorkout } from "./context/WorkoutContext";
 import { GoalProvider } from "./context/GoalContext";
 import { Navigation, NavTab } from "./components/Navigation";
@@ -57,6 +57,15 @@ const AppContent: React.FC = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { selectedExerciseForDetail, setSelectedExerciseForDetail, isWorkoutModalOpen, setIsWorkoutModalOpen } = useWorkout();
 
+  // Contador de entradas "fantasma" en el historial: cada vez que se abre un
+  // modal se hace pushState. Si el modal se cierra con su botón propio (no con
+  // back), esa entrada queda huérfana en el historial y el back posterior la
+  // salta como navegación fantasma. Este ref perm ite limpiarla al cerrar.
+  // `dismissPhantomRef` marca que el próximo popstate es NUESTRO back() de
+  // limpieza (no un back real del usuario): el handler lo ignora.
+  const pendingPhantomRef = useRef(false);
+  const dismissPhantomRef = useRef(false);
+
   const handleBack = useCallback(() => {
     if (selectedExerciseForDetail) {
       setSelectedExerciseForDetail(null);
@@ -73,20 +82,39 @@ const AppContent: React.FC = () => {
     return false;
   }, [selectedExerciseForDetail, isWorkoutModalOpen, isSettingsOpen, setSelectedExerciseForDetail, setIsWorkoutModalOpen]);
 
-  // Push a history entry when a modal opens so Android back button closes it
+  // Push a history entry when a modal opens so Android back button closes it.
+  // Cuando el modal se cierra por su propio botón (X/Escape/submit), desenrosca
+  // la entrada fantasma para que el back posterior no navegue a ningún lado.
   useEffect(() => {
     const hasModalOpen = !!(selectedExerciseForDetail || isWorkoutModalOpen || isSettingsOpen);
     if (hasModalOpen) {
+      pendingPhantomRef.current = true;
       history.pushState({ modal: true }, "");
+    } else if (pendingPhantomRef.current) {
+      pendingPhantomRef.current = false;
+      // Solo desenroscar si la entrada actual es la que nosotros agregamos.
+      if (window.history.state && window.history.state.modal) {
+        dismissPhantomRef.current = true;
+        window.history.back();
+      }
     }
   }, [selectedExerciseForDetail, isWorkoutModalOpen, isSettingsOpen]);
 
   useEffect(() => {
     const onPopState = () => {
+      // Este pop fue generado por nuestro propio back() de limpieza: ignorar.
+      if (dismissPhantomRef.current) {
+        dismissPhantomRef.current = false;
+        return;
+      }
       setCurrentTab(getTabFromURL());
       const handled = handleBack();
       if (!handled) {
-        if (window.history.length > 1) {
+        // El back del usuario llegó a una entrada fantasma de un modal ya
+        // cerrado o a la raíz: en Android nativo cerramos la app cuando no hay
+        // más modal que desplegar; en web dejamos que el navegador la gestione.
+        if (window.history.state && window.history.state.modal) {
+          dismissPhantomRef.current = true;
           window.history.back();
         } else if ((window as any).AndroidBridge) {
           (window as any).AndroidBridge.closeApp();
