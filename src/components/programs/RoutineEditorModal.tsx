@@ -43,6 +43,7 @@ export const RoutineEditorModal: React.FC<RoutineEditorModalProps> = ({
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
   const [supersetMode, setSupersetMode] = useState(false);
   const [supersetPair, setSupersetPair] = useState<number[]>([]);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   if (!isOpen) return null;
 
@@ -414,15 +415,35 @@ export const RoutineEditorModal: React.FC<RoutineEditorModalProps> = ({
         {/* Save Bar */}
         <div className="px-4 sm:px-6 py-4 border-t border-neutral-800 flex items-center gap-3 shrink-0">
           {routine && (
-            <button
-              onClick={() => {
-                deleteCustomRoutine(routine.id);
-                onClose();
-              }}
-              className="px-4 py-2.5 rounded-xl bg-red-950/30 text-red-400 border border-red-500/30 text-xs font-bold hover:bg-red-900/40 transition-colors"
-            >
-              Eliminar
-            </button>
+            <>
+              {confirmDelete ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-bold text-red-400">¿Eliminar «{routine.name}»?</span>
+                  <button
+                    onClick={() => {
+                      deleteCustomRoutine(routine.id);
+                      onClose();
+                    }}
+                    className="px-3 py-2 rounded-xl bg-red-600 text-white text-xs font-bold hover:bg-red-500 transition-colors"
+                  >
+                    Sí, eliminar
+                  </button>
+                  <button
+                    onClick={() => setConfirmDelete(false)}
+                    className="px-3 py-2 rounded-xl bg-neutral-800 text-neutral-300 text-xs font-bold hover:text-white transition-colors"
+                  >
+                    No
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setConfirmDelete(true)}
+                  className="px-4 py-2.5 rounded-xl bg-red-950/30 text-red-400 border border-red-500/30 text-xs font-bold hover:bg-red-900/40 transition-colors"
+                >
+                  Eliminar
+                </button>
+              )}
+            </>
           )}
           <div className="flex-1" />
           <button

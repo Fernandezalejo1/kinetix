@@ -29,7 +29,13 @@ export function safeSet(key: string, value: unknown): boolean {
     localStorage.setItem(key, JSON.stringify(value));
     return true;
   } catch {
-    // Cuota excedida o almacenamiento bloqueado: no romper la app.
+    // Cuota excedida o almacenamiento bloqueado: no romper la app, pero
+    // avisar (las escrituras silenciosas hacían creer que se guardó).
+    try {
+      window.dispatchEvent(new CustomEvent("kinetix-storage-error", { detail: { key } }));
+    } catch {
+      /* ignore */
+    }
     return false;
   }
 }

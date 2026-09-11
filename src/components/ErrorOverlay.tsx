@@ -53,7 +53,11 @@ const CrashCard: React.FC<{ crash: CrashInfo; onDismiss: () => void }> = ({ cras
   const [copied, setCopied] = useState(false);
 
   const copyDetails = useCallback(async () => {
-    const text = `[${crash.kind}] ${crash.time}\n${crash.message}\n\n${crash.stack ?? ""}`;
+    // En producción se copia solo mensaje + tipo (sin stack técnico crudo).
+    const text =
+      import.meta.env.DEV || crash.kind.includes("React")
+        ? `[${crash.kind}] ${crash.time}\n${crash.message}\n\n${crash.stack ?? ""}`
+        : `[${crash.kind}] ${crash.time}\n${crash.message}`;
     try {
       await navigator.clipboard.writeText(text);
     } catch {
@@ -93,7 +97,7 @@ const CrashCard: React.FC<{ crash: CrashInfo; onDismiss: () => void }> = ({ cras
         </div>
         <div className="max-h-40 overflow-y-auto px-3 py-2 overscroll-contain">
           <p className="text-xs font-mono font-bold text-red-100 break-words">{crash.message}</p>
-          {crash.stack && (
+          {crash.stack && import.meta.env.DEV && (
             <pre className="mt-1.5 text-[10px] font-mono text-red-300/80 whitespace-pre-wrap break-words max-h-24 overflow-y-auto">
               {crash.stack}
             </pre>
