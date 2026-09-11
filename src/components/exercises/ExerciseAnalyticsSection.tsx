@@ -96,10 +96,22 @@ export const ExerciseAnalyticsSection: React.FC<ExerciseAnalyticsSectionProps> =
             <span className="font-bold uppercase tracking-wider text-neutral-400">Ratio Estímulo/Fatiga</span>
             <Sparkles className="w-4 h-4 text-cyan-400" />
           </div>
-          <div className="text-2xl font-black text-cyan-400">
-            {analytics?.sfrScore || 9.4} <span className="text-xs font-normal text-neutral-400">/ 10</span>
-          </div>
-          <p className="text-[11px] text-neutral-400">Máximo estímulo hipertrófico con fatiga periférica controlada</p>
+          {analytics?.isEditorialEstimate ? (
+            <>
+              <div className="text-base font-black text-neutral-400 pt-1">Sin evidencia específica</div>
+              <p className="text-[11px] text-neutral-500">Estimación heurística por categoría de ejercicio (no es un dato medido ni de publicación).</p>
+            </>
+          ) : (
+            <>
+              <div className="text-2xl font-black text-cyan-400">
+                {analytics?.sfrScore ?? "—"} <span className="text-xs font-normal text-neutral-400">/ 10</span>
+              </div>
+              <p className="text-[11px] text-neutral-400">Máximo estímulo hipertrófico con fatiga periférica controlada</p>
+              {analytics?.evidenceSource && (
+                <p className="text-[10px] text-cyan-300/70 break-words" title={analytics.evidenceSource}>Evidencia: {analytics.evidenceSource}</p>
+              )}
+            </>
+          )}
         </div>
 
         {/* Hypertrophy Tier */}
@@ -108,9 +120,11 @@ export const ExerciseAnalyticsSection: React.FC<ExerciseAnalyticsSectionProps> =
             <span className="font-bold uppercase tracking-wider text-neutral-400">Nivel de Hipertrofia</span>
             <Zap className="w-4 h-4 text-purple-400" />
           </div>
-          <div className="text-2xl font-black text-purple-400">
-            {analytics?.hypertrophyTier || "S-Tier"}
-          </div>
+          {analytics?.isEditorialEstimate ? (
+            <div className="text-base font-black text-neutral-400 pt-1">Estimación editorial</div>
+          ) : (
+            <div className="text-2xl font-black text-purple-400">{analytics?.hypertrophyTier || "—"}</div>
+          )}
           <p className="text-[11px] text-neutral-400">{analytics?.hypertrophyMechanism || "Tensión mecánica pura"}</p>
         </div>
 
@@ -121,7 +135,7 @@ export const ExerciseAnalyticsSection: React.FC<ExerciseAnalyticsSectionProps> =
             <Shield className="w-4 h-4 text-emerald-400" />
           </div>
           <div className="text-2xl font-black text-emerald-400">
-            {analytics?.axialFatigue || "Baja"}
+            {analytics?.axialFatigue || "—"}
           </div>
           <p className="text-[11px] text-neutral-400">Impacto sistémico en el sistema nervioso central</p>
         </div>
@@ -133,7 +147,7 @@ export const ExerciseAnalyticsSection: React.FC<ExerciseAnalyticsSectionProps> =
             <Activity className="w-4 h-4 text-amber-400" />
           </div>
           <div className="text-2xl font-black text-amber-400">
-            {analytics?.jointStress || "Muy Bajo"}
+            {analytics?.jointStress || "—"}
           </div>
           <p className="text-[11px] text-neutral-400">Presión sobre cartílagos, tendones y bursas</p>
         </div>

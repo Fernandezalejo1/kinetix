@@ -94,9 +94,11 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
                     ? "Sobrecarga en Acortamiento"
                     : "Curva Media Balanceada"}
                 </span>
+                {!exercise.analytics?.isEditorialEstimate && exercise.analytics?.hypertrophyTier && (
                 <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  {exercise.analytics?.hypertrophyTier || "S-Tier"}
+                  {exercise.analytics.hypertrophyTier}
                 </span>
+              )}
               </div>
               <h2 className="text-xl sm:text-3xl font-black text-white tracking-tight">{exercise.nameEs}</h2>
               <p className="text-xs text-neutral-400 font-medium">{exercise.name}</p>

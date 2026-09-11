@@ -79,9 +79,31 @@ export function scrubSeedData(): void {
 }
 
 /** Limita un historial en localStorage para no agotar la cuota (~5 MB).
- *  Mantiene las entradas más recientes (los arrays se prependen). */
+ *  Mantiene las entradas más recientes (los arrays se prependen).
+ *  Cuando recorta, emite un evento para que la UI informe al usuario
+ *  (el recorte nunca debe pasar silencioso). */
+export const RETENTION_POLICY = {
+  workoutHistory: 1500, // sesiones completadas
+  exerciseHistory: 8000, // registros por ejercicio
+  bodyMetrics: 4000, // mediciones corporales
+  nutritionDays: 365, // días de nutrición archivados
+} as const;
+
+/** Dispara el evento de recorte de retención con la cantidad de entradas
+ *  descartadas, para que la interfaz pueda avisar de forma visible. */
+function notifyRetentionTrim(key: string, dropped: number): void {
+  try {
+    window.dispatchEvent(
+      new CustomEvent("kinetix-retention-trim", { detail: { key, dropped } })
+    );
+  } catch {
+    /* sin listener: no romper la escritura */
+  }
+}
+
 export function capForStorage<T>(arr: T[], max: number): T[] {
   if (!Array.isArray(arr) || arr.length <= max) return arr;
+  notifyRetentionTrim("arr", arr.length - max);
   return arr.slice(0, max);
 }
 
@@ -89,9 +111,9 @@ export function capForStorage<T>(arr: T[], max: number): T[] {
 export function trimLargeColumns(): void {
   try {
     for (const [key, max] of [
-      ["kinetix_workout_history", 400],
-      ["kinetix_exercise_history", 2000],
-      ["kinetix_body_metrics", 1000],
+      ["kinetix_workout_history", RETENTION_POLICY.workoutHistory],
+      ["kinetix_exercise_history", RETENTION_POLICY.exerciseHistory],
+      ["kinetix_body_metrics", RETENTION_POLICY.bodyMetrics],
     ] as const) {
       const raw = localStorage.getItem(key);
       if (!raw) continue;
@@ -103,6 +125,7 @@ export function trimLargeColumns(): void {
       }
       if (Array.isArray(arr) && arr.length > max) {
         localStorage.setItem(key, JSON.stringify(arr.slice(0, max)));
+        notifyRetentionTrim(key, arr.length - max);
       }
     }
   } catch {
@@ -126,7 +149,11 @@ export function archiveDayIfStale(log: NutritionLog | null, today: string): void
     if (!Array.isArray(list)) return;
     if (list.some((d) => d && d.date === log.date)) return; // idempotente
     list.unshift(log);
-    localStorage.setItem("kinetix_nutrition_history", JSON.stringify(list.slice(0, 120)));
+    const trimmed = list.slice(0, RETENTION_POLICY.nutritionDays);
+    if (trimmed.length < list.length) {
+      notifyRetentionTrim("kinetix_nutrition_history", list.length - trimmed.length);
+    }
+    localStorage.setItem("kinetix_nutrition_history", JSON.stringify(trimmed));
   } catch {
     /* cuota llena o corrupto: se pierde el archivo de ese día, no la app */
   }

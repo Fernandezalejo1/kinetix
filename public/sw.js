@@ -1,9 +1,9 @@
-const STATIC_CACHE = 'kinetix-static-v21';
-const DYNAMIC_CACHE = 'kinetix-dynamic-v21';
-const PAGE_CACHE = 'kinetix-pages-v21';
+const STATIC_CACHE = 'kinetix-static-v22';
+const DYNAMIC_CACHE = 'kinetix-dynamic-v22';
+const PAGE_CACHE = 'kinetix-pages-v22';
 
 // Version marker bumped on every deploy so stale caches are cleared.
-const BUILD_VERSION = '21';
+const BUILD_VERSION = '22';
 
 // Static assets (hashed by Vite, immutable) are pre-cached on install.
 // FIX (prioridad alta): el shell HTML SÍ se precachea. Sin esto, el primer uso
@@ -11,6 +11,9 @@ const BUILD_VERSION = '21';
 // aún (solo se guardaba tras una navegación exitosa), quedando el usuario sin
 // app offline. Network-first sigue garantizando que online siempre se use la
 // versión fresca; el precache es SOLO el fallback de último recurso.
+// Precaching completo: todos los assets hasheados de Vite se listan en
+// /precache-manifest.json (generado en cada build). Una pantalla nunca abierta
+// ya NO falla offline: sus chunks JS/CSS se bajan en install().
 const PRECACHE_URLS = [
   '/index.html',
   '/manifest.json',
@@ -32,8 +35,22 @@ const PRECACHE_URLS = [
 // message (sent when the user taps "Actualizar") or on the next navigation.
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(STATIC_CACHE).then((cache) => {
-      return cache.addAll(PRECACHE_URLS);
+    caches.open(STATIC_CACHE).then(async (cache) => {
+      await cache.addAll(PRECACHE_URLS);
+      // Precache dinámico: la lista completa de assets del build (ver
+      // scripts/sw-precache.mjs). Si falla (deploy sin manifest), no bloquea
+      // la instalación del SW.
+      try {
+        const res = await fetch('/precache-manifest.json');
+        if (res.ok) {
+          const all = await res.json();
+          if (Array.isArray(all) && all.length) {
+            await cache.addAll(all.filter((u) => typeof u === 'string')).catch(() => {});
+          }
+        }
+      } catch {
+        /* sin manifest: el fallback por request sigue funcionando */
+      }
     })
   );
 });

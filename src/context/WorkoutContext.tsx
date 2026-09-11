@@ -21,7 +21,7 @@ import { EXERCISES_DATABASE } from "../data/exercisesData";
 import { DEFAULT_NUTRITION_PROFILE, computePersonalTargets } from "../data/nutritionData";
 import { calculate1RM, isCompoundExercise, unlockAudio, playRestTimerCompletedSound, playTickSound } from "../utils/scienceCalculators";
 import { detectExecutionMode, isTimeBased, parseTargetSeconds } from "../utils/exerciseMode";
-import { safeParse, safeSet, safeRemove, VALIDATORS, isArrayOrNull } from "../utils/storage";
+import { safeParse, safeSet, safeRemove, VALIDATORS, SANITIZERS, isArrayOrNull } from "../utils/storage";
 import { calculateSmartNextWeight, smartStartingWeight } from "../utils/weightRecommendation";
 import { localDateKey } from "../utils/dateUtils";
 import { latestBodyMetric } from "../utils/absEstimator";
@@ -169,7 +169,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
   });
 
   const [workoutHistory, setWorkoutHistory] = useState<CompletedWorkout[]>(() => {
-    return safeParse("kinetix_workout_history", INITIAL_WORKOUT_HISTORY, VALIDATORS["kinetix_workout_history"]);
+    return safeParse("kinetix_workout_history", INITIAL_WORKOUT_HISTORY, VALIDATORS["kinetix_workout_history"], SANITIZERS["kinetix_workout_history"]);
   });
 
   const [nutritionLog, setNutritionLog] = useState<NutritionLog>(() => {
@@ -205,7 +205,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
   });
 
   const [bodyMetrics, setBodyMetrics] = useState<BodyMetricEntry[]>(() => {
-    return safeParse("kinetix_body_metrics", INITIAL_BODY_METRICS, VALIDATORS["kinetix_body_metrics"]);
+    return safeParse("kinetix_body_metrics", INITIAL_BODY_METRICS, VALIDATORS["kinetix_body_metrics"], SANITIZERS["kinetix_body_metrics"]);
   });
 
   const [nutritionGoal, setNutritionGoalState] = useState<NutritionGoal>(readNutritionGoal);
@@ -213,15 +213,15 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [nutritionProfile, setNutritionProfileState] = useState<NutritionProfile>(readNutritionProfile);
 
   const [personalRecords, setPersonalRecords] = useState<PersonalRecord[]>(() => {
-    return safeParse("kinetix_prs", INITIAL_PRS, VALIDATORS["kinetix_prs"]);
+    return safeParse("kinetix_prs", INITIAL_PRS, VALIDATORS["kinetix_prs"], SANITIZERS["kinetix_prs"]);
   });
 
   const [exerciseHistory, setExerciseHistory] = useState<ExerciseHistoryEntry[]>(() => {
-    return safeParse("kinetix_exercise_history", INITIAL_EXERCISE_HISTORY, VALIDATORS["kinetix_exercise_history"]);
+    return safeParse("kinetix_exercise_history", INITIAL_EXERCISE_HISTORY, VALIDATORS["kinetix_exercise_history"], SANITIZERS["kinetix_exercise_history"]);
   });
 
   const [customRoutines, setCustomRoutines] = useState<CustomRoutine[]>(() => {
-    return safeParse("kinetix_custom_routines", [], VALIDATORS["kinetix_custom_routines"]);
+    return safeParse("kinetix_custom_routines", [], VALIDATORS["kinetix_custom_routines"], SANITIZERS["kinetix_custom_routines"]);
   });
 
   const [weightUnit, setWeightUnit] = useState<"kg" | "lbs">(() =>

@@ -24,6 +24,7 @@ import {
   cancelNativeReminder,
 } from "../utils/reminderNotifications";
 import { encryptJson, decryptBackup, isEncryptedBackup, EncryptedBackup } from "../utils/encryption";
+import { RETENTION_POLICY } from "../context/workoutData";
 
 interface SettingsModalProps {
   open: boolean;
@@ -103,6 +104,27 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
     return () => clearInterval(interval);
   }, [showToast]);
 
+  // Listener de recorte de retención: informa al usuario cuando se
+  // descartan entradas antiguas (la política es visible más abajo).
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { key, dropped } = (e as CustomEvent).detail ?? {};
+      const label = key?.includes("nutrition")
+        ? "días de nutrición"
+        : key?.includes("exercise")
+        ? "registros de ejercicios"
+        : key?.includes("body")
+        ? "mediciones corporales"
+        : "entrenamientos";
+      showToast(
+        `Historial recortado: se descartaron ${dropped} ${label} antiguos por capacidad del dispositivo.`,
+        "info"
+      );
+    };
+    window.addEventListener("kinetix-retention-trim", handler);
+    return () => window.removeEventListener("kinetix-retention-trim", handler);
+  }, [showToast]);
+
   const exportData = (cipherOpts?: { password?: string }) => {
     const data: Record<string, unknown> = {};
     for (let i = 0; i < localStorage.length; i++) {
@@ -176,6 +198,37 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
     return { data };
   };
 
+  /** Snapshot JSON-puro de las claves kinetix_ actuales (excluidas las
+   *  reservadas), para poder restaurarlas si una restauración falla. */
+  const snapshotKinetixKeys = (): Map<string, string> => {
+    const snapshot = new Map<string, string>();
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith("kinetix_") && !EXCLUDED_KEYS.includes(key)) {
+        const raw = localStorage.getItem(key);
+        if (raw !== null) snapshot.set(key, raw);
+      }
+    }
+    return snapshot;
+  };
+
+  /** Borra todas las claves kinetix_ no reservadas. Devuelve las que
+   *  estaban presentes para poder restaurarlas después si hace falta. */
+  const clearKinetixKeys = (): string[] => {
+    const removed: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith("kinetix_") && !EXCLUDED_KEYS.includes(key)) {
+        localStorage.removeItem(key);
+        removed.push(key);
+      }
+    }
+    return removed;
+  };
+
+  // M1 — Restauración TRANSACCIONAL: primero se captura un snapshot del estado
+  // actual. Si cualquier escritura del backup falla (cuota, bloqueo), se
+  // restaura el estado anterior completo y NO se muestra "restaurado".
   const applyBackup = (parsed: { data: Record<string, unknown> }) => {
     const data = parsed.data;
     // M1 — Validación por esquema: importar solo entradas con la forma
@@ -193,22 +246,44 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
       showToast("El backup no contiene datos válidos para importar", "error");
       return;
     }
-    // Clear all previous kinetix keys, then write new ones
-    const keysToRemove: string[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && key.startsWith("kinetix_") && !EXCLUDED_KEYS.includes(key)) {
-        keysToRemove.push(key);
-      }
-    }
-    keysToRemove.forEach((k) => localStorage.removeItem(k));
-    validEntries.forEach(([key, value]) => {
+
+    const snapshot = snapshotKinetixKeys();
+
+    // 1) Vaciar el estado actual.
+    clearKinetixKeys();
+
+    // 2) Escribir el backup. Si CUALQUIER escritura falla, todo se revierte.
+    let failed = false;
+    for (const [key, value] of validEntries) {
       try {
         localStorage.setItem(key, JSON.stringify(value));
       } catch {
-        /* skip entries that can't be serialized */
+        failed = true;
+        break;
       }
-    });
+    }
+
+    if (failed) {
+      // 3a) Fallo: restaurar el estado anterior completo.
+      clearKinetixKeys();
+      let rollbackOk = true;
+      for (const [key, raw] of snapshot) {
+        try {
+          localStorage.setItem(key, raw);
+        } catch {
+          rollbackOk = false;
+        }
+      }
+      showToast(
+        rollbackOk
+          ? "La restauración falló por falta de espacio. Tus datos actuales se conservaron."
+          : "La restauración falló y no se pudo volver al estado anterior por completo.",
+        "error"
+      );
+      return;
+    }
+
+    // 3b) Éxito: confirmar y recargar.
     showToast(
       skipped > 0
         ? `Datos restaurados (${skipped} entradas inválidas omitidas). Recargando…`
@@ -380,6 +455,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
             <p className="text-[10px] text-amber-400/90 leading-relaxed flex items-start gap-1.5">
               <ShieldAlert className="w-3.5 h-3.5 mt-0.5 shrink-0" />
               El backup contiene datos personales (peso, medidas, historial). Guardalo en un lugar seguro y no lo compartas.
+            </p>
+            <p className="text-[10px] text-neutral-500 leading-relaxed">
+              Política de retención: se conservan como máximo {RETENTION_POLICY.workoutHistory.toLocaleString("es")} entrenamientos, {RETENTION_POLICY.exerciseHistory.toLocaleString("es")} registros de ejercicios, {RETENTION_POLICY.bodyMetrics.toLocaleString("es")} mediciones corporales y {RETENTION_POLICY.nutritionDays} días de nutrición. Para conservar más, exportá un backup periódicamente.
             </p>
             <div className="grid grid-cols-2 gap-2">
               <button

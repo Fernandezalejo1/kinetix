@@ -167,26 +167,59 @@ export function getEnrichedExercise(exercise: Exercise): Exercise {
           type: "Activo / Cargado",
         }));
 
-  const analytics: ExerciseAnalyticsData = exercise.analytics || {
-    sfrScore: exercise.category === "push" ? 9.2 : exercise.category === "pull" ? 9.5 : 8.8,
-    hypertrophyTier: "S-Tier",
-    axialFatigue: exercise.equipment === "barbell" && exercise.category === "legs" ? "Alta" : exercise.equipment === "cable" ? "Nula" : "Baja",
-    jointStress: exercise.equipment === "cable" || exercise.equipment === "machine" ? "Muy Bajo" : "Moderado",
-    hypertrophyMechanism:
-      exercise.resistanceProfile === "lengthened"
-        ? "Hipertrofia Mediada por Estiramiento"
-        : "Tensión Mecánica Pura",
-    optimalRepRange: exercise.equipment === "barbell" ? "6 - 10 reps" : "8 - 12 reps",
-    optimalWeeklySets: "6 - 12 series efectivas",
-    targetRir: "1 - 2 RIR",
-    e1rmCurve: [
-      { weight: 60, reps: 12, e1rm: 84 },
-      { weight: 70, reps: 10, e1rm: 93 },
-      { weight: 80, reps: 8, e1rm: 100 },
-      { weight: 85, reps: 6, e1rm: 102 },
-      { weight: 90, reps: 4, e1rm: 101 },
-    ],
-  };
+  // Los valores de analytics se derivan por categoría/equipamiento cuando el
+  // ejercicio no trae evidencia propia. NO son datos medidos del usuario ni
+  // hallazgos específicos: por eso se marcan como estimación editorial y la UI
+  // los etiqueta como tal en lugar de mostrarlos con precisión aparente (SFR
+  // 9.x, "S-Tier"). Solo se muestran como dato cuando exercise.analytics incluye
+  // evidenceSource (ej. DOI de un meta-análisis).
+  const hasSpecEvidence = Boolean(exercise.analytics?.evidenceSource);
+
+  // Si el ejercicio trae analytics con fuente de evidencia, se conserva tal cual.
+  let analytics: ExerciseAnalyticsData;
+  if (exercise.analytics && hasSpecEvidence) {
+    analytics = exercise.analytics;
+  } else {
+    // Analíticas editoriales: valores heurísticos por categoría, marcados
+    // explícitamente como estimación (nunca como dato medido).
+    const base = exercise.analytics || {};
+    analytics = {
+      ...base,
+      sfrScore:
+        base.sfrScore ??
+        (exercise.category === "push" ? 9.2 : exercise.category === "pull" ? 9.5 : 8.8),
+      hypertrophyTier: base.hypertrophyTier || "S-Tier",
+      axialFatigue:
+        base.axialFatigue ||
+        (exercise.equipment === "barbell" && exercise.category === "legs"
+          ? "Alta"
+          : exercise.equipment === "cable"
+          ? "Nula"
+          : "Baja"),
+      jointStress:
+        base.jointStress ||
+        (exercise.equipment === "cable" || exercise.equipment === "machine"
+          ? "Muy Bajo"
+          : "Moderado"),
+      hypertrophyMechanism:
+        base.hypertrophyMechanism ||
+        (exercise.resistanceProfile === "lengthened"
+          ? "Hipertrofia Mediada por Estiramiento"
+          : "Tensión Mecánica Pura"),
+      optimalRepRange: base.optimalRepRange || (exercise.equipment === "barbell" ? "6 - 10 reps" : "8 - 12 reps"),
+      optimalWeeklySets: base.optimalWeeklySets || "6 - 12 series efectivas",
+      targetRir: base.targetRir || "1 - 2 RIR",
+      e1rmCurve: base.e1rmCurve || [
+        { weight: 60, reps: 12, e1rm: 84 },
+        { weight: 70, reps: 10, e1rm: 93 },
+        { weight: 80, reps: 8, e1rm: 100 },
+        { weight: 85, reps: 6, e1rm: 102 },
+        { weight: 90, reps: 4, e1rm: 101 },
+      ],
+      isEditorialEstimate: true,
+      evidenceSource: undefined,
+    };
+  }
 
   const model3DConfig: Exercise3DConfig = exercise.model3DConfig || {
     type: exercise.category === "legs" ? "humanoid_lower" : "humanoid_upper",

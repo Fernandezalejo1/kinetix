@@ -85,15 +85,24 @@ export interface ExercisePostStretchingDetail {
 }
 
 export interface ExerciseAnalyticsData {
-  sfrScore: number; // Stimulus to Fatigue Ratio 0-10
-  hypertrophyTier: "S-Tier" | "A-Tier" | "B-Tier";
-  axialFatigue: "Nula" | "Baja" | "Moderada" | "Alta";
-  jointStress: "Muy Bajo" | "Bajo" | "Moderado" | "Controlado";
-  hypertrophyMechanism: "Tensión Mecánica Pura" | "Hipertrofia Mediada por Estiramiento" | "Estrés Metabólico";
-  optimalRepRange: string;
-  optimalWeeklySets: string;
-  targetRir: string;
+  /** Ratio Estímulo/Fatiga 0-10. Solo se muestra si hay evidencia real
+   *  (publicación/meta-análisis) con `evidenceSource` presente; si no,
+   *  es una estimación editorial heurística y `isEditorialEstimate=true`. */
+  sfrScore?: number;
+  hypertrophyTier?: "S-Tier" | "A-Tier" | "B-Tier";
+  axialFatigue?: "Nula" | "Baja" | "Moderada" | "Alta";
+  jointStress?: "Muy Bajo" | "Bajo" | "Moderado" | "Controlado";
+  hypertrophyMechanism?: "Tensión Mecánica Pura" | "Hipertrofia Mediada por Estiramiento" | "Estrés Metabólico";
+  optimalRepRange?: string;
+  optimalWeeklySets?: string;
+  targetRir?: string;
   e1rmCurve?: { weight: number; reps: number; e1rm: number }[];
+  /** True cuando los valores fueron derivados de heurísticas por categoría
+   *  (no de evidencia específica del ejercicio). La UI lo etiqueta como
+   *  "Estimación editorial" en lugar de mostrarlo como dato científico. */
+  isEditorialEstimate?: boolean;
+  /** Fuente de evidencia (papel/DOI) cuando el valor NO es heurístico. */
+  evidenceSource?: string;
 }
 
 export interface Exercise3DConfig {

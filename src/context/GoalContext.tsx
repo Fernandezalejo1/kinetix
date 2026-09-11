@@ -6,7 +6,7 @@ import {
   ReadinessEntry,
   SleepEntry,
 } from "../types";
-import { safeParse, safeSet, VALIDATORS } from "../utils/storage";
+import { safeParse, safeSet, VALIDATORS, SANITIZERS } from "../utils/storage";
 import { computeReadiness } from "../utils/goalEngine";
 
 interface GoalContextType {
@@ -42,15 +42,15 @@ export const GoalProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   );
 
   const [sleepLog, setSleepLog] = useState<SleepEntry[]>(() =>
-    safeParse("kinetix_sleep_log", [], VALIDATORS["kinetix_sleep_log"])
+    safeParse("kinetix_sleep_log", [], VALIDATORS["kinetix_sleep_log"], SANITIZERS["kinetix_sleep_log"])
   );
 
   const [readinessLog, setReadinessLog] = useState<ReadinessEntry[]>(() =>
-    safeParse("kinetix_readiness", [], VALIDATORS["kinetix_readiness"])
+    safeParse("kinetix_readiness", [], VALIDATORS["kinetix_readiness"], SANITIZERS["kinetix_readiness"])
   );
 
   const [cardioLog, setCardioLog] = useState<CardioEntry[]>(() =>
-    safeParse("kinetix_cardio_log", [], VALIDATORS["kinetix_cardio_log"])
+    safeParse("kinetix_cardio_log", [], VALIDATORS["kinetix_cardio_log"], SANITIZERS["kinetix_cardio_log"])
   );
 
   const setPhase = useCallback((id: GoalPhase) => {
