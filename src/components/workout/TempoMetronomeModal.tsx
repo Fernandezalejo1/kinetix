@@ -171,6 +171,9 @@ export const TempoMetronomeModal: React.FC<TempoMetronomeModalProps> = ({
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Metrónomo de Tempo"
         className="bg-neutral-900 border border-neutral-800 rounded-2xl w-full max-w-md max-h-[92dvh] flex flex-col overflow-hidden shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
@@ -198,6 +201,7 @@ export const TempoMetronomeModal: React.FC<TempoMetronomeModalProps> = ({
                 setIsRunning(false);
                 onClose();
               }}
+              aria-label="Cerrar metrónomo de tempo"
               className="p-2.5 min-w-[44px] min-h-[44px] rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors flex items-center justify-center"
             >
               <X className="w-5 h-5" />

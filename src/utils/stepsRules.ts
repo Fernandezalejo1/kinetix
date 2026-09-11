@@ -185,11 +185,9 @@ export function computeStepAdjustment(
     const what = keto ? "solo grasas (los carbos quedan en su tope keto y la proteína se mantiene)" : "solo carbos y grasas, la proteína se mantiene";
     message = `${reason}Caminaste ${steps.toLocaleString("es-AR")} pasos (${band.label.toLowerCase()}). Se reducen ${Math.abs(caloriesDelta)} kcal de las comidas restantes (${what}).`;
   } else {
-    reason: {
-      const extra = caloriesDelta > 0 ? " para reponer energía" : "";
-      const what = keto ? "en grasas (sin tocar los carbos, para no salir de cetosis)" : "en carbos";
-      message = `Estás muy activo (${steps.toLocaleString("es-AR")} pasos). Se agregan ${caloriesDelta} kcal extra ${what}${extra} para rendir el resto del día.`;
-    }
+    const extra = caloriesDelta > 0 ? " para reponer energía" : "";
+    const what = keto ? "en grasas (sin tocar los carbos, para no salir de cetosis)" : "en carbos";
+    message = `Estás muy activo (${steps.toLocaleString("es-AR")} pasos). Se agregan ${caloriesDelta} kcal extra ${what}${extra} para rendir el resto del día.`;
   }
 
   const adjusted: BaseTargets = {

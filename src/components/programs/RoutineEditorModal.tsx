@@ -134,7 +134,7 @@ export const RoutineEditorModal: React.FC<RoutineEditorModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-md animate-fadeIn">
-      <div className="bg-neutral-900 border border-neutral-800 rounded-t-3xl sm:rounded-3xl w-full max-w-2xl max-h-[92dvh] overflow-y-auto overscroll-contain scrollbar-thin safe-area-bottom">
+      <div role="dialog" aria-modal="true" aria-label={routine ? "Editar Rutina" : "Crear Rutina"} className="bg-neutral-900 border border-neutral-800 rounded-t-3xl sm:rounded-3xl w-full max-w-2xl max-h-[92dvh] overflow-y-auto overscroll-contain scrollbar-thin safe-area-bottom">
         {/* Header */}
         <div className="sticky top-0 z-10 px-4 sm:px-6 py-4 border-b border-neutral-800 bg-neutral-950/95 backdrop-blur-sm flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -146,7 +146,7 @@ export const RoutineEditorModal: React.FC<RoutineEditorModalProps> = ({
               <p className="text-[11px] text-neutral-400">Personaliza tu entrenamiento completo</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2.5 min-w-[44px] min-h-[44px] rounded-xl hover:bg-neutral-800 text-neutral-400 hover:text-white transition-colors flex items-center justify-center">
+          <button onClick={onClose} aria-label="Cerrar editor de rutina" className="p-2.5 min-w-[44px] min-h-[44px] rounded-xl hover:bg-neutral-800 text-neutral-400 hover:text-white transition-colors flex items-center justify-center">
             <X className="w-5 h-5" />
           </button>
         </div>

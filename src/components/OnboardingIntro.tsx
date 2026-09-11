@@ -63,6 +63,9 @@ export const OnboardingIntro: React.FC = () => {
       onClick={dismiss}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Bienvenida: ${STEPS[step].title}`}
         className="bg-neutral-900 border border-neutral-800 rounded-t-3xl sm:rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-slideUp"
         onClick={(e) => e.stopPropagation()}
       >

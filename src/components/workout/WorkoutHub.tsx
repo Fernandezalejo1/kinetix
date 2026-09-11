@@ -747,7 +747,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
       {/* Session Detail Modal */}
       {selectedSession && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn" onClick={() => setSelectedSession(null)}>
-          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-2xl max-h-[90dvh] flex flex-col overflow-hidden shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div role="dialog" aria-modal="true" aria-label={`Detalle de sesión: ${selectedSession.routineName}`} className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-2xl max-h-[90dvh] flex flex-col overflow-hidden shadow-2xl" onClick={(e) => e.stopPropagation()}>
             {/* Header */}
             <div className="p-5 border-b border-neutral-800 bg-neutral-950/50 shrink-0">
               <div className="flex items-center justify-between gap-3">
@@ -757,7 +757,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
                     {new Date(selectedSession.date).toLocaleDateString("es-ES", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
                   </p>
                 </div>
-                <button onClick={() => setSelectedSession(null)} className="p-2 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors">
+                <button onClick={() => setSelectedSession(null)} aria-label="Cerrar detalle de sesión" className="p-2 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -863,14 +863,14 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
         const history = getExerciseHistory(selectedExHistory.id);
         return (
           <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn" onClick={() => setSelectedExHistory(null)}>
-            <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-lg max-h-[90dvh] flex flex-col overflow-hidden shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div role="dialog" aria-modal="true" aria-label={`Historial: ${selectedExHistory.name}`} className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-lg max-h-[90dvh] flex flex-col overflow-hidden shadow-2xl" onClick={(e) => e.stopPropagation()}>
               <div className="p-5 border-b border-neutral-800 bg-neutral-950/50 shrink-0">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-lg font-black text-white">{selectedExHistory.name}</h3>
                     <p className="text-xs text-neutral-400 mt-1">{history.length} sesiones registradas</p>
                   </div>
-                  <button onClick={() => setSelectedExHistory(null)} className="p-2 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors">
+                  <button onClick={() => setSelectedExHistory(null)} aria-label="Cerrar historial del ejercicio" className="p-2 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors">
                     <X className="w-5 h-5" />
                   </button>
                 </div>

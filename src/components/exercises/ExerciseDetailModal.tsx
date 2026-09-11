@@ -70,6 +70,9 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Detalle: ${exercise.name}`}
         className="bg-neutral-900 border-neutral-800 sm:border rounded-none sm:rounded-3xl w-full max-w-5xl overflow-hidden shadow-2xl my-auto text-left flex flex-col max-h-[100dvh] sm:max-h-[92dvh]"
         onClick={(e) => e.stopPropagation()}
       >
@@ -101,6 +104,7 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
 
             <button
               onClick={onClose}
+              aria-label="Cerrar ficha del ejercicio"
               className="p-2.5 min-w-[44px] min-h-[44px] rounded-2xl text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors shrink-0 flex items-center justify-center"
               title="Cerrar Ficha"
             >

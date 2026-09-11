@@ -581,6 +581,9 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
   return (
     <div
       id="live-workout-logger"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Entrenamiento en vivo"
       className="fixed inset-0 z-50 text-neutral-100 flex flex-col overflow-hidden"
       style={{ backgroundColor: '#0a0a0a' }}
     >
@@ -1330,7 +1333,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
       {/* Difficulty Survey Modal */}
       {difficultySurvey && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-md shadow-2xl p-6 space-y-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+          <div role="dialog" aria-modal="true" aria-label="Encuesta de dificultad" className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-md shadow-2xl p-6 space-y-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
             <div className="text-center space-y-2">
               <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 flex items-center justify-center mx-auto">
                 <Activity className="w-7 h-7" />

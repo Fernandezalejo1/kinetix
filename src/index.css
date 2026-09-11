@@ -236,3 +236,27 @@ input[type="number"] {
 @utility pb-nav {
   padding-bottom: max(env(safe-area-inset-bottom, 0px), 60px);
 }
+
+/* Accessibility: respect prefers-reduced-motion (OS-level or device setting).
+   Desactiva animaciones, transformaciones y transiciones para usuarios
+   sensibles al movimiento. Se aplica por encima de utilidades de animación. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Legibilidad: las fuentes de 9-10px eran demasiado pequeñas para lectura
+   en movimiento (diagnóstico). Salto conservador: 9→10 y 10→11 px, dejando
+   el resto (11px en adelante) como está para no romper layouts densos. */
+.text-\[9px\] {
+  font-size: 10px !important;
+}
+.text-\[10px\] {
+  font-size: 11px !important;
+}

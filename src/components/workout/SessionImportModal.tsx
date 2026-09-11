@@ -93,7 +93,7 @@ export const SessionImportModal: React.FC<{ isOpen: boolean; onClose: () => void
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn" onClick={onClose}>
-      <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-lg max-h-[90dvh] flex flex-col overflow-hidden shadow-2xl" onClick={(e) => e.stopPropagation()}>
+      <div role="dialog" aria-modal="true" aria-label="Importar sesión pasada" className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-lg max-h-[90dvh] flex flex-col overflow-hidden shadow-2xl" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="p-5 border-b border-neutral-800 bg-neutral-950/50 shrink-0">
           <div className="flex items-center justify-between gap-3">
@@ -107,7 +107,7 @@ export const SessionImportModal: React.FC<{ isOpen: boolean; onClose: () => void
                 Con esto la app calcula tu 1RM estimado y ajusta los pesos solos.
               </p>
             </div>
-            <button onClick={onClose} className="p-2 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors shrink-0">
+            <button onClick={onClose} aria-label="Cerrar importar sesión" className="p-2 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors shrink-0">
               <X className="w-5 h-5" />
             </button>
           </div>

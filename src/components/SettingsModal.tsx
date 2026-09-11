@@ -9,6 +9,8 @@ import {
   Database,
   Footprints,
   FileText,
+  Lock,
+  Trash2,
 } from "lucide-react";
 import { StepsPanel } from "./nutrition/StepsPanel";
 import { useToast } from "../context/ToastContext";
@@ -21,6 +23,7 @@ import {
   scheduleNativeReminder,
   cancelNativeReminder,
 } from "../utils/reminderNotifications";
+import { encryptJson, decryptBackup, isEncryptedBackup, EncryptedBackup } from "../utils/encryption";
 
 interface SettingsModalProps {
   open: boolean;
@@ -52,6 +55,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
   const fileInputRef = useRef<HTMLInputElement>(null);
   const csvInputRef = useRef<HTMLInputElement>(null);
   const [csvPreview, setCsvPreview] = useState<ImportResult | null>(null);
+  const [encryptedPending, setEncryptedPending] = useState<EncryptedBackup | null>(null);
+  const [passDialog, setPassDialog] = useState<"encrypt" | "decrypt" | null>(null);
+  const [passValue, setPassValue] = useState("");
+  const [confirmWipe, setConfirmWipe] = useState(false);
+  const [wipeTyped, setWipeTyped] = useState("");
   const isMounted = useRef(true);
 
   // Persist reminder config
@@ -95,7 +103,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
     return () => clearInterval(interval);
   }, [showToast]);
 
-  const exportData = () => {
+  const exportData = (cipherOpts?: { password?: string }) => {
     const data: Record<string, unknown> = {};
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
@@ -113,6 +121,23 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
       exportedAt: new Date().toISOString(),
       data,
     };
+    if (cipherOpts?.password) {
+      encryptJson(payload, cipherOpts.password)
+        .then((enc) => {
+          const blob = new Blob([JSON.stringify(enc, null, 2)], { type: "application/json" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `kinetix-backup-cifrado-${localDateKey()}.json`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          showToast("Backup cifrado exportado. No olvides tu contraseña.", "success");
+        })
+        .catch(() => showToast("No se pudo cifrar el backup", "error"));
+      return;
+    }
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -138,6 +163,82 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
     isArray(v) ||
     isPlainObject(v);
 
+  const parseBackupPayload = (pdf: unknown): { data: unknown } | null => {
+    if (!pdf || (pdf as any).app !== "KINETIX" || (pdf as any).version !== IMPORT_VERSION) {
+      showToast("El archivo no es un backup válido de KINETIX", "error");
+      return null;
+    }
+    const data = (pdf as any)?.data;
+    if (!data || typeof data !== "object" || Array.isArray(data)) {
+      showToast("El archivo no es un backup válido de KINETIX", "error");
+      return null;
+    }
+    return { data };
+  };
+
+  const applyBackup = (parsed: { data: Record<string, unknown> }) => {
+    const data = parsed.data;
+    // M1 — Validación por esquema: importar solo entradas con la forma
+    // esperada (las claves conocidas pasan su type guard; las desconocidas
+    // deben ser JSON-safe). Lo inválido se descarta.
+    const validEntries: [string, unknown][] = [];
+    let skipped = 0;
+    for (const [key, value] of Object.entries(data)) {
+      if (!key.startsWith("kinetix_") || EXCLUDED_KEYS.includes(key)) continue;
+      const ok = key in VALIDATORS ? VALIDATORS[key](value) : isJsonSafe(value);
+      if (ok) validEntries.push([key, value]);
+      else skipped++;
+    }
+    if (validEntries.length === 0) {
+      showToast("El backup no contiene datos válidos para importar", "error");
+      return;
+    }
+    // Clear all previous kinetix keys, then write new ones
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith("kinetix_") && !EXCLUDED_KEYS.includes(key)) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach((k) => localStorage.removeItem(k));
+    validEntries.forEach(([key, value]) => {
+      try {
+        localStorage.setItem(key, JSON.stringify(value));
+      } catch {
+        /* skip entries that can't be serialized */
+      }
+    });
+    showToast(
+      skipped > 0
+        ? `Datos restaurados (${skipped} entradas inválidas omitidas). Recargando…`
+        : "Datos restaurados. Recargando…",
+      skipped > 0 ? "info" : "success"
+    );
+    setTimeout(() => window.location.reload(), 1200);
+  };
+
+  const confirmImport = (parsed: { data: Record<string, unknown> }) => {
+    if (!window.confirm("Se reemplazarán TODOS tus datos actuales con los del backup. ¿Continuar?")) return;
+    applyBackup(parsed);
+  };
+
+  const handleEncryptedPassphrase = (pass: string) => {
+    if (!encryptedPending) return;
+    decryptBackup<{ app: string; version: number; data: unknown }>(encryptedPending, pass)
+      .then((pdf) => {
+        setEncryptedPending(null);
+        const parsed = parseBackupPayload(pdf);
+        if (!parsed) return;
+        if (!window.confirm("Se reemplazarán TODOS tus datos actuales con los del backup. ¿Continuar?")) return;
+        applyBackup(parsed as { data: Record<string, unknown> });
+      })
+      .catch(() => {
+        showToast("Contraseña incorrecta o backup dañado", "error");
+        setEncryptedPending(null);
+      });
+  };
+
   const importFile = (file: File) => {
     if (file.size > MAX_BACKUP_SIZE) {
       showToast("El archivo es demasiado grande (máx. 5 MB)", "error");
@@ -145,66 +246,40 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
     }
     const reader = new FileReader();
     reader.onload = () => {
-      let parsed: any;
+      let parsed0: unknown;
       try {
-        parsed = JSON.parse(String(reader.result));
+        parsed0 = JSON.parse(String(reader.result));
       } catch {
         showToast("Error al leer el backup", "error");
         return;
       }
-      // Validación de esquema: debe ser un backup real de KINETIX.
-      if (!parsed || parsed.app !== "KINETIX" || parsed.version !== IMPORT_VERSION) {
-        showToast("El archivo no es un backup válido de KINETIX", "error");
+      if (isEncryptedBackup(parsed0)) {
+        setEncryptedPending(parsed0);
+        setPassDialog("decrypt");
+        setPassValue("");
+        showToast("Backup cifrado detectado: escribí la contraseña para desbloquear", "info");
         return;
       }
-      const data = parsed?.data;
-      if (!data || typeof data !== "object" || Array.isArray(data)) {
-        showToast("El archivo no es un backup válido de KINETIX", "error");
-        return;
-      }
-      // M1 — Validación por esquema: importar solo entradas con la forma
-      // esperada (las claves conocidas pasan su type guard; las desconocidas
-      // deben ser JSON-safe). Lo inválido se descarta.
-      const validEntries: [string, unknown][] = [];
-      let skipped = 0;
-      for (const [key, value] of Object.entries(data)) {
-        if (!key.startsWith("kinetix_") || EXCLUDED_KEYS.includes(key)) continue;
-        const ok = key in VALIDATORS ? VALIDATORS[key](value) : isJsonSafe(value);
-        if (ok) validEntries.push([key, value]);
-        else skipped++;
-      }
-      if (validEntries.length === 0) {
-        showToast("El backup no contiene datos válidos para importar", "error");
-        return;
-      }
-      if (!window.confirm("Se reemplazarán TODOS tus datos actuales con los del backup. ¿Continuar?")) {
-        return;
-      }
-      // Clear all previous kinetix keys, then write new ones
-      const keysToRemove: string[] = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith("kinetix_") && !EXCLUDED_KEYS.includes(key)) {
-          keysToRemove.push(key);
-        }
-      }
-      keysToRemove.forEach((k) => localStorage.removeItem(k));
-      validEntries.forEach(([key, value]) => {
-        try {
-          localStorage.setItem(key, JSON.stringify(value));
-        } catch {
-          /* skip entries that can't be serialized */
-        }
-      });
-      showToast(
-        skipped > 0
-          ? `Datos restaurados (${skipped} entradas inválidas omitidas). Recargando…`
-          : "Datos restaurados. Recargando…",
-        skipped > 0 ? "info" : "success"
-      );
-      setTimeout(() => window.location.reload(), 1200);
+      const parsed = parseBackupPayload(parsed0);
+      if (!parsed) return;
+      confirmImport(parsed as { data: Record<string, unknown> });
     };
     reader.readAsText(file);
+  };
+
+  const wipeAllData = () => {
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith("kinetix_") && !EXCLUDED_KEYS.includes(key)) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach((k) => localStorage.removeItem(k));
+    setConfirmWipe(false);
+    setWipeTyped("");
+    showToast("Se eliminaron todos tus datos. Recargando…", "info");
+    setTimeout(() => window.location.reload(), 1200);
   };
 
   const requestNotification = async () => {
@@ -286,7 +361,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
         {/* Header */}
         <div className="sticky top-0 z-10 p-5 border-b border-neutral-800 bg-neutral-950/95 backdrop-blur-sm flex items-center justify-between">
           <h3 className="text-lg font-black text-white">Configuración</h3>
-          <button onClick={onClose} className="p-2.5 min-w-[44px] min-h-[44px] rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors flex items-center justify-center">
+          <button onClick={onClose} aria-label="Cerrar configuración" className="p-2.5 min-w-[44px] min-h-[44px] rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors flex items-center justify-center">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -308,7 +383,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
             </p>
             <div className="grid grid-cols-2 gap-2">
               <button
-                onClick={exportData}
+                onClick={() => exportData()}
                 className="flex items-center justify-center gap-2 py-3 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold transition-colors"
               >
                 <Download className="w-4 h-4" />
@@ -322,6 +397,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
                 Importar datos
               </button>
             </div>
+            <button
+              onClick={() => {
+                setPassDialog("encrypt");
+                setPassValue("");
+              }}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-cyan-300 text-xs font-bold border border-cyan-500/30 transition-colors touch-target"
+            >
+              <Lock className="w-4 h-4" />
+              Exportar datos cifrado (con contraseña)
+            </button>
             <input
               ref={fileInputRef}
               type="file"
@@ -489,8 +574,135 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
             </p>
             <StepsPanel />
           </section>
+
+          {/* Peligro: borrar todos los datos */}
+          <section className="space-y-3 pt-4 border-t border-neutral-800">
+            <div className="flex items-center gap-2">
+              <Trash2 className="w-4 h-4 text-red-400" />
+              <h4 className="text-sm font-black text-white uppercase tracking-wider text-red-400">Zona de riesgo</h4>
+            </div>
+            <p className="text-[11px] text-neutral-400 leading-relaxed">
+              Borra TODO el historial de entrenamiento, PRs, nutrición, métricas y preferencias guardadas en este
+              dispositivo. Esta acción no se puede deshacer.
+            </p>
+            {!confirmWipe ? (
+              <button
+                onClick={() => {
+                  setConfirmWipe(true);
+                  setWipeTyped("");
+                }}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-red-950/40 hover:bg-red-900/50 text-red-300 text-xs font-bold border border-red-500/40 transition-colors touch-target"
+              >
+                <Trash2 className="w-4 h-4" />
+                Borrar todos los datos
+              </button>
+            ) : (
+              <div className="space-y-3 p-4 rounded-2xl bg-red-950/30 border border-red-500/40 animate-fadeIn">
+                <p className="text-xs text-red-200 font-bold">
+                  Confirmá escribiendo <span className="font-mono bg-neutral-900 px-1.5 py-0.5 rounded border border-neutral-700">BORRAR</span>
+                </p>
+                <input
+                  type="text"
+                  value={wipeTyped}
+                  onChange={(e) => setWipeTyped(e.target.value)}
+                  placeholder="Escribí BORRAR"
+                  autoComplete="off"
+                  autoCapitalize="characters"
+                  className="w-full px-3 py-2.5 bg-neutral-950 border border-neutral-800 rounded-xl text-sm text-white text-center focus:outline-none focus:border-red-500"
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setConfirmWipe(false)}
+                    className="flex-1 py-2.5 rounded-xl bg-neutral-800 text-neutral-300 text-xs font-bold hover:bg-neutral-700 transition-colors touch-target"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={wipeAllData}
+                    disabled={wipeTyped.trim().toUpperCase() !== "BORRAR"}
+                    className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 disabled:opacity-40 disabled:pointer-events-none text-white text-xs font-black transition-colors touch-target"
+                  >
+                    Borrar todo
+                  </button>
+                </div>
+              </div>
+            )}
+          </section>
         </div>
       </div>
+
+      {/* Diálogo de contraseña para exportar/importar cifrado */}
+      {passDialog && (
+        <div
+          className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn"
+          onClick={() => setPassDialog(null)}
+        >
+          <form
+            role="dialog"
+            aria-modal="true"
+            aria-label={passDialog === "encrypt" ? "Exportar backup cifrado" : "Desbloquear backup cifrado"}
+            className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-sm p-5 space-y-4 shadow-2xl animate-slideUp"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (passDialog === "encrypt") {
+                if (!passValue || passValue.length < 6) {
+                  showToast("La contraseña debe tener al menos 6 caracteres", "error");
+                  return;
+                }
+                exportData({ password: passValue });
+                setPassDialog(null);
+                setPassValue("");
+              } else if (encryptedPending) {
+                handleEncryptedPassphrase(passValue);
+                setPassValue("");
+              }
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-2">
+              {passDialog === "encrypt" ? (
+                <Lock className="w-5 h-5 text-cyan-400" />
+              ) : (
+                <Upload className="w-5 h-5 text-cyan-400" />
+              )}
+              <h4 className="text-base font-black text-white">
+                {passDialog === "encrypt" ? "Cifrar backup" : "Desbloquear backup"}
+              </h4>
+            </div>
+            <p className="text-[11px] text-neutral-400 leading-relaxed">
+              {passDialog === "encrypt"
+                ? "Tu backup se cifra con AES-256 en este dispositivo. Guardá bien la contraseña: sin ella no hay forma de recuperar los datos."
+                : "Escribí la contraseña que usaste al exportar. Sin ella no se pueden recuperar los datos."}
+            </p>
+            <input
+              type="password"
+              value={passValue}
+              onChange={(e) => setPassValue(e.target.value)}
+              placeholder="Contraseña"
+              autoFocus
+              className="w-full px-3 py-3 bg-neutral-950 border border-neutral-800 rounded-xl text-sm text-white text-center focus:outline-none focus:border-cyan-500"
+            />
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setPassDialog(null);
+                  setEncryptedPending(null);
+                }}
+                className="flex-1 py-2.5 rounded-xl bg-neutral-800 text-neutral-300 text-xs font-bold hover:bg-neutral-700 transition-colors touch-target"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="flex-1 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-black transition-colors touch-target"
+              >
+                {passDialog === "encrypt" ? "Exportar cifrado" : "Desbloquear"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 };

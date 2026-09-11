@@ -506,7 +506,7 @@ export const NutritionVisionHub: React.FC = () => {
       {/* Edit targets modal */}
       {editingTargets && (
         <div className="fixed inset-0 z-50 bg-black/70 flex items-end sm:items-center justify-center p-4">
-          <form onSubmit={saveTargets} className="w-full max-w-md rounded-3xl bg-neutral-900 border border-neutral-800 p-5 space-y-4">
+          <form onSubmit={saveTargets} role="dialog" aria-modal="true" aria-label="Objetivos diarios" className="w-full max-w-md rounded-3xl bg-neutral-900 border border-neutral-800 p-5 space-y-4">
             <h4 className="text-sm font-black text-white uppercase tracking-wider">Objetivos diarios</h4>
             <div className="grid grid-cols-2 gap-3">
               {[
@@ -548,10 +548,10 @@ export const NutritionVisionHub: React.FC = () => {
       {/* Profile editor modal */}
       {profileOpen && (
         <div className="fixed inset-0 z-50 bg-black/70 flex items-end sm:items-center justify-center p-4">
-          <form onSubmit={saveProfile} className="w-full max-w-lg rounded-3xl bg-neutral-900 border border-neutral-800 p-5 space-y-4 max-h-[88dvh] overflow-y-auto scrollbar-thin">
+          <form onSubmit={saveProfile} role="dialog" aria-modal="true" aria-label="Mi Perfil Nutricional" className="w-full max-w-lg rounded-3xl bg-neutral-900 border border-neutral-800 p-5 space-y-4 max-h-[88dvh] overflow-y-auto scrollbar-thin">
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-black text-white uppercase tracking-wider">Mi Perfil Nutricional</h4>
-              <button type="button" onClick={() => setProfileOpen(false)} className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors">
+              <button type="button" onClick={() => setProfileOpen(false)} aria-label="Cerrar perfil nutricional" className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -693,10 +693,10 @@ export const NutritionVisionHub: React.FC = () => {
       {/* Weight editor modal */}
       {weightEditorOpen && (
         <div className="fixed inset-0 z-50 bg-black/70 flex items-end sm:items-center justify-center p-4">
-          <form onSubmit={saveWeight} className="w-full max-w-md rounded-3xl bg-neutral-900 border border-neutral-800 p-5 space-y-4">
+          <form onSubmit={saveWeight} role="dialog" aria-modal="true" aria-label="Registrar peso corporal" className="w-full max-w-md rounded-3xl bg-neutral-900 border border-neutral-800 p-5 space-y-4">
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-black text-white uppercase tracking-wider">Registrar peso corporal</h4>
-              <button type="button" onClick={() => setWeightEditorOpen(false)} className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors">
+              <button type="button" onClick={() => setWeightEditorOpen(false)} aria-label="Cerrar registro de peso" className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors">
                 <X className="w-4 h-4" />
               </button>
             </div>

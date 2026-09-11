@@ -37,6 +37,9 @@ export const WarmupGeneratorModal: React.FC<WarmupGeneratorModalProps> = ({
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Pirámide de Calentamiento"
         className="bg-neutral-900 border border-neutral-800 rounded-2xl w-full max-w-lg max-h-[92dvh] flex flex-col overflow-hidden shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
@@ -54,6 +57,7 @@ export const WarmupGeneratorModal: React.FC<WarmupGeneratorModalProps> = ({
           <button
             id="close-warmup-btn"
             onClick={onClose}
+            aria-label="Cerrar pirámide de calentamiento"
             className="p-2.5 min-w-[44px] min-h-[44px] rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors shrink-0 flex items-center justify-center"
           >
             <X className="w-5 h-5" />
