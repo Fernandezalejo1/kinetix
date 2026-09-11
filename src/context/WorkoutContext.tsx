@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from "react";
 import {
   ActiveWorkoutSession,
   CompletedWorkout,
@@ -23,6 +23,8 @@ import { calculate1RM, isCompoundExercise, unlockAudio, playRestTimerCompletedSo
 import { detectExecutionMode, isTimeBased, parseTargetSeconds } from "../utils/exerciseMode";
 import { safeParse, safeSet, safeRemove, VALIDATORS, isArrayOrNull } from "../utils/storage";
 import { calculateSmartNextWeight, smartStartingWeight } from "../utils/weightRecommendation";
+import { localDateKey } from "../utils/dateUtils";
+import { latestBodyMetric } from "../utils/absEstimator";
 import confetti from "canvas-confetti";
 
 interface RestTimerState {
@@ -38,6 +40,8 @@ interface WorkoutContextType {
   restTimer: RestTimerState;
   workoutHistory: CompletedWorkout[];
   nutritionLog: NutritionLog;
+  /** Días nutricionales cerrados (más reciente primero). Para adherencia/tendencias. */
+  nutritionHistory: NutritionLog[];
   bodyMetrics: BodyMetricEntry[];
   personalRecords: PersonalRecord[];
   exerciseHistory: ExerciseHistoryEntry[];
@@ -108,7 +112,7 @@ const WorkoutContext = createContext<WorkoutContextType | undefined>(undefined);
 const INITIAL_WORKOUT_HISTORY: CompletedWorkout[] = [];
 
 const INITIAL_NUTRITION: NutritionLog = {
-  date: new Date().toISOString().split("T")[0],
+  date: localDateKey(),
   calorieTarget: 2300,
   proteinTarget: 142,
   carbsTarget: 25,
@@ -230,6 +234,28 @@ function capForStorage<T>(arr: T[], max: number): T[] {
   }
 })();
 
+// -------------------------------------------------------------
+// FIX (prioridad alta): ARCHIVO DIARIO de nutrición.
+// Antes el log nutricional se REEMPLAZABA cada día: solo existía "hoy", y era
+// imposible mostrar adherencia, promedios ni tendencias. El día cerrado se
+// archiva en kinetix_nutrition_history (tope 120 días para no agotar cuota).
+// -------------------------------------------------------------
+function archiveDayIfStale(log: NutritionLog | null, today: string): void {
+  if (!log || log.date === today) return;
+  const dayHasData = (log.meals?.length ?? 0) > 0 || (log.waterMl ?? 0) > 0;
+  if (!dayHasData) return; // día vacío: no archiva ruido
+  try {
+    const raw = localStorage.getItem("kinetix_nutrition_history");
+    const list: NutritionLog[] = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(list)) return;
+    if (list.some((d) => d && d.date === log.date)) return; // idempotente
+    list.unshift(log);
+    localStorage.setItem("kinetix_nutrition_history", JSON.stringify(list.slice(0, 120)));
+  } catch {
+    /* cuota llena o corrupto: se pierde el archivo de ese día, no la app */
+  }
+}
+
 export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [activeSession, setActiveSession] = useState<ActiveWorkoutSession | null>(() => {
     return safeParse<ActiveWorkoutSession | null>(
@@ -257,22 +283,23 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
       null,
       (v) => v === null || VALIDATORS["kinetix_nutrition_log"](v)
     );
-    const today = new Date().toISOString().split("T")[0];
+    // FIX (bloqueante 3): día LOCAL, no UTC. En Uruguay el día UTC cambia a las 21:00.
+    const today = localDateKey();
     const currentGoal = readNutritionGoal();
     if (saved && saved.date === today) {
       if (currentGoal === "keto" && saved.carbsTarget > KETO_CARB_CAP) {
         const savedMetrics = safeParse<BodyMetricEntry[] | null>("kinetix_body_metrics", null, isArrayOrNull);
-        const list = savedMetrics && savedMetrics.length ? savedMetrics : INITIAL_BODY_METRICS;
-        const weightKg = list[list.length - 1]?.weightKg ?? 78;
+        // FIX (bloqueante 2): medición más reciente por fecha.
+        const weightKg = latestBodyMetric(savedMetrics ?? [])?.weightKg ?? 78;
         return { ...saved, ...computeTargetsFromWeight(weightKg, currentGoal) };
       }
       return saved;
     }
-    // New day (or nothing saved): reset meals/water and recompute targets from body weight.
+    // New day (or nothing saved): archive the closed day, reset meals/water and recompute targets from body weight.
     const savedMetrics = safeParse<BodyMetricEntry[] | null>("kinetix_body_metrics", null, isArrayOrNull);
-    const list = savedMetrics && savedMetrics.length ? savedMetrics : INITIAL_BODY_METRICS;
-    const weightKg = list[list.length - 1]?.weightKg ?? 78;
+    const weightKg = latestBodyMetric(savedMetrics ?? [])?.weightKg ?? 78;
     const targets = computeTargetsFromWeight(weightKg, currentGoal);
+    if (saved) archiveDayIfStale(saved, today);
     return {
       ...(saved ?? INITIAL_NUTRITION),
       ...targets,
@@ -953,7 +980,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
                 type: "1RM",
                 value: Math.round(current1RM),
                 reps: s.reps,
-                date: new Date().toISOString().split("T")[0],
+                date: localDateKey(),
                 previousValue: existingPR?.value,
               };
               newPrs.push(prItem);
@@ -1159,10 +1186,11 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
   );
 
   const ensureTodayLogic = useCallback((): { today: string; targets: { calories: number; protein: number; carbs: number; fats: number } } => {
-    const today = new Date().toISOString().split("T")[0];
+    // FIX (bloqueante 3): día LOCAL. Y peso actual = medición más reciente por
+    // fecha (los arrays se prependen: length-1 podía devolver el peso más viejo).
+    const today = localDateKey();
     const savedMetrics = safeParse<BodyMetricEntry[] | null>("kinetix_body_metrics", null, isArrayOrNull);
-    const list = savedMetrics && savedMetrics.length ? savedMetrics : INITIAL_BODY_METRICS;
-    const weightKg = list[list.length - 1]?.weightKg ?? 78;
+    const weightKg = latestBodyMetric(savedMetrics ?? [])?.weightKg ?? 78;
     return { today, targets: computeTargetsFromWeight(weightKg) };
   }, []);
 
@@ -1213,8 +1241,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
       localStorage.setItem("kinetix_nutrition_goal", goal);
     }
     const savedMetrics = safeParse<BodyMetricEntry[] | null>("kinetix_body_metrics", null, isArrayOrNull);
-    const list = savedMetrics && savedMetrics.length ? savedMetrics : INITIAL_BODY_METRICS;
-    const weightKg = list[list.length - 1]?.weightKg ?? 78;
+    const weightKg = latestBodyMetric(savedMetrics ?? [])?.weightKg ?? 78;
     const profile = readNutritionProfile();
     setNutritionLog((prev) => ({ ...prev, ...computePersonalTargets(weightKg, goal, profile) }));
   }, []);
@@ -1222,8 +1249,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
   const setNutritionProfile = useCallback((profile: NutritionProfile) => {
     setNutritionProfileState(profile);
     const savedMetrics = safeParse<BodyMetricEntry[] | null>("kinetix_body_metrics", null, isArrayOrNull);
-    const list = savedMetrics && savedMetrics.length ? savedMetrics : INITIAL_BODY_METRICS;
-    const weightKg = list[list.length - 1]?.weightKg ?? 78;
+    const weightKg = latestBodyMetric(savedMetrics ?? [])?.weightKg ?? 78;
     const goal = readNutritionGoal();
     setNutritionLog((prev) => ({ ...prev, ...computePersonalTargets(weightKg, goal, profile) }));
   }, []);
@@ -1341,6 +1367,19 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
     return rec.nextWeight > 0 ? rec.nextWeight : last.weight;
   }, [exerciseHistory, personalRecords]);
 
+  // Historial nutricional archivado (días cerrados). Se re-lee cuando cambia
+  // el log activo: archiveDayIfStale lo mantiene sincronizado al abrir un día nuevo.
+  const nutritionHistory = useMemo((): NutritionLog[] => {
+    try {
+      const raw = localStorage.getItem("kinetix_nutrition_history");
+      const list = raw ? JSON.parse(raw) : [];
+      return Array.isArray(list) ? (list as NutritionLog[]) : [];
+    } catch {
+      return [];
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nutritionLog.date]);
+
   return (
     <WorkoutContext.Provider
       value={{
@@ -1348,6 +1387,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
         restTimer,
         workoutHistory,
         nutritionLog,
+        nutritionHistory,
         bodyMetrics,
         personalRecords,
         exerciseHistory,

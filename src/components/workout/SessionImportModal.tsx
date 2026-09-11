@@ -5,6 +5,7 @@ import { useToast } from "../../context/ToastContext";
 import { EXERCISES_DATABASE } from "../../data/exercisesData";
 import { Exercise, DifficultyLevel } from "../../types";
 import { e1rmFromSet } from "../../utils/startingLoads";
+import { localDateKey } from "../../utils/dateUtils";
 
 interface ParsedSet {
   weight: number;
@@ -40,7 +41,8 @@ export const SessionImportModal: React.FC<{ isOpen: boolean; onClose: () => void
   const { showToast } = useToast();
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Exercise | null>(null);
-  const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
+  // FIX (bloqueante 3): fecha por defecto en día LOCAL.
+  const [date, setDate] = useState(() => localDateKey());
   const [setsText, setSetsText] = useState("");
   const [difficulty, setDifficulty] = useState<DifficultyLevel | "">("" as DifficultyLevel | "");
 
@@ -170,7 +172,7 @@ export const SessionImportModal: React.FC<{ isOpen: boolean; onClose: () => void
             <input
               type="date"
               value={date}
-              max={new Date().toISOString().split("T")[0]}
+              max={localDateKey()}
               onChange={(e) => setDate(e.target.value)}
               className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500/40"
             />

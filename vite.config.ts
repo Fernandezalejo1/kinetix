@@ -12,20 +12,11 @@ export default defineConfig(() => {
       },
     },
     build: {
-      // Split vendor chunks for better caching
-      rollupOptions: {
-        output: {
-          manualChunks: {
-            'vendor-react': ['react', 'react-dom'],
-            'vendor-motion': ['motion'],
-            'vendor-charts': ['recharts'],
-            'vendor-lucide': ['lucide-react'],
-            'vendor-confetti': ['canvas-confetti'],
-          },
-        },
-      },
-      // Reduce chunk size warning limit
-      chunkSizeWarningLimit: 600,
+      // Sin manualChunks: Rollup divide automáticamente. Los hubs pesados
+      // (Recharts) quedan en chunks lazy de sus pestañas y NO se precargan
+      // desde la pantalla inicial (modulepreload del vendor único era el bug).
+      // vendor-react/vendor-lucide los maneja Rollup junto a sus consumidores.
+      chunkSizeWarningLimit: 700,
       // Source maps off for production (smaller builds)
       sourcemap: false,
       // Target modern browsers for smaller bundles

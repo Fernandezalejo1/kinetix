@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { Swords } from "lucide-react";
 import { useWorkout } from "../../context/WorkoutContext";
 import { computeMuscleRanks } from "../../utils/muscleRanks";
+import { latestBodyMetric } from "../../utils/absEstimator";
 import {
   RANK_EMBLEM_SRC,
   RANK_LABELS,
@@ -26,7 +27,8 @@ const RANK_ORDER: Rank[] = ["challenger", "master", "gold", "bronze"];
 export const MuscleRanksPanel: React.FC = () => {
   const { personalRecords, exerciseHistory, bodyMetrics } = useWorkout();
 
-  const bodyWeight = bodyMetrics.length ? bodyMetrics[bodyMetrics.length - 1]?.weightKg ?? null : null;
+  // FIX (bloqueante 2): peso corporal actual = medición más reciente por fecha.
+  const bodyWeight = latestBodyMetric(bodyMetrics)?.weightKg ?? null;
 
   const ranks = useMemo(
     () => computeMuscleRanks(personalRecords, exerciseHistory, bodyWeight).sort((a, b) => RANK_ORDER.indexOf(b.rank) - RANK_ORDER.indexOf(a.rank)),

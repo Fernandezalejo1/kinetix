@@ -22,11 +22,12 @@ import {
   ABS_TARGET_BODY_FAT,
 } from "../../utils/absEstimator";
 import { movingAverageWeight, detectStall, downscalePhotoFile } from "../../utils/goalEngine";
+import { localDateKey } from "../../utils/dateUtils";
 import { ResponsiveContainer, ComposedChart, Area, Line, XAxis, YAxis, Tooltip } from "recharts";
 
 /** Panel "Ruta a los Abdominales": ETA estimada + captura de peso/cintura/%grasa. */
 export const AbsEstimatePanel: React.FC = () => {
-  const { bodyMetrics, nutritionProfile, addBodyMetric, updateMacroTargets } = useWorkout();
+  const { bodyMetrics, nutritionProfile, nutritionGoal, addBodyMetric, updateMacroTargets } = useWorkout();
   const { showToast } = useToast();
 
   const result = useMemo(
@@ -67,9 +68,10 @@ export const AbsEstimatePanel: React.FC = () => {
     [bodyMetrics]
   );
 
+  // FIX: usa el objetivo nutricional real del usuario, no "keto" fijo.
   const currentTarget = computePersonalTargets(
     result.weightKg ?? DEFAULT_WEIGHT_KG,
-    "keto",
+    nutritionGoal,
     nutritionProfile
   ).calories;
 
@@ -104,14 +106,14 @@ export const AbsEstimatePanel: React.FC = () => {
     const bf = parseFloat(fBf);
     addBodyMetric({
       id: `bm-${Date.now()}`,
-      date: new Date().toISOString().split("T")[0],
+      date: localDateKey(),
       weightKg: w,
       waistCm: Number.isFinite(waist) && waist > 0 ? waist : undefined,
       estimatedBodyFat: Number.isFinite(bf) && bf > 0 && bf < 60 ? bf : undefined,
       photoUrl: fPhoto || undefined,
     });
-    // Recalcula los objetivos keto desde el nuevo peso (igual que en Nutrición).
-    const t = computePersonalTargets(w, "keto", nutritionProfile);
+    // Recalcula objetivos con el goal real del usuario desde el nuevo peso.
+    const t = computePersonalTargets(w, nutritionGoal, nutritionProfile);
     updateMacroTargets({ calories: t.calories, protein: t.protein, carbs: t.carbs, fats: t.fats });
     setFPhoto("");
     setFormOpen(false);

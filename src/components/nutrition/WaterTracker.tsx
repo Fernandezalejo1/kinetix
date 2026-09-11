@@ -3,12 +3,15 @@ import { Droplets, Minus, Plus, CheckCircle2 } from "lucide-react";
 import { useWorkout } from "../../context/WorkoutContext";
 import { useToast } from "../../context/ToastContext";
 import { computeWaterTarget } from "../../data/nutritionData";
+import { latestBodyMetric } from "../../utils/absEstimator";
 
 export const WaterTracker: React.FC = () => {
   const { nutritionLog, bodyMetrics, addWater, removeWater } = useWorkout();
   const { showToast } = useToast();
 
-  const lastWeight = bodyMetrics[bodyMetrics.length - 1]?.weightKg ?? null;
+  // FIX (bloqueante 2): la métrica actual es la más reciente POR FECHA
+  // (los arrays se prependen, length-1 daba a veces el peso más viejo).
+  const lastWeight = latestBodyMetric(bodyMetrics)?.weightKg ?? null;
   const goal = computeWaterTarget(lastWeight);
   const consumed = nutritionLog.waterMl;
   const remaining = Math.max(0, goal - consumed);

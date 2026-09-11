@@ -1,21 +1,22 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# KINETIX — Reglas ProGuard/R8 para el build release con minifyEnabled true.
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Capacitor usa reflexión para puentes JS -> nativo.
+-keep class com.getcapacitor.** { *; }
+-keep class com.kinetix.hypertrophy.** { *; }
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Plugin Health Connect (@capgo/capacitor-health): API anotada y reflexión interna.
+-keep class ee.forgr.capacitor.health.** { *; }
+-keep class androidx.health.connect.client.** { *; }
+-keep class androidx.health.platform.client.** { *; }
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# Local Notifications (@capacitor/local-notifications)
+-keep class com.capacitorjs.plugins.localnotifications.** { *; }
+
+# WebView JS bridge: conservar métodos anotados @JavascriptInterface
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}
+
+# Reglas genéricas recomendadas por Capacitor
+-keepattributes *Annotation*, InnerClasses, Signature, Exceptions
+-dontwarn androidx.**

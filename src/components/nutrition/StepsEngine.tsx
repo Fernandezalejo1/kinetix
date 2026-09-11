@@ -10,6 +10,7 @@ import {
   subscribeStepsChanged,
 } from "../../utils/healthConnect";
 import { computePersonalTargets } from "../../data/nutritionData";
+import { latestBodyMetric } from "../../utils/absEstimator";
 import { useWorkout } from "../../context/WorkoutContext";
 
 /**
@@ -54,9 +55,8 @@ export const StepsEngine: React.FC = () => {
             fats: nutritionLog.fatsTarget,
           };
         } else {
-          const weightKg = bodyMetrics && bodyMetrics.length
-            ? bodyMetrics[bodyMetrics.length - 1].weightKg
-            : 78;
+          // FIX (bloqueante 2): peso actual = medición más reciente por fecha.
+          const weightKg = latestBodyMetric(bodyMetrics)?.weightKg ?? 78;
           const t = computePersonalTargets(weightKg, nutritionGoal, nutritionProfile);
           base = { calories: t.calories, protein: t.protein, carbs: t.carbs, fats: t.fats };
         }

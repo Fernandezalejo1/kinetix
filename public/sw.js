@@ -1,13 +1,18 @@
-const STATIC_CACHE = 'kinetix-static-v20';
-const DYNAMIC_CACHE = 'kinetix-dynamic-v20';
-const PAGE_CACHE = 'kinetix-pages-v20';
+const STATIC_CACHE = 'kinetix-static-v21';
+const DYNAMIC_CACHE = 'kinetix-dynamic-v21';
+const PAGE_CACHE = 'kinetix-pages-v21';
 
 // Version marker bumped on every deploy so stale caches are cleared.
-const BUILD_VERSION = '20';
+const BUILD_VERSION = '21';
 
 // Static assets (hashed by Vite, immutable) are pre-cached on install.
-// NOTE: we do NOT pre-cache the HTML shell so the app always loads fresh.
+// FIX (prioridad alta): el shell HTML SÍ se precachea. Sin esto, el primer uso
+// offline caía a caches.match('/index.html') y ese recurso no existía en caché
+// aún (solo se guardaba tras una navegación exitosa), quedando el usuario sin
+// app offline. Network-first sigue garantizando que online siempre se use la
+// versión fresca; el precache es SOLO el fallback de último recurso.
 const PRECACHE_URLS = [
+  '/index.html',
   '/manifest.json',
   '/favicon.ico',
   '/favicon.svg',
@@ -82,7 +87,8 @@ self.addEventListener('fetch', (event) => {
         }
         return networkResponse;
       }).catch(() => {
-        // Offline: fall back to the most recently cached page.
+        // Offline: fall back to the most recently cached page, then to the
+        // precached shell (garantizado desde install()).
         return caches.match(request).then((cached) =>
           cached || caches.match('/index.html')
         );

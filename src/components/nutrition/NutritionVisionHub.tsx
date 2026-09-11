@@ -18,8 +18,11 @@ import {
 } from "lucide-react";
 import { useWorkout } from "../../context/WorkoutContext";
 import { useToast } from "../../context/ToastContext";
+import { localDateKey } from "../../utils/dateUtils";
+import { latestBodyMetric } from "../../utils/absEstimator";
 import { ActivityLevel, MealItem, NutritionGoal, NutritionProfile } from "../../types";
 import { MealSchedulerPanel } from "./MealSchedulerPanel";
+import { NutritionAdherencePanel } from "./NutritionAdherencePanel";
 import { StepsPanel } from "./StepsPanel";
 import { WaterTracker } from "./WaterTracker";
 import { ElectrolytesTracker } from "./ElectrolytesTracker";
@@ -69,7 +72,8 @@ export const NutritionVisionHub: React.FC = () => {
   const [editFats, setEditFats] = useState(nutritionLog.fatsTarget);
 
   const [weightEditorOpen, setWeightEditorOpen] = useState(false);
-  const [newWeight, setNewWeight] = useState(() => bodyMetrics[bodyMetrics.length - 1]?.weightKg ?? 80);
+  // FIX (bloqueante 2): inicializa con la medición más reciente por fecha.
+  const [newWeight, setNewWeight] = useState(() => latestBodyMetric(bodyMetrics)?.weightKg ?? 80);
 
   const [quickCategory, setQuickCategory] = useState<QuickMealCategory | "todos">("todos");
 
@@ -78,7 +82,7 @@ export const NutritionVisionHub: React.FC = () => {
     if (!newWeight || newWeight <= 0) return;
     addBodyMetric({
       id: `bm-${Date.now()}`,
-      date: new Date().toISOString().split("T")[0],
+      date: localDateKey(),
       weightKg: newWeight,
     });
     // Recompute macro targets con el perfil personal (Mifflin-St Jeor + déficit)
@@ -113,8 +117,8 @@ export const NutritionVisionHub: React.FC = () => {
     { label: "Grasas", value: totalKcal > 0 ? Math.round((fatsKcal / totalKcal) * 100) : 0, color: "bg-emerald-400", text: "text-emerald-400" },
   ];
 
-  const lastMetric = bodyMetrics[bodyMetrics.length - 1];
-  const currentWeight = lastMetric?.weightKg ?? null;
+  // FIX (bloqueante 2): peso actual = medición más reciente por fecha.
+  const currentWeight = latestBodyMetric(bodyMetrics)?.weightKg ?? null;
 
   // Métricas metabólicas personalizadas (Mifflin-St Jeor + NEAT)
   const profileWeight = currentWeight ?? 78;
@@ -220,7 +224,7 @@ export const NutritionVisionHub: React.FC = () => {
         <div className="min-w-0">
           <h2 className="text-2xl font-black text-white tracking-tight">Nutrición</h2>
           <p className="text-xs text-neutral-400 mt-1">
-            {lastMetric
+            {currentWeight
               ? `Objetivos para ${currentWeight} kg · ${NUTRITION_GOALS[nutritionGoal].label} · Déficit ${nutritionProfile.deficitPercent}% · Turno ${nutritionProfile.workStart}–${nutritionProfile.workEnd}`
               : "Registrá tu peso en Analytics para calcular objetivos exactos"}
           </p>
@@ -492,6 +496,8 @@ export const NutritionVisionHub: React.FC = () => {
           </div>
         )}
       </div>
+
+      <NutritionAdherencePanel />
 
       <WaterTracker />
 

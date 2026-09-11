@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useWorkout } from "../../context/WorkoutContext";
 import { useGoal } from "../../context/GoalContext";
 import { useToast } from "../../context/ToastContext";
@@ -33,25 +33,30 @@ const SYNC_INTERVAL_MS = 60 * 60 * 1000;
  *     keto desde ese peso (igual que el alta manual en Analytics/Nutrición).
  */
 export const HealthSyncEngine: React.FC = () => {
-  const { bodyMetrics, nutritionProfile, addBodyMetric, updateMacroTargets } = useWorkout();
+  const { bodyMetrics, nutritionProfile, nutritionGoal, addBodyMetric, updateMacroTargets } = useWorkout();
   const { sleepLog, addSleep } = useGoal();
   const { showToast } = useToast();
 
-  // Ref con el contexto más reciente para que los callbacks registrados UNA vez
-  // no queden con valores viejos.
-  const ctxRef = { bodyMetrics, nutritionProfile, sleepLog, addBodyMetric, updateMacroTargets, addSleep, showToast };
+  // FIX (prioridad alta): useRef REAL. Antes `ctxRef` era un objeto plano
+  // recreado en cada render; el effect de montaje lo capturaba en la closure
+  // y las sincronizaciones horarias operaban con datos del primer render
+  // (riesgo de duplicar registros). Con useRef + asignación en cada render,
+  // el callback siempre lee el contexto vigente.
+  const ctxRef = useRef({ bodyMetrics, nutritionProfile, nutritionGoal, sleepLog, addBodyMetric, updateMacroTargets, addSleep, showToast });
+  ctxRef.current = { bodyMetrics, nutritionProfile, nutritionGoal, sleepLog, addBodyMetric, updateMacroTargets, addSleep, showToast };
 
   useEffect(() => {
     const sync = async () => {
       const {
         bodyMetrics,
         nutritionProfile,
+        nutritionGoal,
         sleepLog,
         addBodyMetric,
         updateMacroTargets,
         addSleep,
         showToast,
-      } = ctxRef;
+      } = ctxRef.current;
 
       if (!isNativePlatform()) return;
       try {
@@ -82,8 +87,9 @@ export const HealthSyncEngine: React.FC = () => {
             if (!hasSameDate && isNewerThanLatest) {
               addBodyMetric({ id: `bm-hc-${Date.now()}`, date: w.date, weightKg: w.weightKg });
               addedWeight = w.weightKg;
-              // La pesada cambió el peso actual → recalcula objetivos keto.
-              const t = computePersonalTargets(w.weightKg, "keto", nutritionProfile);
+              // FIX (prioridad alta): recalcula con el OBJETIVO ACTUAL del
+              // usuario (cut/maintenance/lean_bulk/bulk/keto), no siempre keto.
+              const t = computePersonalTargets(w.weightKg, nutritionGoal, nutritionProfile);
               updateMacroTargets({ calories: t.calories, protein: t.protein, carbs: t.carbs, fats: t.fats });
             }
           }

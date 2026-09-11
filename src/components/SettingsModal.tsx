@@ -15,6 +15,12 @@ import { useToast } from "../context/ToastContext";
 import { useWorkout } from "../context/WorkoutContext";
 import { parseWorkoutCsv, ImportResult } from "../utils/csvImporter";
 import { VALIDATORS, isArray, isPlainObject } from "../utils/storage";
+import { localDateKey } from "../utils/dateUtils";
+import {
+  nativeRemindersAvailable,
+  scheduleNativeReminder,
+  cancelNativeReminder,
+} from "../utils/reminderNotifications";
 
 interface SettingsModalProps {
   open: boolean;
@@ -111,7 +117,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `kinetix-backup-${new Date().toISOString().split("T")[0]}.json`;
+    a.download = `kinetix-backup-${localDateKey()}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -212,14 +218,31 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
 
   const toggleReminder = async () => {
     if (!reminder.enabled) {
+      // FIX (prioridad alta): en APK nativo se programa una NOTIFICACIÓN LOCAL
+      // real que se dispara aunque la app esté cerrada. El fallback web
+      // (interval) sigue funcionando solo en navegador.
+      if (nativeRemindersAvailable()) {
+        const next: ReminderConfig = { ...reminder, enabled: true };
+        const ok = await scheduleNativeReminder(next);
+        if (!ok) {
+          showToast("No se pudo programar la notificación (¿permiso denegado?)", "error");
+          return;
+        }
+        setReminder(next);
+        showToast("Recordatorio semanal programado (funciona con la app cerrada)", "success");
+        return;
+      }
       const { granted } = await requestNotification();
       if (!granted) {
         showToast("Permití las notificaciones para activar el recordatorio", "info");
         return;
       }
       setReminder((r) => ({ ...r, enabled: true }));
-      showToast("Recordatorio activado", "success");
+      showToast("Recordatorio activado (funciona con la app abierta)", "success");
     } else {
+      if (nativeRemindersAvailable()) {
+        await cancelNativeReminder();
+      }
       setReminder((r) => ({ ...r, enabled: false }));
       showToast("Recordatorio desactivado", "info");
     }
@@ -254,6 +277,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Configuración"
         className="bg-neutral-900 border border-neutral-800 rounded-t-3xl sm:rounded-3xl w-full max-w-lg max-h-[90dvh] overflow-y-auto overscroll-contain scrollbar-thin shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
@@ -443,7 +469,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
             {reminder.enabled && (
               <p className="text-[11px] text-neutral-500 flex items-center gap-1.5">
                 <ShieldAlert className="w-3.5 h-3.5" />
-                Se mostrará una notificación local a la hora elegida.
+                {nativeRemindersAvailable()
+                  ? "Notificación programada en el sistema: se muestra aunque la app esté cerrada."
+                  : "Se mostrará una notificación local a la hora elegida (con la app abierta)."}
               </p>
             )}
           </section>

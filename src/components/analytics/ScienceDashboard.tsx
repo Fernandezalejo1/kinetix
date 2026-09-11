@@ -128,7 +128,17 @@ export const ScienceDashboard: React.FC = () => {
 
   // Memoize heavy computations to prevent freeze
   const recentWorkoutExercises = useMemo(() => workoutHistory.flatMap((w) => w.exercises), [workoutHistory]);
-  const volumeLandmarks = useMemo(() => computeWeeklyVolumeStatus(recentWorkoutExercises), [recentWorkoutExercises]);
+
+  // FIX (bloqueante 1): solo ejercicios de los ÚLTIMOS 7 DÍAS alimentan el
+  // heatmap/landmarks. Sin este filtro, todo el historial se sumaba y todos los
+  // músculos terminaban por encima del MRV con el paso de las semanas.
+  const weeklyWorkoutExercises = useMemo(() => {
+    const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    return workoutHistory
+      .filter((w) => new Date(w.date).getTime() >= cutoff)
+      .flatMap((w) => w.exercises);
+  }, [workoutHistory]);
+  const volumeLandmarks = useMemo(() => computeWeeklyVolumeStatus(weeklyWorkoutExercises), [weeklyWorkoutExercises]);
 
   const autoProgressions = useMemo(
     () => computeAllAutoProgressions(recentWorkoutExercises, EXERCISES_DATABASE, weightUnit),

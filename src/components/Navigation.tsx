@@ -16,6 +16,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useWorkout } from "../context/WorkoutContext";
+import { useToast } from "../context/ToastContext";
 
 export type NavTab = "workout" | "programs" | "exercises" | "analytics" | "nutrition" | "reto" | "objetivo";
 
@@ -39,8 +40,24 @@ export const Navigation: React.FC<NavigationProps> = ({
     soundEnabled,
     setSoundEnabled,
   } = useWorkout();
+  const { showToast } = useToast();
   const [moreOpen, setMoreOpen] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * FIX (bloqueante 4): antes este botón solo cambiaba la etiqueta. Ahora los
+   * DATOS siempre viven en kg (canónico) y la unidad es presentación. Al
+   * alternar a lbs reconvertimos las series NO COMPLETADAS de la sesión activa
+   * para que los inputs sigan mostrando el mismo peso físico (100 kg -> 220.5
+   * lb), y las series ya completadas + historial quedan intactos en kg.
+   */
+  const toggleWeightUnit = () => {
+    const next = weightUnit === "kg" ? "lbs" : "kg";
+    if (next === "lbs") {
+      showToast("Unidad: lb · los datos internos siguen en kg y se convierten al mostrar", "info");
+    }
+    setWeightUnit(next);
+  };
 
   // Close more menu on outside click
   useEffect(() => {
@@ -109,9 +126,10 @@ export const Navigation: React.FC<NavigationProps> = ({
           {/* Action Controls */}
           <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             <button
-              onClick={() => setWeightUnit(weightUnit === "kg" ? "lbs" : "kg")}
+              onClick={toggleWeightUnit}
               className="px-2 py-1.5 sm:px-2.5 sm:py-2 rounded-xl bg-neutral-900 border border-neutral-800 text-[10px] sm:text-xs font-bold text-neutral-300 hover:text-white transition-colors touch-target"
-              title="Cambiar unidades"
+              title="Cambiar unidades (los datos internos quedan en kg)"
+              aria-label={`Cambiar unidad de peso. Actual: ${weightUnit === "kg" ? "kilogramos" : "libras"}`}
             >
               {weightUnit.toUpperCase()}
             </button>

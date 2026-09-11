@@ -50,6 +50,7 @@ const ExerciseLibraryModal = React.lazy(() =>
 import { WorkoutSummaryModal } from "./WorkoutSummaryModal";
 import { analyzeDoubleProgression } from "../../utils/doubleProgression";
 import { isTimeBased, getTargetSeconds } from "../../utils/exerciseMode";
+import { kgToDisplay, displayToKg, formatWeight } from "../../utils/weightUnits";
 
 /** Cardio Timer — 20 minute countdown for treadmill/cardio exercises.
  *  Uses a target END timestamp (not tick-counting) so the countdown keeps
@@ -382,6 +383,15 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
     selectedExerciseForDetail,
   } = useWorkout();
 
+  // FIX (bloqueante 4): los datos SIEMPRE se guardan en kg (unidad canónica).
+  // Con unidad "lbs" el input muestra libras y lo ingresado se convierte a kg;
+  // los botones y chips operan en la unidad visible.
+  const weightDisplay = (kg: number) => kgToDisplay(kg, weightUnit);
+  const weightKgFromDisplay = (disp: number) => displayToKg(disp, weightUnit);
+  const weightStep = weightUnit === "lbs" ? 5 : 2.5;
+  const weightChips = weightUnit === "lbs" ? [-11, -5.5, -2.5, 2.5, 5.5, 11] : [-5, -2.5, 1.25, 2.5, 5, 10];
+  const fmtW = (kg: number) => formatWeight(kg, weightUnit);
+
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [selectedExForPlate, setSelectedExForPlate] = useState<{ name: string; weight: number } | null>(null);
   const [selectedExForWarmup, setSelectedExForWarmup] = useState<{ name: string; weight: number } | null>(null);
@@ -590,7 +600,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
               <div className="flex items-center gap-2 text-xs text-neutral-400 font-mono">
                 <span>{completedSetsCount} series</span>
                 <span>•</span>
-                <span className="text-purple-400 font-bold">{currentVolume.toLocaleString()} {weightUnit}</span>
+                <span className="text-purple-400 font-bold">{kgToDisplay(currentVolume, weightUnit).toLocaleString("es-AR")} {weightUnit}</span>
               </div>
             </div>
           </div>
@@ -888,10 +898,10 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                             {/* Ghost Rep Previous Performance */}
                             <td className="py-2.5 text-neutral-400 font-mono text-[11px]">
                               {set.previousWeight ? (
-                                <span>{set.previousWeight}k × {set.previousReps} @RIR{set.previousRir ?? 1}
+                                <span>{fmtW(set.previousWeight)} × {set.previousReps} @RIR{set.previousRir ?? 1}
                                   {set.weight !== set.previousWeight && !set.completed && (
                                     <span className={`ml-1 font-black ${set.weight > set.previousWeight ? "text-emerald-400" : "text-amber-400"}`}>
-                                      {set.weight > set.previousWeight ? "↑" : "↓"}{set.weight}k
+                                      {set.weight > set.previousWeight ? "↑" : "↓"}{fmtW(set.weight)}
                                     </span>
                                   )}
                                 </span>
@@ -907,7 +917,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                                   type="button"
                                     onClick={() =>
                                       updateSet(wEx.id, set.id, {
-                                        weight: Math.max(0, Math.round((set.weight - 2.5) * 10) / 10),
+                                      weight: Math.max(0, weightKgFromDisplay(weightDisplay(set.weight) - weightStep)),
                                       })
                                     }
                                   className="w-8 h-8 flex items-center justify-center text-neutral-400 hover:text-white rounded hover:bg-neutral-800"
@@ -917,11 +927,11 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                                 <input
                                   type="number"
                                   inputMode="decimal"
-                                  step="2.5"
-                                  value={set.weight}
+                                  step={weightStep}
+                                  value={weightDisplay(set.weight)}
                                   onChange={(e) =>
                                     updateSet(wEx.id, set.id, {
-                                      weight: parseFloat(e.target.value) || 0,
+                                      weight: weightKgFromDisplay(parseFloat(e.target.value) || 0),
                                     })
                                   }
                                   className="w-14 text-center bg-transparent font-bold text-white text-sm focus:outline-none py-1.5"
@@ -930,7 +940,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                                   type="button"
                                   onClick={() =>
                                     updateSet(wEx.id, set.id, {
-                                      weight: Math.round((set.weight + 2.5) * 10) / 10,
+                                      weight: weightKgFromDisplay(weightDisplay(set.weight) + weightStep),
                                     })
                                   }
                                   className="w-8 h-8 flex items-center justify-center text-neutral-400 hover:text-white rounded hover:bg-neutral-800"
@@ -1062,10 +1072,10 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                             </select>
                             {set.previousWeight ? (
                               <span className="text-[10px] font-mono text-neutral-500 truncate">
-                                antes {set.previousWeight}k × {set.previousReps} @RIR{set.previousRir ?? 1}
+                                antes {fmtW(set.previousWeight)} × {set.previousReps} @RIR{set.previousRir ?? 1}
                                 {set.weight !== set.previousWeight && !set.completed && (
                                   <span className={`ml-1 font-bold ${set.weight > set.previousWeight ? "text-emerald-400" : "text-amber-400"}`}>
-                                    · auto {set.weight > set.previousWeight ? "↑" : "↓"} {set.weight}k
+                                    · auto {set.weight > set.previousWeight ? "↑" : "↓"} {fmtW(set.weight)}
                                   </span>
                                 )}
                               </span>
@@ -1088,7 +1098,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                                 type="button"
                                 onClick={() =>
                                   updateSet(wEx.id, set.id, {
-                                    weight: Math.max(0, Math.round((set.weight - 2.5) * 10) / 10),
+                                    weight: Math.max(0, weightKgFromDisplay(weightDisplay(set.weight) - weightStep)),
                                   })
                                 }
                                 className="w-9 h-10 shrink-0 flex items-center justify-center text-neutral-400 active:text-white rounded-lg bg-neutral-900 text-base touch-target"
@@ -1099,10 +1109,10 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                               <input
                                 type="number"
                                 inputMode="decimal"
-                                value={set.weight}
+                                value={weightDisplay(set.weight)}
                                 onChange={(e) =>
                                   updateSet(wEx.id, set.id, {
-                                    weight: parseFloat(e.target.value) || 0,
+                                    weight: weightKgFromDisplay(parseFloat(e.target.value) || 0),
                                   })
                                 }
                                 className="flex-1 min-w-0 text-center bg-transparent font-bold text-white text-sm focus:outline-none touch-target"
@@ -1111,7 +1121,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                                 type="button"
                                 onClick={() =>
                                   updateSet(wEx.id, set.id, {
-                                    weight: Math.round((set.weight + 2.5) * 10) / 10,
+                                    weight: weightKgFromDisplay(weightDisplay(set.weight) + weightStep),
                                   })
                                 }
                                 className="w-9 h-10 shrink-0 flex items-center justify-center text-neutral-400 active:text-white rounded-lg bg-cyan-600/20 text-cyan-300 text-base font-bold touch-target"
@@ -1122,13 +1132,13 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                             </div>
                             {/* Chips de ajuste rápido de peso */}
                             <div className="flex items-center gap-1 mt-1.5 overflow-x-auto scrollbar-none py-0.5">
-                              {[-5, -2.5, 1.25, 2.5, 5, 10].map((delta) => (
+                              {weightChips.map((delta) => (
                                 <button
                                   key={delta}
                                   type="button"
                                   onClick={() =>
                                     updateSet(wEx.id, set.id, {
-                                      weight: Math.max(0, Math.round((set.weight + delta) * 100) / 100),
+                                      weight: Math.max(0, weightKgFromDisplay(weightDisplay(set.weight) + delta)),
                                     })
                                   }
                                   className={`px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold shrink-0 transition-colors ${
