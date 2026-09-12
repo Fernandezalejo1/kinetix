@@ -22,11 +22,17 @@ import { useToast } from "../../context/ToastContext";
 import { ConfirmDialog } from "../ConfirmDialog";
 import { MUSCLE_LANDMARKS_CONFIG } from "../../utils/scienceCalculators";
 import { RoutineEditorModal } from "./RoutineEditorModal";
-import { loadUserProfile } from "../../utils/userProfile";
+import { loadUserProfile, resolveCurrentEquipment } from "../../utils/userProfile";
 import { adaptRoutineToEquipment } from "../../utils/equipmentAdapter";
 import { applyDupDay } from "../../utils/dup";
 import { previewExerciseCount } from "../../utils/sessionPreview";
 import { CardioToggle } from "../workout/CardioToggle";
+
+const EQUIPMENT_LEVEL_LABEL: Record<string, string> = {
+  home: "Casa (peso corporal)",
+  basic: "Básico (mancuernas)",
+  gym: "Gimnasio",
+};
 
 export const ProgramsExplorer: React.FC = () => {
   const { startWorkoutFromRoutine, setSelectedExerciseForDetail, customRoutines, deleteCustomRoutine, workoutHistory, includeCardio } = useWorkout();
@@ -56,6 +62,15 @@ export const ProgramsExplorer: React.FC = () => {
   const [editingRoutine, setEditingRoutine] = useState<CustomRoutine | undefined>(undefined);
   const [activeTab, setActiveTab] = useState<"programs" | "custom">("programs");
   const [routineToDelete, setRoutineToDelete] = useState<CustomRoutine | null>(null);
+
+  // PDF: la lista muestra SIEMPRE la rutina adaptada al equipamiento vigente
+  // (override de hoy → perfil → gym). Si hoy entrenás en casa, verás los
+  // equivalentes de peso corporal, no la barra/polea del plan original.
+  const equipmentLevel = resolveCurrentEquipment();
+  const displayRoutine = adaptRoutineToEquipment(selectedRoutine, equipmentLevel);
+  const needsAdaptation =
+    JSON.stringify(displayRoutine.exercises.map((e) => e.exerciseId)) !==
+    JSON.stringify(selectedRoutine.exercises.map((e) => e.exerciseId));
 
   const handleDeleteConfirmed = () => {
     if (routineToDelete) {
@@ -306,7 +321,7 @@ export const ProgramsExplorer: React.FC = () => {
 
             <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
               <button
-                onClick={() => handleStartWorkout(selectedRoutine)}
+                onClick={() => handleStartWorkout(displayRoutine)}
                 className="flex-1 sm:flex-none px-6 py-3 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-cyan-600/20 transition-all flex items-center justify-center gap-2"
               >
                 <Play className="w-4 h-4 fill-white" />
@@ -318,11 +333,18 @@ export const ProgramsExplorer: React.FC = () => {
 
           {/* Exercises in Routine List */}
           <div className="space-y-3">
-            <span className="text-xs font-bold uppercase tracking-wider text-neutral-400">
-              Secuencia de Ejercicios & Sobrecarga de Tensión:
-            </span>
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <span className="text-xs font-bold uppercase tracking-wider text-neutral-400">
+                Secuencia de Ejercicios & Sobrecarga de Tensión:
+              </span>
+              {needsAdaptation && (
+                <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30">
+                  Adaptado a {EQUIPMENT_LEVEL_LABEL[equipmentLevel]} (hoy)
+                </span>
+              )}
+            </div>
 
-            {selectedRoutine.exercises.map((re, idx) => {
+            {displayRoutine.exercises.map((re, idx) => {
               const ex = EXERCISES_DATABASE.find((e) => e.id === re.exerciseId) || EXERCISES_DATABASE[0];
               const primaryStr = ex.primaryMuscles
                 .map((m) => MUSCLE_LANDMARKS_CONFIG[m]?.nameEs || m)
@@ -340,6 +362,9 @@ export const ProgramsExplorer: React.FC = () => {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                         <h4 className="text-[15px] font-bold text-white leading-tight">{ex.nameEs}</h4>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-neutral-800 text-neutral-400 border border-neutral-700 capitalize">
+                          {ex.equipment}
+                        </span>
                         <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shrink-0">
                           {ex.resistanceProfile === "lengthened" ? "Estiramiento" : "Contracción"}
                         </span>

@@ -18,6 +18,8 @@ import { isVaultLocked, isVaultEnabled, initVaultSessionFromStorage } from "./ut
 import { TodayHub } from "./components/TodayHub";
 // Eagerly load the workout hub too (core flow)
 import { WorkoutHub } from "./components/workout/WorkoutHub";
+// Ficha completa del ejercicio (icono {i} en Programas / Biomecánica / Análisis)
+import { ExerciseDetailModal } from "./components/exercises/ExerciseDetailModal";
 
 // Lazy load everything else — these become separate chunks
 const ProgramsExplorer = React.lazy(() =>
@@ -177,6 +179,7 @@ const AppContent: React.FC = () => {
             onGoToWorkout={() => setCurrentTab("workout")}
             onGoToPrograms={() => setCurrentTab("programs")}
             onGoToBiomechanics={() => setCurrentTab("exercises")}
+            onGoToNutrition={() => setCurrentTab("nutrition")}
           />
         )}
 
@@ -203,6 +206,14 @@ const AppContent: React.FC = () => {
 
       {/* SettingsModal stays mounted so the workout reminder keeps active while closed */}
       <SettingsModal open={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+
+      {/* Ficha del ejercicio: icono {i} desde Programas, Biomecánica y Análisis */}
+      {selectedExerciseForDetail && (
+        <ExerciseDetailModal
+          exercise={selectedExerciseForDetail}
+          onClose={() => setSelectedExerciseForDetail(null)}
+        />
+      )}
 
       {/* Primer-uso: mini tutorial de RIR / tempo / sobrecarga (una sola vez) */}
       <OnboardingIntro />

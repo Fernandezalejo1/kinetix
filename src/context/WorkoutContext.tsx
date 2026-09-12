@@ -43,6 +43,8 @@ import {
 import { mergeArchived, mirrorHistoryToArchive, hydrateFromArchive, isReplacingHistory } from "../utils/longTermHistory";
 import { advanceMesocycleClock } from "../utils/mesocycle";
 import { createAutoBackup } from "../utils/backupService";
+import { adaptRoutineToEquipment } from "../utils/equipmentAdapter";
+import { resolveCurrentEquipment } from "../utils/userProfile";
 import confetti from "canvas-confetti";
 
 /**
@@ -407,6 +409,10 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
   const { restTimer, startRestTimer, stopRestTimer, adjustRestTimer } = useRestTimer(soundEnabled);
   const startWorkoutFromRoutine = useCallback((routine: Routine | CustomRoutine) => {
     try {
+      // Adaptación al equipamiento vigente (override de hoy → perfil → gym):
+      // un usuario de "solo casa" nunca empieza una serie con barra/máquina,
+      // sin importar desde qué pantalla se inicia (programas, hoy, libres).
+      routine = adaptRoutineToEquipment(routine, resolveCurrentEquipment());
       // P1: veredicto de hoy (una sola lectura por sesión).
       const readinessVerdict = todayReadinessVerdict();
       let readinessApplied = false;

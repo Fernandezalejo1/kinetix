@@ -35,6 +35,7 @@ interface TodayHubProps {
   onGoToWorkout: () => void;
   onGoToPrograms: () => void;
   onGoToBiomechanics: () => void;
+  onGoToNutrition: () => void;
 }
 
 const PHASE_LABEL: Record<string, { label: string; emoji?: string }> = {
@@ -53,6 +54,7 @@ export const TodayHub: React.FC<TodayHubProps> = ({
   onGoToWorkout,
   onGoToPrograms,
   onGoToBiomechanics,
+  onGoToNutrition,
 }) => {
   const {
     activeSession,
@@ -263,23 +265,35 @@ export const TodayHub: React.FC<TodayHubProps> = ({
         </div>
       </div>
 
-      {/* Resumen del día */}
+      {/* Resumen del día — cada tarjeta navega a su sección */}
       <div className="grid grid-cols-3 gap-2.5">
-        <div className="p-3.5 rounded-2xl bg-neutral-900 border border-neutral-800 text-center min-w-0">
+        <button
+          onClick={onGoToWorkout}
+          className="p-3.5 rounded-2xl bg-neutral-900 border border-neutral-800 hover:border-cyan-500/40 text-center min-w-0 transition-all press-scale"
+          title="Ver sesiones de hoy"
+        >
           <CalendarCheck className="w-4 h-4 text-cyan-400 mx-auto mb-1" />
           <div className="text-xl font-black text-white tabular-nums">{todayStats.workouts}</div>
           <span className="text-[9px] font-bold text-neutral-500 uppercase">Sesiones hoy</span>
-        </div>
-        <div className="p-3.5 rounded-2xl bg-neutral-900 border border-neutral-800 text-center min-w-0">
+        </button>
+        <button
+          onClick={onGoToWorkout}
+          className="p-3.5 rounded-2xl bg-neutral-900 border border-neutral-800 hover:border-emerald-500/40 text-center min-w-0 transition-all press-scale"
+          title="Ver series de hoy"
+        >
           <Activity className="w-4 h-4 text-emerald-400 mx-auto mb-1" />
           <div className="text-xl font-black text-emerald-400 tabular-nums">{todayStats.sets}</div>
           <span className="text-[9px] font-bold text-neutral-500 uppercase">Series hoy</span>
-        </div>
-        <div className="p-3.5 rounded-2xl bg-neutral-900 border border-neutral-800 text-center min-w-0">
+        </button>
+        <button
+          onClick={onGoToNutrition}
+          className="p-3.5 rounded-2xl bg-neutral-900 border border-neutral-800 hover:border-amber-500/40 text-center min-w-0 transition-all press-scale"
+          title="Registrar comidas de hoy"
+        >
           <Utensils className="w-4 h-4 text-amber-400 mx-auto mb-1" />
           <div className="text-xl font-black text-amber-400 tabular-nums">{todayStats.meals}</div>
           <span className="text-[9px] font-bold text-neutral-500 uppercase">Comidas</span>
-        </div>
+        </button>
       </div>
 
       {/* Navegación rápida */}

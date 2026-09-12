@@ -253,6 +253,15 @@ export function setTodayEquipment(equipment: EquipmentAccess | null): void {
   }
 }
 
+/** Equipamiento vigente para adaptar ejercicios: prioriza el override de hoy
+ *  (selector "Hoy entreno en"), luego el perfil y por defecto gimnasio. */
+export function resolveCurrentEquipment(): EquipmentAccess {
+  const today = loadTodayEquipment();
+  if (today) return today;
+  const profile = loadUserProfile();
+  return profile?.equipment ?? "gym";
+}
+
 /** "Hoy te toca" adaptado al equipamiento real de HOY (override diario). Sin
  *  override (null) o igual al perfil → comportamiento normal. */
 export function resolveAdaptedRoutineForEquipment(
