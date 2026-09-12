@@ -14,12 +14,10 @@ import {
 } from "lucide-react";
 import { useWorkout } from "../context/WorkoutContext";
 import { useGoal } from "../context/GoalContext";
-import { Routine, Program } from "../types";
+import { Routine } from "../types";
 import {
   loadUserProfile,
-  resolveFeaturedProgram,
   resolveAdaptedRoutineForEquipment,
-  adaptProgramRoutines,
   shortenRoutine,
   daysSinceCompletion,
   loadTodayEquipment,
@@ -71,12 +69,8 @@ export const TodayHub: React.FC<TodayHubProps> = ({
   const [todayEquipment, setTodayEquipmentState] = useState<EquipmentAccess | null>(() => loadTodayEquipment());
 
   const userProfile = loadUserProfile();
-  const featuredProgram: Program = resolveFeaturedProgram(userProfile);
-  // Rutinas ya adaptadas al equipamiento del perfil (home/básico/gimnasio):
-  // "Hoy te toca" y su versión corta nunca sugieren ejercicios imposibles.
-  const programRoutines: Routine[] = adaptProgramRoutines(featuredProgram, userProfile);
-  // FASE 2/3: "Hoy te toca" inteligente — rota por historial y se adapta al
-  // equipamiento real de HOY (casa/básico/gimnasio), nunca la ya completada hoy.
+  // "Hoy te toca" y su versión corta nunca sugieren ejercicios imposibles:
+  // se adaptan al equipamiento real de HOY (override → perfil → gimnasio).
   const nextRoutine: Routine = resolveAdaptedRoutineForEquipment(userProfile, workoutHistory, todayEquipment);
   const nextLastDays: number | null = daysSinceCompletion(nextRoutine, workoutHistory);
 

@@ -22,7 +22,7 @@ import { useToast } from "../../context/ToastContext";
 import { ConfirmDialog } from "../ConfirmDialog";
 import { MUSCLE_LANDMARKS_CONFIG } from "../../utils/scienceCalculators";
 import { RoutineEditorModal } from "./RoutineEditorModal";
-import { loadUserProfile, resolveCurrentEquipment } from "../../utils/userProfile";
+import { resolveCurrentEquipment } from "../../utils/userProfile";
 import { adaptRoutineToEquipment } from "../../utils/equipmentAdapter";
 import { applyDupDay } from "../../utils/dup";
 import { previewExerciseCount } from "../../utils/sessionPreview";
@@ -90,10 +90,9 @@ export const ProgramsExplorer: React.FC = () => {
   };
 
   const handleStartWorkout = (routine: Routine) => {
-    // Sustituye ejercicios inaccesibles según el equipamiento del perfil
-    // (ej. "solo casa" nunca recibe barras/poleas aunque el plan los liste).
-    const profile = loadUserProfile();
-    const adapted = adaptRoutineToEquipment(routine, profile?.equipment ?? "gym");
+    // Sustituye ejercicios inaccesibles según el equipamiento VIGENTE
+    // (override de hoy → perfil → gym): "solo casa" nunca recibe barras/poleas.
+    const adapted = adaptRoutineToEquipment(routine, resolveCurrentEquipment());
     // P4 DUP: rotación fuerza/hipertrofia/potencia por exposiciones recientes.
     const { routine: duped, dupDay } = applyDupDay(adapted, workoutHistory, selectedProgram?.id);
     if (dupDay) showToast(`Día DUP: ${dupDay} (rotación automática)`, "info");

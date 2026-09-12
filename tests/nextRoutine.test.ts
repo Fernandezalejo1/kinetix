@@ -3,6 +3,7 @@ import { installTestEnv } from "./helpers/testEnv";
 import {
   resolveNextRoutine,
   resolveAdaptedRoutine,
+  resolveAdaptedRoutineForEquipment,
   pickNextRoutine,
   lastWorkoutForRoutine,
   daysSinceCompletion,
@@ -123,6 +124,24 @@ describe("resolveNextRoutine / resolveAdaptedRoutine con historial", () => {
     const adapted = resolveAdaptedRoutine({ ...PROFILE, equipment: "home" }, h);
     expect(UL.routines.map((r) => r.name)).toContain(adapted.name);
     for (const item of adapted.exercises) {
+      const def = EXERCISES_DATABASE.find((e) => e.id === item.exerciseId);
+      if (def) expect(def.equipment).toBe("bodyweight");
+    }
+  });
+
+  it("override de HOY manda aunque el perfil diga gym o no exista perfil", () => {
+    persistSelectedProgram(UL);
+    const gymHome = resolveAdaptedRoutineForEquipment(
+      { ...PROFILE, equipment: "gym" },
+      [],
+      "home"
+    );
+    for (const item of gymHome.exercises) {
+      const def = EXERCISES_DATABASE.find((e) => e.id === item.exerciseId);
+      if (def) expect(def.equipment).toBe("bodyweight");
+    }
+    const nullHome = resolveAdaptedRoutineForEquipment(null, [], "home");
+    for (const item of nullHome.exercises) {
       const def = EXERCISES_DATABASE.find((e) => e.id === item.exerciseId);
       if (def) expect(def.equipment).toBe("bodyweight");
     }

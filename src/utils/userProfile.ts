@@ -263,16 +263,23 @@ export function resolveCurrentEquipment(): EquipmentAccess {
 }
 
 /** "Hoy te toca" adaptado al equipamiento real de HOY (override diario). Sin
- *  override (null) o igual al perfil → comportamiento normal. */
+ *  override (null) → comportamiento normal. El override SIEMPRE manda: si el
+ *  usuario hoy entrena en casa (aunque el perfil diga gimnasio, o ni siquiera
+ *  tenga perfil guardado), la rutina de HOY queda en ejercicios de peso
+ *  corporal, nunca en máquinas/barras/poleas. */
 export function resolveAdaptedRoutineForEquipment(
   profile: UserProfile | null,
   history: CompletedWorkout[] = [],
   todayEquipment: EquipmentAccess | null
 ): Routine {
-  if (!profile || !todayEquipment || profile.equipment === todayEquipment) {
+  if (!todayEquipment) {
     return resolveNextRoutine(profile, history);
   }
-  return resolveNextRoutine({ ...profile, equipment: todayEquipment }, history);
+  if (profile && profile.equipment === todayEquipment) {
+    return resolveNextRoutine(profile, history);
+  }
+  const effective = profile ? { ...profile, equipment: todayEquipment } : { ...DEFAULT_USER_PROFILE, equipment: todayEquipment };
+  return resolveNextRoutine(effective, history);
 }
 
 /** Rutina que entra en la franja de minutos preferida del usuario. Prefiere

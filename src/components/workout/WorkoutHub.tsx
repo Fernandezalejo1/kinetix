@@ -47,10 +47,11 @@ import {
   loadUserProfile,
   resolveFeaturedProgram,
   resolveAdaptedRoutineForEquipment,
-  adaptProgramRoutines,
   loadTodayEquipment,
+  resolveCurrentEquipment,
   setTodayEquipment,
 } from "../../utils/userProfile";
+import { adaptRoutineToEquipment } from "../../utils/equipmentAdapter";
 import { EquipmentAccess } from "../../types";
 import {
   analyzeDeload,
@@ -140,8 +141,12 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
   // onboarding (explicable, determinista).
   const userProfile = loadUserProfile();
   const featuredProgram: Program = resolveFeaturedProgram(userProfile);
-  // Rutinas del programa adaptadas al equipamiento (home/básico/gimnasio).
-  const programRoutines: Routine[] = adaptProgramRoutines(featuredProgram, userProfile);
+  // Rutinas del programa adaptadas al equipamiento VIGENTE (override de hoy →
+  // perfil → gym). Si hoy entrenás en casa, la lista muestra los equivalentes
+  // de peso corporal, no la barra/polea del plan original.
+  const programRoutines: Routine[] = featuredProgram.routines.map((r) =>
+    adaptRoutineToEquipment(r, resolveCurrentEquipment())
+  );
   // P3: override diario del lugar de entrenamiento (casa/básico/gimnasio).
   const [todayEquipment, setTodayEquipmentState] = useState<EquipmentAccess | null>(() => loadTodayEquipment());
   const nextRoutine: Routine = resolveAdaptedRoutineForEquipment(userProfile, workoutHistory, todayEquipment);
