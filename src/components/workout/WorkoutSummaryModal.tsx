@@ -277,9 +277,22 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
                         <span className="text-xs font-bold text-white truncate">
                           {r.wEx.exercise.nameEs}
                         </span>
-                        <div className={`flex items-center gap-1 shrink-0 text-[11px] font-black font-mono ${color}`}>
-                          <Icon className={`w-3.5 h-3.5 ${isUp ? "fill-emerald-400/30" : isDown ? "fill-amber-400/30" : ""}`} />
-                          {delta === 0 ? "Mantener" : `${current} → ${r.rec.nextWeight}`} {weightUnit}
+                        <div className="flex items-center gap-1 shrink-0">
+                          <span
+                            className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded ${
+                              r.rec.confidence === "high"
+                                ? "bg-emerald-500/10 text-emerald-300 border border-emerald-500/20"
+                                : r.rec.confidence === "medium"
+                                ? "bg-cyan-500/10 text-cyan-300 border border-cyan-500/20"
+                                : "bg-neutral-800 text-neutral-400 border border-neutral-700"
+                            }`}
+                          >
+                            {r.rec.confidence === "high" ? "Confianza alta" : r.rec.confidence === "medium" ? "Confianza media" : "Confianza baja"}
+                          </span>
+                          <div className={`flex items-center gap-1 text-[11px] font-black font-mono ${color}`}>
+                            <Icon className={`w-3.5 h-3.5 ${isUp ? "fill-emerald-400/30" : isDown ? "fill-amber-400/30" : ""}`} />
+                            {delta === 0 ? "Mantener" : `${current} → ${r.rec.nextWeight}`} {weightUnit}
+                          </div>
                         </div>
                       </div>
                       <p className="text-[11px] text-neutral-400 leading-snug">

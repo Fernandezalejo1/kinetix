@@ -214,7 +214,7 @@ export const ExerciseMediaVisualizer: React.FC<ExerciseMediaVisualizerProps> = (
 
         <div className="flex items-center gap-2">
           <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-neutral-900 text-neutral-300 border border-neutral-800">
-            {mediaMode === "video" ? "Modo Video HD & Cues" : mediaMode === "gif" ? "Loop Continuo" : "WebGL 360°"}
+            {mediaMode === "video" ? "Modo Video HD & Cues" : mediaMode === "gif" ? "Loop Continuo" : "Esquema Animado"}
           </span>
         </div>
       </div>

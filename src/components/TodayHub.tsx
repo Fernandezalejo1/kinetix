@@ -23,6 +23,7 @@ import {
   daysSinceCompletion,
 } from "../utils/userProfile";
 import { localDateKey } from "../utils/dateUtils";
+import { EXERCISES_DATABASE } from "../data/exercisesData";
 import { WeeklyReviewModal } from "./analytics/WeeklyReviewModal";
 
 interface TodayHubProps {
@@ -49,6 +50,8 @@ export const TodayHub: React.FC<TodayHubProps> = ({
     startEmptyWorkout,
     workoutHistory,
     nutritionLog,
+    includeCardio,
+    setIncludeCardio,
   } = useWorkout();
   const { phase } = useGoal();
   const [isReviewOpen, setIsReviewOpen] = useState(false);
@@ -62,6 +65,16 @@ export const TodayHub: React.FC<TodayHubProps> = ({
   // que no se entrena (rotación del microciclo), nunca la ya completada hoy.
   const nextRoutine: Routine = resolveAdaptedRoutine(userProfile, workoutHistory);
   const nextLastDays: number | null = daysSinceCompletion(nextRoutine, workoutHistory);
+
+  // Cardio inyectado al final de la sesión (solo si la rutina no lo prescribe
+  // ya y el toggle está activo): el conteo de "Hoy" debe coincidir con lo real.
+  const routineHasCardio = (r: Routine | null): boolean =>
+    !!r && r.exercises.some((item) => {
+      const def = EXERCISES_DATABASE.find((e) => e.id === item.exerciseId);
+      return def && (def.executionMode === "time" || /min/i.test(String(item.targetReps ?? "")));
+    });
+  const cardioCount = (r: Routine) => (includeCardio && !routineHasCardio(r) ? 1 : 0);
+  const nextExerciseCount = nextRoutine.exercises.length + cardioCount(nextRoutine);
 
   const userMinutes = userProfile?.sessionMinutes ?? 45;
   const shortFit: Routine | null = nextRoutine.estimatedDurationMin > userMinutes
@@ -150,7 +163,7 @@ export const TodayHub: React.FC<TodayHubProps> = ({
             <p className="text-sm text-neutral-400 mt-1 max-w-xl leading-relaxed">
               {nextRoutine.name}
               <span className="text-neutral-500">
-                {" · "}{nextRoutine.exercises.length} ejercicios
+                {" · "}{nextExerciseCount} ejercicios
                 {nextLastDays === null
                   ? " · primera vez con esta rutina"
                   : nextLastDays === 0
@@ -189,6 +202,22 @@ export const TodayHub: React.FC<TodayHubProps> = ({
               Sesión libre
             </button>
           </div>
+
+          <label
+            className="flex items-center justify-between gap-2 w-full px-3 py-2.5 rounded-2xl bg-neutral-950 border border-neutral-800 cursor-pointer select-none press-scale"
+            title="Agrega 20 min de elíptica al final de la sesión"
+          >
+            <span className="flex items-center gap-2 text-[11px] font-bold text-neutral-300">
+              <Activity className="w-3.5 h-3.5 text-cyan-400" />
+              Cardio al final (20 min de elíptica)
+            </span>
+            <input
+              type="checkbox"
+              checked={includeCardio}
+              onChange={(e) => setIncludeCardio(e.target.checked)}
+              className="w-4 h-4 accent-cyan-500 cursor-pointer rounded"
+            />
+          </label>
 
           <div className="flex flex-wrap items-center gap-2 text-[11px] text-neutral-500">
             <button onClick={onGoToWorkout} className="flex items-center gap-1 font-bold text-neutral-400 hover:text-white transition-colors">

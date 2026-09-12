@@ -40,6 +40,7 @@ import {
   computeGoalCalories,
   computePersonalTargets,
   ACTIVITY_FACTORS,
+  DEFAULT_WEIGHT_KG,
   QuickMealCategory,
 } from "../../data/nutritionData";
 
@@ -122,13 +123,33 @@ export const NutritionVisionHub: React.FC = () => {
   // FIX (bloqueante 2): peso actual = medición más reciente por fecha.
   const currentWeight = latestBodyMetric(bodyMetrics)?.weightKg ?? null;
 
-  // Métricas metabólicas personalizadas (Mifflin-St Jeor + NEAT)
-  const profileWeight = currentWeight ?? 78;
-  const bmr = computeBMR(nutritionProfile, profileWeight);
-  const tdee = computeTDEE(nutritionProfile, profileWeight);
-  const goalCalories = Object.fromEntries(
-    NUTRITION_GOAL_KEYS.map((g) => [g, computeGoalCalories(tdee, g, nutritionProfile.deficitPercent)])
-  ) as Record<NutritionGoal, number>;
+  // Métricas metabólicas personalizadas (Mifflin-St Jeor + NEAT).
+// Sin peso registrado NO se presentan como reales: se muestran "—" y solo se
+// calculan (con 75 kg por defecto) cuando el usuario registró su peso.
+const profileWeight = currentWeight ?? DEFAULT_WEIGHT_KG;
+const bmr = currentWeight != null ? computeBMR(nutritionProfile, profileWeight) : null;
+const tdee = currentWeight != null ? computeTDEE(nutritionProfile, profileWeight) : null;
+const goalCalories = Object.fromEntries(
+  NUTRITION_GOAL_KEYS.map((g) => [g, computeGoalCalories(tdee ?? computeTDEE(nutritionProfile, DEFAULT_WEIGHT_KG), g, nutritionProfile.deficitPercent)])
+) as Record<NutritionGoal, number>;
+// Dirección del objetivo para léxico coherente (evita "déficit" en lean bulk).
+const goalInDeficit = nutritionGoal === "keto" || nutritionGoal === "cut";
+const goalDirection =
+  goalInDeficit
+    ? `déficit −${nutritionProfile.deficitPercent}%`
+    : nutritionGoal === "maintenance"
+    ? "mantenimiento (TDEE)"
+    : nutritionGoal === "lean_bulk"
+    ? "superávit leve +8%"
+    : "superávit +12%";
+const goalDirectionMain =
+  goalInDeficit
+    ? `Estás en déficit (−${nutritionProfile.deficitPercent}%)`
+    : nutritionGoal === "maintenance"
+    ? "Estás en mantenimiento (TDEE)"
+    : nutritionGoal === "lean_bulk"
+    ? "Estás en superávit leve (+8%) para ganar masa magra"
+    : "Estás en superávit (+12%) para ganar masa";
 
   const openProfile = () => {
     setPAge(nutritionProfile.age);
@@ -281,18 +302,18 @@ export const NutritionVisionHub: React.FC = () => {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           <div className="p-3 rounded-2xl bg-neutral-950 border border-neutral-800">
             <div className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-1">BMR <span title="Tasa Metabólica Basal · Mifflin-St Jeor · calorías en reposo absoluto" className="cursor-help text-cyan-400">ⓘ</span></div>
-            <div className="text-xl font-black text-amber-300 font-mono mt-0.5 tabular-nums break-words">{bmr} kcal</div>
-            <div className="text-[11px] text-neutral-500">basal / día</div>
+            <div className="text-xl font-black text-amber-300 font-mono mt-0.5 tabular-nums break-words">{currentWeight ? `${bmr} kcal` : "—"}</div>
+            <div className="text-[11px] text-neutral-500">{currentWeight ? "basal / día" : "agregá tu peso"}</div>
           </div>
           <div className="p-3 rounded-2xl bg-neutral-950 border border-neutral-800">
             <div className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Gasto (TDEE)</div>
-            <div className="text-xl font-black text-emerald-300 font-mono mt-0.5 tabular-nums break-words">{tdee} kcal</div>
-            <div className="text-[11px] text-neutral-500">{ACTIVITY_FACTORS[nutritionProfile.activityLevel].short}</div>
+            <div className="text-xl font-black text-emerald-300 font-mono mt-0.5 tabular-nums break-words">{currentWeight ? `${tdee} kcal` : "—"}</div>
+            <div className="text-[11px] text-neutral-500">{currentWeight ? ACTIVITY_FACTORS[nutritionProfile.activityLevel].short : "≈ con 75 kg (estimado)"}</div>
           </div>
           <div className="p-3 rounded-2xl bg-neutral-950 border border-neutral-800">
             <div className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Objetivo hoy</div>
             <div className="text-xl font-black text-cyan-300 font-mono mt-0.5 tabular-nums break-words">{targetCalories} kcal</div>
-            <div className="text-[11px] text-amber-400">déficit −{nutritionProfile.deficitPercent}%</div>
+            <div className={`text-[11px] ${goalInDeficit ? "text-amber-400" : nutritionGoal === "maintenance" ? "text-neutral-500" : "text-emerald-400"}`}>{goalDirection}</div>
           </div>
           <div className="p-3 rounded-2xl bg-neutral-950 border border-neutral-800">
             <div className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Turno de trabajo</div>
@@ -302,10 +323,11 @@ export const NutritionVisionHub: React.FC = () => {
         </div>
 
         <p className="text-[11px] text-neutral-400 leading-relaxed">
-          <strong className="text-amber-300">Estás en déficit (−{nutritionProfile.deficitPercent}%)</strong> con un día laboral de{" "}
+          <strong className={goalInDeficit ? "text-amber-300" : nutritionGoal === "maintenance" ? "text-neutral-300" : "text-emerald-300"}>{goalDirectionMain}</strong> con un día laboral de{" "}
           <strong className="text-white">{nutritionProfile.workStart}</strong> a <strong className="text-white">{nutritionProfile.workEnd}</strong>,
           así que tus comidas e hidratación se organizan en ese rango y la hidratación va hasta antes de dormir. Mantené la{" "}
-          <strong className="text-white">proteína {NUTRITION_GOALS[nutritionGoal].proteinPerKg} g/kg</strong> para no perder músculo con el déficit,
+          <strong className="text-white">proteína {NUTRITION_GOALS[nutritionGoal].proteinPerKg} g/kg</strong>{" "}
+          {goalInDeficit ? "para no perder músculo con el déficit" : "para progresar sin acumular grasa innecesaria"},
           y evitá cafeína en las horas previas a tu descanso para proteger el sueño.
         </p>
       </div>
@@ -351,8 +373,8 @@ export const NutritionVisionHub: React.FC = () => {
         </div>
       </div>
 
-      {/* Guía KETO / Cetogénica */}
-      <div className={`p-5 sm:p-7 rounded-3xl border shadow-2xl space-y-4 ${
+      {/* Guía KETO / Cetogénica (solo se muestra si la meta activa es keto) */}
+      {nutritionGoal === "keto" && (<div className={`p-5 sm:p-7 rounded-3xl border shadow-2xl space-y-4 ${
         nutritionGoal === "keto"
           ? "bg-gradient-to-br from-neutral-900 via-neutral-900 to-rose-950/20 border-rose-500/25"
           : "bg-neutral-900 border-neutral-800"
@@ -404,7 +426,7 @@ export const NutritionVisionHub: React.FC = () => {
           plan de comidas — todo es alto en grasa y sin carbos — y aplicá tus macros con "Aplicar a objetivos".
           Tu perfil {currentWeight ? `(${currentWeight} kg, definición −${nutritionProfile.deficitPercent}%)` : ""} ya quedó calculado.
         </div>
-      </div>
+      </div>)}
 
       {/* Macro overview */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

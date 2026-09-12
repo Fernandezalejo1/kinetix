@@ -354,7 +354,7 @@ export interface AutoProgressionRecommendation {
   recommendedWeight: number;
   deltaWeight: number;
   deltaPercent: number;
-  action: "increase" | "micro_increase" | "maintain" | "rep_progression" | "deload";
+  action: "increase" | "micro_increase" | "maintain" | "rep_progression" | "deload" | "decrease";
   actionLabel: string;
   targetRepsNext: string;
   targetRirNext: number;
@@ -364,6 +364,9 @@ export interface AutoProgressionRecommendation {
   fatigueStatus: "optima" | "baja" | "moderada" | "elevada";
   nextSessionTip: string;
   isCompound: boolean;
+  /** Fase 1 coherencia: false si ninguna serie de la sesión tiene RIR/RPE real
+   *  (evita mostrar "RIR 0 / Fallo Real" o "Óptimo" cuando no hay dato). */
+  rirAvailable?: boolean;
 }
 
 export type DifficultyLevel = "very_hard" | "just_right" | "good" | "had_more";

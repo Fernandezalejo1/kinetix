@@ -25,12 +25,12 @@ import {
 import { useWorkout } from "../../context/WorkoutContext";
 import {
   computeWeeklyVolumeStatus,
-  computeAllAutoProgressions,
   calculateAutoProgression,
   MUSCLE_LANDMARKS_CONFIG,
   calculate1RM
 } from "../../utils/scienceCalculators";
-import { MuscleGroup, Exercise } from "../../types";
+import { resolveNextWeightFromHistory } from "../../utils/progressionEngine";
+import { MuscleGroup, Exercise, ExerciseHistoryEntry, WorkoutSet, AutoProgressionRecommendation } from "../../types";
 import { EXERCISES_DATABASE } from "../../data/exercisesData";
 import { MuscleRanksPanel } from "./MuscleRanksPanel";
 import { ManualPrForm, DeletePrButton } from "./ManualPrForm";
@@ -51,6 +51,19 @@ const CATEGORY_ES: Record<string, string> = {
   legs: "Piernas",
   core: "Core",
 };
+/** Convierte la última entrada REAL de historial en sets sintéticos para las
+ *  estadísticas de la tarjeta (la decisión de carga NO depende de estos). */
+function setsFromHistory(entry: ExerciseHistoryEntry): WorkoutSet[] {
+  return (entry.reps ?? []).map((r, i) => ({
+    id: `hist-${entry.id}-${i}`,
+    setNumber: i + 1,
+    type: "normal",
+    weight: entry.weight,
+    reps: r,
+    rir: typeof entry.rir === "number" ? entry.rir : undefined,
+    completed: true,
+  } satisfies WorkoutSet));
+}
 import {
   ResponsiveContainer,
   AreaChart,
@@ -68,7 +81,7 @@ import {
 } from "recharts";
 
 export const ScienceDashboard: React.FC = () => {
-  const { workoutHistory, personalRecords, weightUnit, setSelectedExerciseForDetail } = useWorkout();
+  const { workoutHistory, exerciseHistory, personalRecords, weightUnit, setSelectedExerciseForDetail } = useWorkout();
   const [selectedMuscle, setSelectedMuscle] = useState<MuscleGroup>("chest");
   const [heatmapView, setHeatmapView] = useState<"front" | "back">("front");
   
@@ -127,8 +140,6 @@ export const ScienceDashboard: React.FC = () => {
   }, [workoutHistory]);
 
   // Memoize heavy computations to prevent freeze
-  const recentWorkoutExercises = useMemo(() => workoutHistory.flatMap((w) => w.exercises), [workoutHistory]);
-
   // FIX (bloqueante 1): solo ejercicios de los ÚLTIMOS 7 DÍAS alimentan el
   // heatmap/landmarks. Sin este filtro, todo el historial se sumaba y todos los
   // músculos terminaban por encima del MRV con el paso de las semanas.
@@ -140,10 +151,53 @@ export const ScienceDashboard: React.FC = () => {
   }, [workoutHistory]);
   const volumeLandmarks = useMemo(() => computeWeeklyVolumeStatus(weeklyWorkoutExercises), [weeklyWorkoutExercises]);
 
-  const autoProgressions = useMemo(
-    () => computeAllAutoProgressions(recentWorkoutExercises, EXERCISES_DATABASE, weightUnit),
-    [recentWorkoutExercises, weightUnit]
-  );
+  // Fase 1 coherencia: la lista de Progreso sale de exerciseHistory (solo
+  // ejercicios con series REALES; nunca planificados sin hacer) y decide SIEMPRE
+  // con el MISMO motor que el resumen de sesión (resolveNextWeightFromHistory).
+  // Antes usaba el historial de sesiones completadas (que incluía ejercicios
+  // planificados sin series → "Sin datos" + "Fallo Real" falsos) y la matriz RIR,
+  // por eso resumen y Progreso podían recomendar bajar y subir a la vez.
+  const autoProgressions = useMemo(() => {
+    const byEx: Map<string, ExerciseHistoryEntry> = new Map();
+    for (const entry of exerciseHistory) {
+      if (!byEx.has(entry.exerciseId)) byEx.set(entry.exerciseId, entry);
+    }
+    const list: AutoProgressionRecommendation[] = [];
+    byEx.forEach((entry, exId) => {
+      const foundEx = EXERCISES_DATABASE.find((e) => e.id === exId);
+      if (!foundEx) return;
+      // Stats de la tarjeta (última sesión real): solo exhibición.
+      const stats = calculateAutoProgression(foundEx, setsFromHistory(entry), weightUnit);
+      // Decisión CANÓNICA: exactamente la misma del resumen de sesión.
+      const uni = resolveNextWeightFromHistory(
+        foundEx,
+        entry.targetReps,
+        entry.targetSets,
+        entry.targetRir,
+        exerciseHistory,
+        personalRecords,
+        { weightUnit }
+      );
+      const confidenceScore = uni.confidence === "high" ? 95 : uni.confidence === "medium" ? 70 : 40;
+      list.push({
+        ...stats,
+        recommendedWeight: uni.nextWeight,
+        deltaWeight: uni.deltaWeight,
+        action: uni.action,
+        actionLabel:
+          uni.action === "increase"
+            ? `Subir a ${uni.nextWeight} ${weightUnit}`
+            : uni.action === "decrease"
+            ? `Bajar a ${uni.nextWeight} ${weightUnit}`
+            : "Mantener carga",
+        scientificRationale: uni.rationale,
+        confidenceScore,
+        nextSessionTip: uni.rationale,
+        rirAvailable: entry.rir != null || entry.rpe != null,
+      });
+    });
+    return list;
+  }, [exerciseHistory, personalRecords, weightUnit]);
 
   const filteredProgressions = useMemo(() => autoProgressions.filter((item) => {
     if (progressionFilter === "increase") return item.deltaWeight > 0;
@@ -442,18 +496,20 @@ export const ScienceDashboard: React.FC = () => {
                   <div className="flex flex-wrap justify-between items-center gap-2 text-[11px]">
                     <span className="font-bold text-neutral-300 flex items-center gap-1.5 min-w-0">
                       <Gauge className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                      <span className="break-words">Esfuerzo Percibido: <strong className="text-white font-mono">RIR {prog.averageRir} (RPE {prog.averageRpe})</strong></span>
+                      <span className="break-words">Esfuerzo Percibido: <strong className="text-white font-mono">{prog.rirAvailable ? `RIR ${prog.averageRir} (RPE ${prog.averageRpe})` : "—"}</strong></span>
                     </span>
                     <span
                       className={`font-black text-[10px] uppercase tracking-wider px-2 py-0.5 rounded ${
-                        prog.averageRir >= 2
+                        !prog.rirAvailable
+                          ? "bg-neutral-800 text-neutral-400"
+                          : prog.averageRir >= 2
                           ? "bg-emerald-500/20 text-emerald-300"
                           : prog.averageRir === 1
                           ? "bg-purple-500/20 text-purple-300"
                           : "bg-amber-500/20 text-amber-300"
                       }`}
                     >
-                      {prog.averageRir >= 2 ? "Estímulo Óptimo MAV" : prog.averageRir === 1 ? "Alta Cercanía al Fallo" : "Fallo Real"}
+                      {!prog.rirAvailable ? "Sin RIR registrado" : prog.averageRir >= 2 ? "Estímulo Óptimo MAV" : prog.averageRir === 1 ? "Alta Cercanía al Fallo" : "Fallo Real"}
                     </span>
                   </div>
 

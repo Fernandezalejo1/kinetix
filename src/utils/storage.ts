@@ -769,9 +769,10 @@ export const VALIDATORS: Record<string, (v: unknown) => boolean> = {
   kinetix_nutrition_log: isNutritionLog,
   kinetix_nutrition_profile: isNutritionProfile,
   kinetix_nutrition_goal: (v) => typeof v === "string" && v.length > 0,
-  kinetix_weight_unit: (v) => v === "kg" || v === "lbs",
-  kinetix_sound_enabled: isBoolean,
-  kinetix_auto_start_timer: isBoolean,
+kinetix_weight_unit: (v) => v === "kg" || v === "lbs",
+kinetix_sound_enabled: isBoolean,
+kinetix_auto_start_timer: isBoolean,
+kinetix_include_cardio: isBoolean,
   kinetix_health_steps: isPlainObject,
   kinetix_steps_config: isPlainObject,
   kinetix_goal_phase: (v) =>

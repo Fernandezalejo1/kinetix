@@ -77,7 +77,12 @@ function velocityChip(wEx: WorkoutExercise, set: WorkoutSet): { label: string; c
 const VelocityChip: React.FC<{ wEx: WorkoutExercise; set: WorkoutSet }> = ({ wEx, set }) => {
   const info = velocityChip(wEx, set);
   if (!info) return null;
-  return <span className={`font-mono font-bold ${info.color}`}>~ {info.label}</span>;
+  return (
+    <span className="group relative inline-flex items-center gap-1">
+      <span className={`font-mono font-bold ${info.color}`}>≈ {info.label}</span>
+      <span className="hidden group-hover:inline text-[9px] text-neutral-400 cursor-help" title="Estimación sin encoder (proxy carga-velocidad, ±0.05 m/s) — no es una medición real de velocidad">ⓘ</span>
+    </span>
+  );
 };
 
 /** Double Progression Banner — live guidance per exercise.

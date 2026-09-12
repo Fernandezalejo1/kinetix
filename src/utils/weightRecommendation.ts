@@ -265,6 +265,20 @@ export function calculateSmartNextWeight(
     };
   }
 
+  // Sesión interrumpida/parcial: NO se decide carga sobre una sesión incompleta.
+  // Bajarla como si fuera bajo rendimiento o subirla por un RIR fácil son dos
+  // errores: falta el dato de las series que no se hicieron. La decisión honesta
+  // es mantener la carga y pedir completar la sesión. (Fase 1 coherencia)
+  if (targetSets != null && targetSets > 0 && perf.completionRate < 1) {
+    return {
+      nextWeight: currentWeight,
+      adjustment: 0,
+      reason: `Sesión parcial: completaste ${perf.completedSets} de ${targetSets} series planificadas. Mantené la carga hasta completar la sesión completa.`,
+      confidence: perf.completedSets >= Math.ceil(targetSets / 2) ? "low" : "low",
+      performance: perf,
+    };
+  }
+
   // Calcular score compuesto
   const score = computePerformanceScore(perf, targetRir);
 

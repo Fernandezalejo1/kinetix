@@ -18,7 +18,7 @@ import {
   NutritionProfile,
 } from "../types";
 import { EXERCISES_DATABASE } from "../data/exercisesData";
-import { DEFAULT_NUTRITION_PROFILE, computePersonalTargets } from "../data/nutritionData";
+import { DEFAULT_NUTRITION_PROFILE, DEFAULT_WEIGHT_KG, computePersonalTargets } from "../data/nutritionData";
 import { calculate1RM, isCompoundExercise } from "../utils/scienceCalculators";
 import { useRestTimer, RestTimerState } from "./useRestTimer";
 import { detectExecutionMode, isTimeBased, parseTargetSeconds } from "../utils/exerciseMode";
@@ -82,11 +82,13 @@ interface WorkoutContextType {
   weightUnit: "kg" | "lbs";
   soundEnabled: boolean;
   autoStartTimer: boolean;
+  includeCardio: boolean;
   selectedExerciseForDetail: Exercise | null;
   isWorkoutModalOpen: boolean;
   setWeightUnit: (unit: "kg" | "lbs") => void;
   setSoundEnabled: (enabled: boolean) => void;
   setAutoStartTimer: (enabled: boolean) => void;
+  setIncludeCardio: (enabled: boolean) => void;
   setSelectedExerciseForDetail: (ex: Exercise | null) => void;
   setIsWorkoutModalOpen: (open: boolean) => void;
   startWorkoutFromRoutine: (routine: Routine | CustomRoutine) => void;
@@ -194,17 +196,22 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
     const today = localDateKey();
     const currentGoal = readNutritionGoal();
     if (saved && saved.date === today) {
+      const savedMetrics = safeParse<BodyMetricEntry[] | null>("kinetix_body_metrics", null, isArrayOrNull);
+      const weightKg = latestBodyMetric(savedMetrics ?? [])?.weightKg ?? DEFAULT_WEIGHT_KG;
+      // Log con carbos keto (tope 35) pero objetivo no keto → targets viejos de
+      // un objetivo anterior. Recalcular para que cada pantalla muestre macros
+      // coherentes con el objetivo actual (Fase 1 coherencia).
       if (currentGoal === "keto" && saved.carbsTarget > KETO_CARB_CAP) {
-        const savedMetrics = safeParse<BodyMetricEntry[] | null>("kinetix_body_metrics", null, isArrayOrNull);
-        // FIX (bloqueante 2): medición más reciente por fecha.
-        const weightKg = latestBodyMetric(savedMetrics ?? [])?.weightKg ?? 78;
+        return { ...saved, ...computeTargetsFromWeight(weightKg, currentGoal) };
+      }
+      if (currentGoal !== "keto" && saved.carbsTarget <= KETO_CARB_CAP) {
         return { ...saved, ...computeTargetsFromWeight(weightKg, currentGoal) };
       }
       return saved;
     }
     // New day (or nothing saved): archive the closed day, reset meals/water and recompute targets from body weight.
     const savedMetrics = safeParse<BodyMetricEntry[] | null>("kinetix_body_metrics", null, isArrayOrNull);
-    const weightKg = latestBodyMetric(savedMetrics ?? [])?.weightKg ?? 78;
+    const weightKg = latestBodyMetric(savedMetrics ?? [])?.weightKg ?? DEFAULT_WEIGHT_KG;
     const targets = computeTargetsFromWeight(weightKg, currentGoal);
     if (saved) archiveDayIfStale(saved, today);
     return {
@@ -244,6 +251,12 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
   );
   const [autoStartTimer, setAutoStartTimer] = useState<boolean>(() =>
     safeParse("kinetix_auto_start_timer", null, VALIDATORS["kinetix_auto_start_timer"]) === false ? false : true
+  );
+  // Cardio opcional: visible/decidible antes de iniciar la sesión (auditoría:
+  // "Hoy" decía 5 ejercicios y al iniciar aparecían 6). Default = mantener
+  // comportamiento histórico (incluirlo).
+  const [includeCardio, setIncludeCardio] = useState<boolean>(() =>
+    safeParse("kinetix_include_cardio", null, VALIDATORS["kinetix_include_cardio"]) === false ? false : true
   );
   const [selectedExerciseForDetail, setSelectedExerciseForDetail] = useState<Exercise | null>(null);
   const [isWorkoutModalOpen, setIsWorkoutModalOpen] = useState(false);
@@ -296,6 +309,10 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
   useEffect(() => {
     safeSet("kinetix_auto_start_timer", autoStartTimer);
   }, [autoStartTimer]);
+
+  useEffect(() => {
+    safeSet("kinetix_include_cardio", includeCardio);
+  }, [includeCardio]);
 
   useEffect(() => {
     safeSet("kinetix_custom_routines", customRoutines);
@@ -466,15 +483,15 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
         };
       });
 
-      // Add cardio block at the end (20 min treadmill) â€” marcado como "cardio"
-      // para NO contarlo como serie efectiva de fuerza en volumen/deload/volumen semanal.
-      // Se agrega SOLO si la rutina no prescribe ya cardio (ej. D7 NIGHTWING ya
-      // incluye elliptical "20 min"; duplicarlo harÃ­a 40 min auto-prescritos).
+      // Add cardio block at the end (20 min elliptical) — marcado como "cardio"
+      // para NO contarlo como serie efectiva de fuerza. Solo si el usuario lo
+      // dejó habilitado (toggle visible en "Hoy" antes de iniciar) y la rutina
+      // no prescribe ya cardio (ej. D7 NIGHTWING incluye elliptical "20 min").
       const alreadyHasCardio = routine.exercises.some((item: any) => {
         const def = EXERCISES_DATABASE.find((e) => e.id === item.exerciseId);
         return def && (def.executionMode === "time" || /min/i.test(String(item.targetReps ?? "")));
       });
-      if (!alreadyHasCardio) {
+      if (!alreadyHasCardio && includeCardio) {
         const cardioDef = EXERCISES_DATABASE.find((e) => e.id === "elliptical-machine-walk") || EXERCISES_DATABASE[0];
         const cardioSets: WorkoutSet[] = [
           { id: `cardio-${Date.now()}`, setNumber: 1, type: "cardio", weight: 0, reps: 1, rir: 2, tempo: "--",
@@ -504,7 +521,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
     } catch (err) {
       console.error("[KINETIX] startWorkoutFromRoutine failed:", err);
     }
-  }, [exerciseHistory, personalRecords]);
+  }, [exerciseHistory, personalRecords, includeCardio]);
 
   const startEmptyWorkout = useCallback((name = "Entrenamiento Libre") => {
     try {
@@ -1146,7 +1163,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
     // fecha (los arrays se prependen: length-1 podía devolver el peso más viejo).
     const today = localDateKey();
     const savedMetrics = safeParse<BodyMetricEntry[] | null>("kinetix_body_metrics", null, isArrayOrNull);
-    const weightKg = latestBodyMetric(savedMetrics ?? [])?.weightKg ?? 78;
+    const weightKg = latestBodyMetric(savedMetrics ?? [])?.weightKg ?? DEFAULT_WEIGHT_KG;
     return { today, targets: computeTargetsFromWeight(weightKg) };
   }, []);
 
@@ -1197,7 +1214,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
       localStorage.setItem("kinetix_nutrition_goal", goal);
     }
     const savedMetrics = safeParse<BodyMetricEntry[] | null>("kinetix_body_metrics", null, isArrayOrNull);
-    const weightKg = latestBodyMetric(savedMetrics ?? [])?.weightKg ?? 78;
+    const weightKg = latestBodyMetric(savedMetrics ?? [])?.weightKg ?? DEFAULT_WEIGHT_KG;
     const profile = readNutritionProfile();
     setNutritionLog((prev) => ({ ...prev, ...computePersonalTargets(weightKg, goal, profile) }));
   }, []);
@@ -1205,7 +1222,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
   const setNutritionProfile = useCallback((profile: NutritionProfile) => {
     setNutritionProfileState(profile);
     const savedMetrics = safeParse<BodyMetricEntry[] | null>("kinetix_body_metrics", null, isArrayOrNull);
-    const weightKg = latestBodyMetric(savedMetrics ?? [])?.weightKg ?? 78;
+    const weightKg = latestBodyMetric(savedMetrics ?? [])?.weightKg ?? DEFAULT_WEIGHT_KG;
     const goal = readNutritionGoal();
     setNutritionLog((prev) => ({ ...prev, ...computePersonalTargets(weightKg, goal, profile) }));
   }, []);
@@ -1353,9 +1370,11 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
         autoStartTimer,
         selectedExerciseForDetail,
         isWorkoutModalOpen,
+        includeCardio,
         setWeightUnit,
         setSoundEnabled,
         setAutoStartTimer,
+        setIncludeCardio,
         setSelectedExerciseForDetail,
         setIsWorkoutModalOpen,
         startWorkoutFromRoutine,
