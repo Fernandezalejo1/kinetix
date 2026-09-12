@@ -5,7 +5,7 @@
 // oculta). Live solo en este dispositivo.
 // =============================================================
 
-import { CompletedWorkout, Program, Routine, UserProfile } from "../types";
+import { CompletedWorkout, Program, Routine, UserProfile, EquipmentAccess } from "../types";
 import { PREBUILT_PROGRAMS } from "../data/programsData";
 import { safeParse, safeSet, isUserProfile } from "./storage";
 import { adaptRoutineToEquipment } from "./equipmentAdapter";
@@ -212,6 +212,58 @@ export function resolveAdaptedRoutine(
   history: CompletedWorkout[] = []
 ): Routine {
   return resolveNextRoutine(profile, history);
+}
+
+// -------- Ubicación de entrenamiento de HOY (casa / básico / gimnasio) --------
+// Los rutinas "de hoy" se adaptan al lugar donde el usuario va a entrenar ESE
+// día (la preferencia del perfil es la base; este override es temporal y
+// expira al cambiar de día). Persistida en localStorage con fecha.
+
+const TODAY_EQUIPMENT_KEY = "kinetix_today_equipment";
+
+export function loadTodayEquipment(): EquipmentAccess | null {
+  try {
+    const raw = localStorage.getItem(TODAY_EQUIPMENT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || parsed.date !== localDateKey()) {
+      localStorage.removeItem(TODAY_EQUIPMENT_KEY);
+      return null;
+    }
+    return parsed.equipment === "gym" || parsed.equipment === "basic" || parsed.equipment === "home"
+      ? (parsed.equipment as EquipmentAccess)
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setTodayEquipment(equipment: EquipmentAccess | null): void {
+  try {
+    if (equipment === null) {
+      localStorage.removeItem(TODAY_EQUIPMENT_KEY);
+    } else {
+      localStorage.setItem(
+        TODAY_EQUIPMENT_KEY,
+        JSON.stringify({ date: localDateKey(), equipment })
+      );
+    }
+  } catch {
+    /* noop */
+  }
+}
+
+/** "Hoy te toca" adaptado al equipamiento real de HOY (override diario). Sin
+ *  override (null) o igual al perfil → comportamiento normal. */
+export function resolveAdaptedRoutineForEquipment(
+  profile: UserProfile | null,
+  history: CompletedWorkout[] = [],
+  todayEquipment: EquipmentAccess | null
+): Routine {
+  if (!profile || !todayEquipment || profile.equipment === todayEquipment) {
+    return resolveNextRoutine(profile, history);
+  }
+  return resolveNextRoutine({ ...profile, equipment: todayEquipment }, history);
 }
 
 /** Rutina que entra en la franja de minutos preferida del usuario. Prefiere

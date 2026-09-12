@@ -46,9 +46,12 @@ import { isTimeBased } from "../../utils/exerciseMode";
 import {
   loadUserProfile,
   resolveFeaturedProgram,
-  resolveAdaptedRoutine,
+  resolveAdaptedRoutineForEquipment,
   adaptProgramRoutines,
+  loadTodayEquipment,
+  setTodayEquipment,
 } from "../../utils/userProfile";
+import { EquipmentAccess } from "../../types";
 import {
   analyzeDeload,
   buildDeloadRoutine,
@@ -68,6 +71,12 @@ const GOAL_LABELS: Record<string, string> = {
   maintenance: "Mantenimiento",
   lean_bulk: "Lean bulk",
 };
+
+const EQUIPMENT_OPTIONS: { value: EquipmentAccess; label: string }[] = [
+  { value: "home", label: "Casa" },
+  { value: "basic", label: "Básico" },
+  { value: "gym", label: "Gimnasio" },
+];
 
 interface WorkoutHubProps {
   onGoToPrograms: () => void;
@@ -133,7 +142,14 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
   const featuredProgram: Program = resolveFeaturedProgram(userProfile);
   // Rutinas del programa adaptadas al equipamiento (home/básico/gimnasio).
   const programRoutines: Routine[] = adaptProgramRoutines(featuredProgram, userProfile);
-  const nextRoutine: Routine = resolveAdaptedRoutine(userProfile, workoutHistory);
+  // P3: override diario del lugar de entrenamiento (casa/básico/gimnasio).
+  const [todayEquipment, setTodayEquipmentState] = useState<EquipmentAccess | null>(() => loadTodayEquipment());
+  const nextRoutine: Routine = resolveAdaptedRoutineForEquipment(userProfile, workoutHistory, todayEquipment);
+  const changeTodayEquipment = (e: EquipmentAccess) => {
+    setTodayEquipmentState(e);
+    setTodayEquipment(e);
+  };
+  const currentEquipment = todayEquipment ?? userProfile?.equipment ?? "gym";
 
   // FASE 6: Weekly summary stats
   const weekStats = useMemo(() => {
@@ -360,8 +376,32 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
           </div>
         </div>
         {!activeSession && (
-          <div className="mt-3 border-t border-neutral-800/60 pt-3">
+          <div className="mt-3 border-t border-neutral-800/60 pt-3 space-y-2">
             <CardioToggle className="max-w-sm" />
+            <div className="flex items-center justify-between gap-2 w-full max-w-sm px-3 py-2 rounded-2xl bg-neutral-950 border border-neutral-800">
+              <span className="flex items-center gap-2 text-[11px] font-bold text-neutral-300">
+                <Dumbbell className="w-3.5 h-3.5 text-cyan-400" />
+                Hoy entreno en
+              </span>
+              <div className="flex gap-1" role="radiogroup" aria-label="Lugar de entrenamiento de hoy">
+                {EQUIPMENT_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={currentEquipment === opt.value}
+                    onClick={() => changeTodayEquipment(opt.value)}
+                    className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-[10px] sm:text-[11px] font-bold transition-all touch-target ${
+                      currentEquipment === opt.value
+                        ? "bg-cyan-600 text-white shadow-lg shadow-cyan-600/25"
+                        : "bg-neutral-900 text-neutral-400 hover:text-white border border-neutral-800"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </div>

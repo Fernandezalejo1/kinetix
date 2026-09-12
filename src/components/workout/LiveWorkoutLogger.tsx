@@ -27,7 +27,8 @@ import {
   Zap,
   Target,
   TrendingUp,
-  AlertCircle
+  AlertCircle,
+  Repeat,
 } from "lucide-react";
 import { useWorkout } from "../../context/WorkoutContext";
 import { useToast } from "../../context/ToastContext";
@@ -158,6 +159,8 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
     adjustRestTimer,
     soundEnabled,
     setSoundEnabled,
+    autoStartTimer,
+    setAutoStartTimer,
     updateSet,
     addSet,
     removeSet,
@@ -440,6 +443,15 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
             title="Sonido de Temporizador"
           >
             {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+          </button>
+
+          <button
+            onClick={() => setAutoStartTimer(!autoStartTimer)}
+            className="p-2.5 rounded-xl bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-700 min-w-[44px] min-h-[44px] flex items-center justify-center"
+            title={autoStartTimer ? "Auto-iniciar temporizador tras cada serie (activo)" : "Auto-iniciar temporizador tras cada serie (desactivado)"}
+            aria-pressed={autoStartTimer}
+          >
+            <Repeat className={`w-4 h-4 ${autoStartTimer ? "text-cyan-400" : "text-neutral-500"}`} />
           </button>
 
           <button

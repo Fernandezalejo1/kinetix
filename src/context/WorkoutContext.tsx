@@ -109,6 +109,8 @@ interface WorkoutContextType {
   adjustRestTimer: (deltaSeconds: number) => void;
   addMeal: (meal: MealItem) => void;
   removeMeal: (mealId: string) => void;
+  /** P3: re-registra HOY las comidas del día anterior (log rápido). true si copió algo. */
+  copyMealsFromYesterday: () => boolean;
   updateMacroTargets: (targets: { calories: number; protein: number; carbs: number; fats: number }) => void;
   addBodyMetric: (entry: BodyMetricEntry) => void;
   nutritionGoal: NutritionGoal;
@@ -1186,6 +1188,67 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
     });
   }, [ensureTodayLogic]);
 
+  // P3: copia HOY las comidas del día anterior (fuente: historial largo + el
+  // log local si todavía es de ayer). Devuelve true si pudo copiar.
+  const copyMealsFromYesterday = useCallback((): boolean => {
+    const now = new Date();
+    const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+    const yesterdayKey = localDateKey(yesterday);
+    let sourceMeals: MealItem[] = [];
+    try {
+      const raw = readVaultAwareRaw("kinetix_nutrition_history");
+      const list = raw ? JSON.parse(raw) : [];
+      if (Array.isArray(list)) {
+        const y = (list as NutritionLog[]).find((n) => n.date === yesterdayKey);
+        if (y && Array.isArray(y.meals)) sourceMeals = y.meals;
+      }
+    } catch {
+      /* corrupto: se intenta con el log local */
+    }
+    if (sourceMeals.length === 0 && nutritionLog.date === yesterdayKey) {
+      sourceMeals = Array.isArray(nutritionLog.meals) ? nutritionLog.meals : [];
+    }
+    if (sourceMeals.length === 0) return false;
+    const nowStr = new Date().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+    setNutritionLog((prev) => {
+      const { today, targets } = ensureTodayLogic();
+      const base = prev.date === today ? prev : { ...INITIAL_NUTRITION, ...targets, date: today, meals: [], waterMl: 0 };
+      const copied: MealItem[] = sourceMeals.map((m) => ({
+        ...m,
+        id: `meal-copy-${Date.now()}-${m.id}`,
+        time: nowStr,
+      }));
+      return { ...base, meals: [...copied, ...base.meals] };
+    });
+    return true;
+  }, [ensureTodayLogic, nutritionLog]);
+
+  // P3: al pasar de día, archiva el log anterior en el historial LARGO antes de
+  // descartarlo (evita perder las comidas de ayer al abrir la app hoy).
+  const archivedNutritionRef = useRef<NutritionLog | null>(nutritionLog);
+  useEffect(() => {
+    const prev = archivedNutritionRef.current;
+    if (
+      prev &&
+      prev.date &&
+      prev.date !== nutritionLog.date &&
+      Array.isArray(prev.meals) &&
+      prev.meals.length > 0
+    ) {
+      try {
+        const raw = readVaultAwareRaw("kinetix_nutrition_history");
+        const list = raw ? JSON.parse(raw) : [];
+        const arr = Array.isArray(list) ? (list as NutritionLog[]) : [];
+        const next = arr.filter((n) => n.date !== prev.date);
+        next.unshift(prev);
+        safeSet("kinetix_nutrition_history", capForStorage(next, 365));
+      } catch {
+        /* no-op */
+      }
+    }
+    archivedNutritionRef.current = nutritionLog;
+  }, [nutritionLog]);
+
   const updateMacroTargets = useCallback(
     (targets: { calories: number; protein: number; carbs: number; fats: number }) => {
       setNutritionLog((prev) => {
@@ -1396,6 +1459,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
         adjustRestTimer,
         addMeal,
         removeMeal,
+        copyMealsFromYesterday,
         updateMacroTargets,
         addBodyMetric,
         nutritionGoal,

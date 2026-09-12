@@ -10,6 +10,7 @@ import {
   CalendarCheck,
   Zap,
   RefreshCcw,
+  Dumbbell,
 } from "lucide-react";
 import { useWorkout } from "../context/WorkoutContext";
 import { useGoal } from "../context/GoalContext";
@@ -17,11 +18,14 @@ import { Routine, Program } from "../types";
 import {
   loadUserProfile,
   resolveFeaturedProgram,
-  resolveAdaptedRoutine,
+  resolveAdaptedRoutineForEquipment,
   adaptProgramRoutines,
   shortenRoutine,
   daysSinceCompletion,
+  loadTodayEquipment,
+  setTodayEquipment,
 } from "../utils/userProfile";
+import { EquipmentAccess } from "../types";
 import { localDateKey } from "../utils/dateUtils";
 import { previewExerciseCount } from "../utils/sessionPreview";
 import { CardioToggle } from "./workout/CardioToggle";
@@ -39,6 +43,12 @@ const PHASE_LABEL: Record<string, { label: string; emoji?: string }> = {
   lean_bulk: { label: "Volumen limpio" },
 };
 
+const EQUIPMENT_OPTIONS: { value: EquipmentAccess; label: string }[] = [
+  { value: "home", label: "Casa" },
+  { value: "basic", label: "Básico" },
+  { value: "gym", label: "Gimnasio" },
+];
+
 export const TodayHub: React.FC<TodayHubProps> = ({
   onGoToWorkout,
   onGoToPrograms,
@@ -55,16 +65,24 @@ export const TodayHub: React.FC<TodayHubProps> = ({
   } = useWorkout();
   const { phase } = useGoal();
   const [isReviewOpen, setIsReviewOpen] = useState(false);
+  // P3: dónde se entrena HOY (override diario del equipamiento del perfil).
+  const [todayEquipment, setTodayEquipmentState] = useState<EquipmentAccess | null>(() => loadTodayEquipment());
 
   const userProfile = loadUserProfile();
   const featuredProgram: Program = resolveFeaturedProgram(userProfile);
   // Rutinas ya adaptadas al equipamiento del perfil (home/básico/gimnasio):
   // "Hoy te toca" y su versión corta nunca sugieren ejercicios imposibles.
   const programRoutines: Routine[] = adaptProgramRoutines(featuredProgram, userProfile);
-  // FASE 2: "Hoy te toca" inteligente — elige la rutina que hace más tiempo
-  // que no se entrena (rotación del microciclo), nunca la ya completada hoy.
-  const nextRoutine: Routine = resolveAdaptedRoutine(userProfile, workoutHistory);
+  // FASE 2/3: "Hoy te toca" inteligente — rota por historial y se adapta al
+  // equipamiento real de HOY (casa/básico/gimnasio), nunca la ya completada hoy.
+  const nextRoutine: Routine = resolveAdaptedRoutineForEquipment(userProfile, workoutHistory, todayEquipment);
   const nextLastDays: number | null = daysSinceCompletion(nextRoutine, workoutHistory);
+
+  const changeTodayEquipment = (e: EquipmentAccess) => {
+    setTodayEquipmentState(e);
+    setTodayEquipment(e);
+  };
+  const currentEquipment = todayEquipment ?? userProfile?.equipment ?? "gym";
 
   // Cardio inyectado al final de la sesión: el conteo de "Hoy" debe coincidir
   // con lo que realmente se inicia (toggle global + rutinas que ya prescriben cardio).
@@ -198,6 +216,32 @@ export const TodayHub: React.FC<TodayHubProps> = ({
           </div>
 
           <CardioToggle />
+
+          {/* P3: lugar de entrenamiento de hoy — adapta la rutina al equipamiento real */}
+          <div className="flex items-center justify-between gap-2 w-full px-3 py-2 rounded-2xl bg-neutral-950 border border-neutral-800">
+            <span className="flex items-center gap-2 text-[11px] font-bold text-neutral-300">
+              <Dumbbell className="w-3.5 h-3.5 text-cyan-400" />
+              Hoy entreno en
+            </span>
+            <div className="flex gap-1" role="radiogroup" aria-label="Lugar de entrenamiento de hoy">
+              {EQUIPMENT_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={currentEquipment === opt.value}
+                  onClick={() => changeTodayEquipment(opt.value)}
+                  className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-[10px] sm:text-[11px] font-bold transition-all touch-target ${
+                    currentEquipment === opt.value
+                      ? "bg-cyan-600 text-white shadow-lg shadow-cyan-600/25"
+                      : "bg-neutral-900 text-neutral-400 hover:text-white border border-neutral-800"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
 
           <div className="flex flex-wrap items-center gap-2 text-[11px] text-neutral-500">
             <button onClick={onGoToWorkout} className="flex items-center gap-1 font-bold text-neutral-400 hover:text-white transition-colors">
