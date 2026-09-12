@@ -58,7 +58,36 @@ export interface WarmupStep {
   purpose: string;
 }
 
-export function generateWarmupPyramid(workingWeight: number, barWeight = 20): WarmupStep[] {
+export function generateWarmupPyramid(
+  workingWeight: number,
+  barWeight = 20,
+  opts?: { equipment?: string; weightUnit?: "kg" | "lbs" }
+): WarmupStep[] {
+  const unit = opts?.weightUnit ?? "kg";
+  const step = unit === "lbs" ? 5 : 2.5; // incremento mínimo redondeable
+  const roundTo = (v: number) => Math.round(v / step) * step;
+  const equipment = opts?.equipment ?? "barbell";
+
+  // P0: polea/mancuerna/peso corporal no usan pirámide de barra.
+  if (equipment !== "barbell" && equipment !== "smith") {
+    return [
+      {
+        stepName: "Serie 1 (Movilidad)",
+        percentage: 50,
+        weight: roundTo(workingWeight * 0.5),
+        reps: 8,
+        purpose: "Patrón motor y flujo sanguíneo sin fatiga",
+      },
+      {
+        stepName: "Serie 2 (Activación)",
+        percentage: 70,
+        weight: roundTo(workingWeight * 0.7),
+        reps: 5,
+        purpose: "Activación neuromuscular específica del patrón",
+      },
+    ];
+  }
+
   if (workingWeight <= barWeight) {
     return [
       {
@@ -82,21 +111,21 @@ export function generateWarmupPyramid(workingWeight: number, barWeight = 20): Wa
     {
       stepName: "Serie 2 (Activación Neuromuscular)",
       percentage: 50,
-      weight: Math.round((workingWeight * 0.5) / 2.5) * 2.5,
+      weight: roundTo(workingWeight * 0.5),
       reps: 5,
       purpose: "Coordinación intermuscular y ritmo de tempo",
     },
     {
       stepName: "Serie 3 (Potenciación Post-Activación)",
       percentage: 70,
-      weight: Math.round((workingWeight * 0.7) / 2.5) * 2.5,
+      weight: roundTo(workingWeight * 0.7),
       reps: 3,
       purpose: "Reclutamiento de unidades motoras de alto umbral",
     },
     {
       stepName: "Serie 4 (Aclimatación de Carga)",
       percentage: 85,
-      weight: Math.round((workingWeight * 0.85) / 2.5) * 2.5,
+      weight: roundTo(workingWeight * 0.85),
       reps: 1,
       purpose: "Sensación propioceptiva del peso sin generar fatiga",
     },
@@ -120,7 +149,8 @@ export function calculatePlates(targetWeightKg: number, barWeightKg = 20): Plate
     { weight: 10, colorHex: "#16a34a" }, // Green
     { weight: 5, colorHex: "#ffffff" },  // White
     { weight: 2.5, colorHex: "#64748b" },// Slate
-    { weight: 1.25, colorHex: "#94a3b8" } // Light slate
+    { weight: 1.25, colorHex: "#94a3b8" }, // Light slate
+    { weight: 0.5, colorHex: "#cbd5e1" } // Micro-carga para aislados (P0)
   ];
 
   const targetPerSide = Math.max(0, (targetWeightKg - barWeightKg) / 2);
@@ -188,12 +218,22 @@ export function computeWeeklyVolumeStatus(
   };
 
   recentExercises.forEach((wEx) => {
-    // Count completed effective sets (RIR <= 3, excluye warmup y cardio — el
-    // cardio NO es volumen de fuerza y no debe empujar a un grupo muscular
-    // por encima del MAV/MRV.
-    const effectiveSets = wEx.sets.filter(
-      (s) => s.completed && s.type !== "warmup" && s.type !== "cardio" && (s.rir === undefined || s.rir <= 3)
-    ).length;
+    // Serie efectiva = completada, no warmup/cardio, con evidencia de cercanía
+    // al fallo (RIR<=3 o RPE>=7). P0 fix: antes una serie SIN RIR contaba como
+    // efectiva e inflaba el volumen; ahora se excluye (no se puede afirmar
+    // que fue estimulante). Ver calculateAutoProgression (rirMissing).
+    const effectiveSets = wEx.sets.filter((s) => {
+      if (!s.completed || s.type === "warmup" || s.type === "cardio") return false;
+      if (s.rir !== undefined && s.rir !== null) {
+        const r = Number(s.rir);
+        return Number.isFinite(r) && r <= 3;
+      }
+      if (s.rpe !== undefined && s.rpe !== null) {
+        const pe = Number(s.rpe);
+        return Number.isFinite(pe) && pe >= 7;
+      }
+      return false;
+    }).length;
 
     wEx.exercise.primaryMuscles.forEach((muscle) => {
       muscleSetCounts[muscle] = (muscleSetCounts[muscle] || 0) + effectiveSets;
@@ -340,9 +380,59 @@ export function playTickSound() {
 // Auto-Progression Engine (RIR / RPE Adaptive Scientific Algorithm)
 // -------------------------------------------------------------
 
+/**
+ * Fuente única de verdad para "compuesto vs aislamiento" (P0 fix).
+ * Antes había 2 criterios distintos: aquí (12 IDs + barbell/smith = compuesto)
+ * y en doubleProgression (toda machine = compuesto → pec-deck saltaba 2.5kg).
+ * Regla unificada y conservadora:
+ *  1. Si el ID contiene un patrón de aislamiento → aislamiento (aunque sea barra/máquina,
+ *     ej. barbell-curl, pec-deck/lever-seated-fly, leg-extension).
+ *  2. Máquina/cable solo es compuesto si el ID está en la lista de máquinas multi-articulares.
+ *  3. Barra/smith son compuestos salvo caso 1.
+ *  4. Peso libre: lista de compuestos conocidos o patrones press/row/squat/deadlift/etc.
+ */
+const ISOLATION_PATTERNS = [
+  "curl", "extension", "lateral-raise", "front-raise", "fly", "flye", "crossover",
+  "pullover", "pushdown", "kickback", "calf-raise", "calf_raise", "crunch", "sit-up",
+  "abduction", "adduction", "face-pull", "pull-apart", "neck-", "shrug", "wrist",
+  "concentration", "skull-crusher", "jm-press", "heel-toucher", "scissors",
+  "russian-twist", "leg-curl", "leg-extension", "pec-deck", "seated-fly",
+  "rear-delt-fly", "scaption",
+];
+
+const COMPOUND_MACHINE_IDS = new Set([
+  "hack-squat-machine",
+  "sled-leg-press",
+  "lever-incline-chest-press",
+  "lever-decline-chest-press",
+  "lever-military-press",
+  "converging-chest-press",
+  "rowing-machine-row",
+  "chest-supported-tbar-row",
+  "trap-bar-deadlift",
+  "smith-bench-press",
+  "smith-incline-bench-press",
+]);
+
+const COMPOUND_PATTERNS = [
+  "bench-press", "overhead-press", "military-press", "shoulder-press",
+  "squat", "deadlift", "hip-thrust", "bent-over-row", "seated-cable-row",
+  "lat-pulldown", "pulldown", "pull-up", "chin-up", "dip", "lunge",
+  "bulgarian", "good-morning", "inverted-row", "push-up",
+];
+
 export function isCompoundExercise(exercise: { id: string; category?: string; equipment?: string }): boolean {
-  // Smith machines and main bars are always compounds regardless of specific id list.
+  const id = (exercise.id || "").toLowerCase();
+  // 1. Aislamiento explícito gana siempre (ej. barbell-curl con barra).
+  if (ISOLATION_PATTERNS.some((p) => id.includes(p))) return false;
+  // 2. Máquina/cable/polea: solo compuestos conocidos.
+  if (exercise.equipment === "machine" || exercise.equipment === "cable") {
+    if (COMPOUND_MACHINE_IDS.has(exercise.id)) return true;
+    return COMPOUND_PATTERNS.some((p) => id.includes(p));
+  }
+  // 3. Barra/smith: compuesto salvo aislamiento (ya filtrado).
   if (exercise.equipment === "smith" || exercise.equipment === "barbell") return true;
+  // 4. Peso libre / bodyweight: lista legacy + patrones.
   const compoundIds = [
     "incline-barbell-press",
     "incline-dumbbell-press",
@@ -351,13 +441,20 @@ export function isCompoundExercise(exercise: { id: string; category?: string; eq
     "seated-cable-row",
     "chest-supported-tbar-row",
     "lat-pulldown-neutral",
+    "neutral-grip-lat-pulldown",
     "barbell-hack-or-squat",
     "hack-squat-machine",
     "romanian-deadlift",
-    "seated-leg-curl",
+    "barbell-bench-press",
+    "barbell-hip-thrust",
     "standing-overhead-press",
+    "standing-military-press",
+    "trap-bar-deadlift",
+    "barbell-bent-over-row",
+    "weighted-chin-up",
   ];
-  return compoundIds.includes(exercise.id);
+  if (compoundIds.includes(exercise.id)) return true;
+  return COMPOUND_PATTERNS.some((p) => id.includes(p));
 }
 
 export function calculateAutoProgression(

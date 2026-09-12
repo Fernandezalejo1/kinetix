@@ -205,8 +205,8 @@ export const QUICK_MEAL_CATEGORIES: { id: QuickMealCategory | "todos"; label: st
   { id: "pre_post", label: "Pre / Post" },
 ];
 
-// 100% KETO: todos los presets son bajos en carbos (≤12 g) y altos en grasa.
-// La app es cetogénica; no se ofrecen platos con arroz/papa/avena/pan/fruta/miel.
+// P2: presets por objetivo. Keto = bajos en carbos (≤12 g); el resto usa
+// carbohidratos de calidad (arroz/papa/avena/fruta) para rendir y recuperar.
 export const QUICK_MEALS: QuickMealPreset[] = [
   { name: "Omelette + Palta + Espinaca", category: "desayuno", cal: 520, pro: 34, carb: 8, fat: 40, fiber: 6, mpsQuality: "Suficiente" },
   { name: "Huevos Revueltos + Panceta + Palta", category: "desayuno", cal: 560, pro: 32, carb: 6, fat: 44, fiber: 4, mpsQuality: "Suficiente" },
@@ -227,6 +227,37 @@ export const QUICK_MEALS: QuickMealPreset[] = [
   { name: "Whey + Mantequilla de Maní + Leche de Almendras", category: "pre_post", cal: 340, pro: 32, carb: 8, fat: 22, fiber: 3, mpsQuality: "Alta" },
   { name: "Whey + Crema + Frutillas", category: "pre_post", cal: 320, pro: 30, carb: 9, fat: 18, fiber: 3, mpsQuality: "Alta" },
 ];
+
+// Platos con carbos para objetivos NO keto (bulk/lean_bulk/maintenance/cut):
+// arroz, papa, avena, fruta, pasta, yogur. Proteína ≥25 g por plato.
+export const QUICK_MEALS_BALANCED: QuickMealPreset[] = [
+  { name: "Avena + Whey + Banana + Mantequilla de Maní", category: "desayuno", cal: 620, pro: 38, carb: 82, fat: 16, fiber: 10, mpsQuality: "Alta" },
+  { name: "Tostadas Integrales + Huevo + Palta", category: "desayuno", cal: 520, pro: 28, carb: 52, fat: 22, fiber: 9, mpsQuality: "Suficiente" },
+  { name: "Yogur Griego + Granola + Frutos Rojos + Miel", category: "desayuno", cal: 540, pro: 32, carb: 78, fat: 10, fiber: 7, mpsQuality: "Alta" },
+  { name: "Pollo + Arroz + Brócoli + Oliva", category: "comida", cal: 680, pro: 50, carb: 72, fat: 18, fiber: 8, mpsQuality: "Alta" },
+  { name: "Carne + Papa al Horno + Ensalada", category: "comida", cal: 720, pro: 48, carb: 68, fat: 24, fiber: 8, mpsQuality: "Suficiente" },
+  { name: "Pasta Integral + Atún + Tomate + Oliva", category: "comida", cal: 700, pro: 44, carb: 84, fat: 18, fiber: 10, mpsQuality: "Suficiente" },
+  { name: "Salmón + Arroz + Espárragos", category: "cena", cal: 660, pro: 46, carb: 62, fat: 22, fiber: 6, mpsQuality: "Alta" },
+  { name: "Omelette + Pan Integral + Ensalada", category: "cena", cal: 560, pro: 36, carb: 48, fat: 24, fiber: 7, mpsQuality: "Suficiente" },
+  { name: "Batata + Pollo + Vegetales", category: "cena", cal: 620, pro: 46, carb: 66, fat: 14, fiber: 9, mpsQuality: "Alta" },
+  { name: "Banana + Whey + Leche", category: "pre_post", cal: 380, pro: 32, carb: 52, fat: 6, fiber: 4, mpsQuality: "Alta" },
+  { name: "Arroz con Leche Proteico + Canela", category: "pre_post", cal: 420, pro: 28, carb: 64, fat: 6, fiber: 3, mpsQuality: "Alta" },
+  { name: "Puñado de Frutos Secos + Manzana", category: "snack", cal: 340, pro: 12, carb: 38, fat: 18, fiber: 7, mpsQuality: "Suficiente" },
+];
+
+/** Platos según objetivo: keto → cetogénicos; resto → balanceados con carbos. */
+export function quickMealsFor(goal: NutritionGoal): QuickMealPreset[] {
+  return goal === "keto" ? QUICK_MEALS : QUICK_MEALS_BALANCED;
+}
+
+/**
+ * Proteína por comida para maximizar síntesis proteica (Morton/Schoenfeld):
+ * 0.4 g/kg × 4 comidas. Ej. 80 kg → 32 g por comida.
+ */
+export function proteinPerMeal(weightKg: number, meals = 4): number {
+  if (!(weightKg > 0)) return 0;
+  return Math.round(weightKg * 0.4 * 10) / 10;
+}
 
 // Evidence-based supplement guide (educational reference, 100% offline).
 export interface SupplementInfo {

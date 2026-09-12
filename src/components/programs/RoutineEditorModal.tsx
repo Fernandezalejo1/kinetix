@@ -18,6 +18,7 @@ import {
 import { useWorkout } from "../../context/WorkoutContext";
 import { ExerciseLibraryModal } from "../exercises/ExerciseLibraryModal";
 import { ExerciseDetailModal } from "../exercises/ExerciseDetailModal";
+import { FocusTrap } from "../FocusTrap";
 import { CustomRoutine, CustomRoutineExercise, Exercise } from "../../types";
 import { EXERCISES_DATABASE } from "../../data/exercisesData";
 
@@ -133,7 +134,8 @@ export const RoutineEditorModal: React.FC<RoutineEditorModalProps> = ({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-md animate-fadeIn">
+    <FocusTrap>
+      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-md animate-fadeIn">
       <div role="dialog" aria-modal="true" aria-label={routine ? "Editar Rutina" : "Crear Rutina"} className="bg-neutral-900 border border-neutral-800 rounded-t-3xl sm:rounded-3xl w-full max-w-2xl max-h-[92dvh] overflow-y-auto overscroll-contain scrollbar-thin safe-area-bottom">
         {/* Header */}
         <div className="sticky top-0 z-10 px-4 sm:px-6 py-4 border-b border-neutral-800 bg-neutral-950/95 backdrop-blur-sm flex items-center justify-between">
@@ -479,5 +481,6 @@ export const RoutineEditorModal: React.FC<RoutineEditorModalProps> = ({
         />
       )}
     </div>
+    </FocusTrap>
   );
 };

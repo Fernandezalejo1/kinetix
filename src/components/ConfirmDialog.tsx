@@ -1,4 +1,5 @@
 import React from "react";
+import { FocusTrap } from "./FocusTrap";
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -24,10 +25,11 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   if (!open) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn"
-      onClick={onCancel}
-    >
+    <FocusTrap>
+      <div
+        className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn"
+        onClick={onCancel}
+      >
       <div
         role="dialog"
         aria-modal="true"
@@ -55,7 +57,8 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             {confirmLabel}
           </button>
         </div>
+        </div>
       </div>
-    </div>
+    </FocusTrap>
   );
 };

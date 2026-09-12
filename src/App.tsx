@@ -8,8 +8,15 @@ import { StepsEngine } from "./components/nutrition/StepsEngine";
 import { HealthSyncEngine } from "./components/health/HealthSyncEngine";
 import { OnboardingIntro } from "./components/OnboardingIntro";
 import { StorageWarning } from "./components/StorageWarning";
+import { PinLockScreen } from "./components/PinLockScreen";
+import { VaultLockScreen } from "./components/VaultLockScreen";
+import { createAutoBackup } from "./utils/backupService";
+import { isAppLocked, hasAppPin, lockAppIfNeeded } from "./utils/pinLock";
+import { isVaultLocked, isVaultEnabled, initVaultSessionFromStorage } from "./utils/vault";
 
-// Eagerly load the first screen (workout hub) for instant display
+// Eagerly load the first screen (today hub) for instant display
+import { TodayHub } from "./components/TodayHub";
+// Eagerly load the workout hub too (core flow)
 import { WorkoutHub } from "./components/workout/WorkoutHub";
 
 // Lazy load everything else — these become separate chunks
@@ -32,15 +39,15 @@ const GoalHub = React.lazy(() =>
   import("./components/goal/GoalHub").then((m) => ({ default: m.GoalHub }))
 );
 
-const TAB_ORDER: NavTab[] = ["workout", "programs", "exercises", "analytics", "nutrition", "reto", "objetivo"];
+const TAB_ORDER: NavTab[] = ["hoy", "workout", "programs", "exercises", "analytics", "nutrition", "reto", "objetivo"];
 
 /** Reads the PWA deep-link target (?tab=...) from the URL (manifest shortcuts). */
 const getTabFromURL = (): NavTab => {
-  if (typeof window === "undefined") return "workout";
+  if (typeof window === "undefined") return "hoy";
   const tab = new URLSearchParams(window.location.search).get("tab");
   return (TAB_ORDER as readonly string[]).includes(tab ?? "")
     ? (tab as NavTab)
-    : "workout";
+    : "hoy";
 };
 
 /** Minimal loading skeleton shown while a chunk downloads */
@@ -57,6 +64,26 @@ const AppContent: React.FC = () => {
   const [currentTab, setCurrentTab] = useState<NavTab>(getTabFromURL);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { selectedExerciseForDetail, setSelectedExerciseForDetail, isWorkoutModalOpen, setIsWorkoutModalOpen } = useWorkout();
+
+  // Copia de seguridad automática (100% local, IndexedDB): revisa cada 15 min
+  // si toca guardar un snapshot (cada 6h con datos), al volver a primer plano y
+  // unos segundos después del arranque. Nunca bloquea ni molesta al usuario.
+  useEffect(() => {
+    const run = () => {
+      void createAutoBackup(false);
+    };
+    const timer = window.setInterval(run, 15 * 60 * 1000);
+    const onVisibility = () => {
+      if (typeof document !== "undefined" && !document.hidden) run();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    const bootTimer = window.setTimeout(run, 2500);
+    return () => {
+      window.clearInterval(timer);
+      window.clearTimeout(bootTimer);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, []);
 
   // Contador de entradas "fantasma" en el historial: cada vez que se abre un
   // modal se hace pushState. Si el modal se cierra con su botón propio (no con
@@ -144,6 +171,15 @@ const AppContent: React.FC = () => {
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 pt-3 sm:pt-6 pb-20 md:pb-6">
+        {/* TodayHub is eagerly loaded for instant first paint (default tab) */}
+        {currentTab === "hoy" && (
+          <TodayHub
+            onGoToWorkout={() => setCurrentTab("workout")}
+            onGoToPrograms={() => setCurrentTab("programs")}
+            onGoToBiomechanics={() => setCurrentTab("exercises")}
+          />
+        )}
+
         {/* WorkoutHub is eagerly loaded for instant first paint */}
         {currentTab === "workout" && (
           <WorkoutHub
@@ -179,7 +215,68 @@ const AppContent: React.FC = () => {
 };
 
 function AppWithPin() {
-  return <AppContent />;
+  const [locked, setLocked] = useState<boolean>(() => isAppLocked() && hasAppPin());
+  // P4 Vault v2: el boot intenta re-hidratar la sesión desde sessionStorage
+  // (sin contraseña). Si no hay secreto de pestaña → bloqueado (gate).
+  const [vaultLocked, setVaultLocked] = useState<boolean>(() => {
+    try {
+      return isVaultLocked();
+    } catch {
+      return false;
+    }
+  });
+  const [vaultBootDone, setVaultBootDone] = useState<boolean>(() => {
+    try {
+      return !isVaultEnabled();
+    } catch {
+      return true;
+    }
+  });
+  const lockedRef = useRef(locked);
+  lockedRef.current = locked;
+
+  useEffect(() => {
+    let alive = true;
+    void initVaultSessionFromStorage().then((unlocked) => {
+      if (!alive) return;
+      setVaultLocked(!unlocked);
+      setVaultBootDone(true);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const onVisibility = () => {
+      if (typeof document === "undefined") return;
+      if (document.hidden && !lockedRef.current) {
+        // Bloqueo automático al oscurecer/minimizar (si lo habilita el usuario).
+        if (lockAppIfNeeded()) setLocked(true);
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, []);
+
+  const handleUnlocked = useCallback(() => {
+    setLocked(false);
+  }, []);
+
+  const showVaultGate = isVaultEnabled() && (vaultLocked || !vaultBootDone);
+
+  if (showVaultGate) {
+    // Antes del boot del vault los providers NO montan: evita que hidraten
+    // fallback y sobrescriban los datos descifrados reales.
+    return <VaultLockScreen onUnlocked={() => setVaultLocked(false)} />;
+  }
+
+  return (
+    <>
+      <AppContent />
+      {locked && <PinLockScreen onUnlocked={handleUnlocked} />}
+    </>
+  );
 }
 
 export default function App() {

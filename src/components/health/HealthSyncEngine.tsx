@@ -45,6 +45,10 @@ export const HealthSyncEngine: React.FC = () => {
   const ctxRef = useRef({ bodyMetrics, nutritionProfile, nutritionGoal, sleepLog, addBodyMetric, updateMacroTargets, addSleep, showToast });
   ctxRef.current = { bodyMetrics, nutritionProfile, nutritionGoal, sleepLog, addBodyMetric, updateMacroTargets, addSleep, showToast };
 
+  // Guía de permisos parciales/revocados: se avisa UNA vez por sesión para no
+  // spamear (autorizado, pero falto de permiso de Sueño o Peso).
+  const guidanceShownRef = useRef(false);
+
   useEffect(() => {
     const sync = async () => {
       const {
@@ -66,6 +70,17 @@ export const HealthSyncEngine: React.FC = () => {
         const perms = await hasSleepWeightPermission();
         let addedSleep = 0;
         let addedWeight: number | null = null;
+
+        // Permisos parciales/revocados: guía clara en vez de fallo silencioso.
+        if (perms.sleep || perms.weight) {
+          guidanceShownRef.current = false;
+        } else if (!guidanceShownRef.current) {
+          guidanceShownRef.current = true;
+          showToast(
+            "Health Connect conectado, pero sin permisos de Sueño ni Peso: concedelos en Ajustes del sistema para sincronizar.",
+            "info"
+          );
+        }
 
         // ---- Sueño: noches de Health Connect que no estén ya registradas ----
         if (perms.sleep) {

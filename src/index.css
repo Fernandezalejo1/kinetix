@@ -260,3 +260,12 @@ input[type="number"] {
 .text-\[10px\] {
   font-size: 11px !important;
 }
+
+/* P0 contraste AA en gym: neutral-500/600 sobre negro no llega a 4.5:1.
+   Se aclaran solo sobre fondo oscuro (la app es dark-only intencional). */
+.text-neutral-500 {
+  color: rgb(163 163 163) !important; /* neutral-400 */
+}
+.text-neutral-600 {
+  color: rgb(163 163 163) !important;
+}

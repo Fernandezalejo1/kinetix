@@ -45,7 +45,7 @@ export function kdfParams(blob?: Partial<EncryptedBackup> | null): { iterations:
 }
 
 // Deriva una clave AES-GCM de 256 bits a partir de la contraseña + salt.
-async function deriveKey(password: string, salt: Uint8Array, params: { iterations: number; hash: string }): Promise<CryptoKey> {
+export async function deriveKey(password: string, salt: Uint8Array, params: { iterations: number; hash: string }): Promise<CryptoKey> {
   const baseKey = await crypto.subtle.importKey(
     "raw",
     textEncoder().encode(password),
@@ -156,3 +156,30 @@ export const toUint8Safe = (b64: string, what: string): Uint8Array => {
     throw new Error(`Backup inválido: ${what} no es base64 válida`);
   }
 };
+
+// ─── Primitivas de llave AES-GCM (para envelopes del Vault) ──────────
+// El Vault cifra cada clave con una DataKey aleatoria de 32 bytes. La DataKey
+// se guarda CIFRADA dos veces dentro del envelope: una con una llave derivada
+// de la contraseña (para desbloquear) y otra con un secreto de sesión aleatorio
+// (para sobrevivir al reload mientras la pestaña está abierta). Así el
+// localStorage NUNCA contiene texto plano, ni siquiera desbloqueado.
+
+export async function aesKeyFromBytes(bytes: Uint8Array): Promise<CryptoKey> {
+  return crypto.subtle.importKey("raw", bytes as BufferSource, { name: "AES-GCM" }, true, ["encrypt", "decrypt"]);
+}
+
+export async function aeadEncrypt(key: CryptoKey, iv: Uint8Array, plain: Uint8Array): Promise<string> {
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv } as AesGcmParams, key, plain as BufferSource));
+  return toB64(ct);
+}
+
+export async function aeadDecrypt(key: CryptoKey, iv: Uint8Array, ciphertext: string): Promise<Uint8Array> {
+  const plain = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv } as AesGcmParams,
+    key,
+    fromB64(ciphertext).buffer as ArrayBuffer
+  );
+  return new Uint8Array(plain);
+}
+
+export const DEFAULT_SESSION_SALT = "kinetix-vault-session-v2";

@@ -18,12 +18,16 @@ import {
   Trash2,
   X,
   Zap,
-  AlertTriangle
+  AlertTriangle,
+  ChevronDown,
+  HelpCircle,
+  SlidersHorizontal
 } from "lucide-react";
 import { useWorkout } from "../../context/WorkoutContext";
 import { useToast } from "../../context/ToastContext";
+import { useGoal } from "../../context/GoalContext";
 import { ConfirmDialog } from "../ConfirmDialog";
-import { PREBUILT_PROGRAMS } from "../../data/programsData";
+import { FocusTrap } from "../FocusTrap";
 import { EXERCISES_DATABASE } from "../../data/exercisesData";
 const PlateCalculatorModal = React.lazy(() =>
   import("./PlateCalculatorModal").then((m) => ({ default: m.PlateCalculatorModal }))
@@ -40,13 +44,28 @@ const SessionImportModal = React.lazy(() =>
 import { Program, Routine } from "../../types";
 import { isTimeBased } from "../../utils/exerciseMode";
 import {
+  loadUserProfile,
+  resolveFeaturedProgram,
+  resolveAdaptedRoutine,
+  adaptProgramRoutines,
+} from "../../utils/userProfile";
+import {
   analyzeDeload,
   buildDeloadRoutine,
   getDeloadWeekState,
+  getRecoverySignals,
   setDeloadWeekState,
 } from "../../utils/deloadDetection";
+import { getMesocycleInfo } from "../../utils/mesocycle";
 import { getUndoneExercisesFromSession } from "../../utils/pendingExercises";
 import { localDateKey } from "../../utils/dateUtils";
+import { READINESS_VERDICTS } from "../../utils/goalEngine";
+
+const GOAL_LABELS: Record<string, string> = {
+  cut: "Definición",
+  maintenance: "Mantenimiento",
+  lean_bulk: "Lean bulk",
+};
 
 interface WorkoutHubProps {
   onGoToPrograms: () => void;
@@ -84,6 +103,9 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
     name?: string;
   }>(null);
   const { showToast } = useToast();
+  const { readinessLog } = useGoal();
+  const [showWhy, setShowWhy] = useState(false);
+  const [showAdapt, setShowAdapt] = useState(false);
 
   const runConfirmed = () => {
     if (!confirmAction) return;
@@ -102,26 +124,13 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
 
   // Use the program/routine the user selected in Programas (persisted) so the
   // home "today" recommendation and the day list NEVER jump back to nightwing.
-  const featuredProgram: Program =
-    (() => {
-      try {
-        const savedId = localStorage.getItem("kinetix_selected_program");
-        return PREBUILT_PROGRAMS.find((p) => p.id === savedId) || PREBUILT_PROGRAMS[0];
-      } catch {
-        return PREBUILT_PROGRAMS[0];
-      }
-    })();
-  const nextRoutine: Routine =
-    (() => {
-      try {
-        const savedProgramId = localStorage.getItem("kinetix_selected_program");
-        const savedRoutineId = localStorage.getItem("kinetix_selected_routine");
-        const program = PREBUILT_PROGRAMS.find((p) => p.id === savedProgramId) || featuredProgram;
-        return program.routines.find((r) => r.id === savedRoutineId) || program.routines[0];
-      } catch {
-        return featuredProgram.routines[0];
-      }
-    })();
+  // Si no hay selección explícita, usa la recomendación del perfil del
+  // onboarding (explicable, determinista).
+  const userProfile = loadUserProfile();
+  const featuredProgram: Program = resolveFeaturedProgram(userProfile);
+  // Rutinas del programa adaptadas al equipamiento (home/básico/gimnasio).
+  const programRoutines: Routine[] = adaptProgramRoutines(featuredProgram, userProfile);
+  const nextRoutine: Routine = resolveAdaptedRoutine(userProfile, workoutHistory);
 
   // FASE 6: Weekly summary stats
   const weekStats = useMemo(() => {
@@ -176,13 +185,30 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
     showToast(`${exercise?.nameEs || "Ejercicio"} sumado a la sesión de hoy`, "success");
   };
 
-  // IDEA 2: Deload automático por acumulación real de sobrecarga.
-  const deload = useMemo(() => analyzeDeload(workoutHistory, 4), [workoutHistory]);
+  // IDEA 2: Deload por acumulación real + mesociclo 4+1 (P1) + recuperación (P2: sueño/readiness).
+  const deload = useMemo(
+    () => analyzeDeload(workoutHistory, 4, getRecoverySignals()),
+    [workoutHistory]
+  );
+  const mesocycle = useMemo(() => getMesocycleInfo(workoutHistory), [workoutHistory]);
   const deloadRoutine = useMemo<Routine | null>(
     () => (nextRoutine && deload.status !== "none" ? buildDeloadRoutine(nextRoutine) : null),
     [nextRoutine, deload.status]
   );
   const [deloadWeek, setDeloadWeek] = useState(() => getDeloadWeekState());
+
+  // Readiness de hoy para el panel "Adaptar sesión" (veredicto ya persistido
+  // por GoalHub; acá solo se muestra la consecuencia antes de arrancar).
+  const todayKey = localDateKey();
+  const todayReadiness = readinessLog.find((r) => r.date === todayKey);
+  const verdictMeta = todayReadiness ? READINESS_VERDICTS[todayReadiness.verdict] : null;
+  const adjLabel = todayReadiness
+    ? todayReadiness.verdict === "descanso"
+      ? "−10% de carga · RIR +1 (recuperación prioritaria)"
+      : todayReadiness.verdict === "moderado"
+      ? "RIR +1 hoy (fatiga acumulada)"
+      : "Sin ajustes: estás listo/a para darle"
+    : "Registrá tu readiness en Objetivos y la sesión se ajusta sola en arranque";
 
   const startDeloadWeek = () => {
     if (!deloadRoutine) return;
@@ -212,7 +238,26 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
                 SISTEMA KINETIX
               </span>
-              <span className="text-[10px] sm:text-xs text-neutral-400 font-medium">Periodización & RIR</span>
+              <span className="text-[10px] sm:text-xs text-neutral-400 font-medium">
+                Mesociclo · semana {mesocycle.weekInCycle}/5 · {mesocycle.phaseLabel}
+                {mesocycle.isDeloadWeek && (
+                  <span
+                    className={
+                      mesocycle.deloadCompleted
+                        ? " text-emerald-400"
+                        : " text-cyan-300"
+                    }
+                  >
+                    {mesocycle.deloadCompleted ? " · descarga realizada" : " · descarga sugerida — completala para reiniciar el ciclo"}
+                  </span>
+                )}
+              </span>
+              {/* P4 DUP: día de rotación aplicado a la rutina de hoy. */}
+              {nextRoutine.dupDay && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-violet-500/20 text-violet-300 border border-violet-500/30">
+                  DUP {nextRoutine.dupDay}
+                </span>
+              )}
             </div>
             <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight">
               {activeSession ? "Sesión Activa" : "¿Listo para entrenar hoy?"}
@@ -220,11 +265,55 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
             <p className="text-[11px] sm:text-xs md:text-sm text-neutral-300 leading-relaxed line-clamp-2">
               {activeSession
                 ? `Rutina "${activeSession.routineName}" con ${activeSession.exercises.length} ejercicios.`
-                : `Rutina de hoy: "${nextRoutine.name}". Sobrecarga en posición alargada (lengthened-bias).`}
+                : `Rutina de hoy: "${nextRoutine.name}". ${nextRoutine.description} Sobrecarga en posición alargada (lengthened-bias).`}
             </p>
+            {!activeSession && (
+              <button
+                onClick={() => setShowWhy((v) => !v)}
+                className="inline-flex items-center gap-1.5 text-[11px] font-bold text-cyan-400 hover:text-cyan-300 transition-colors"
+              >
+                <HelpCircle className="w-3.5 h-3.5" />
+                {showWhy ? "Ocultar explicación" : "¿Por qué este entrenamiento?"}
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showWhy ? "rotate-180" : ""}`} />
+              </button>
+            )}
+            {showWhy && !activeSession && (
+              <div className="pt-1 animate-fadeIn">
+                <ul className="space-y-1.5 text-[11px] text-neutral-300">
+                  <li className="flex items-start gap-2">
+                    <span className="text-cyan-400 mt-0.5">→</span>
+                    <span><strong className="text-white">Programa:</strong> {featuredProgram.title} · meta {GOAL_LABELS[userProfile?.goal ?? "lean_bulk"]}</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-cyan-400 mt-0.5">→</span>
+                    <span><strong className="text-white">Rutina de hoy:</strong> {nextRoutine.name} — {nextRoutine.exercises.length} ejercicios{userProfile?.sessionMinutes ? ` · ~${userProfile.sessionMinutes} min` : ""}</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-cyan-400 mt-0.5">→</span>
+                    <span><strong className="text-white">Mesociclo:</strong> semana {mesocycle.weekInCycle}/5 · {mesocycle.phaseLabel}{mesocycle.isDeloadWeek ? " (descarga: volumen bajo, RIR alto para disipar fatiga)" : " (sobrecarga progresiva: subís cuando llegás al tope del rango)"}</span>
+                  </li>
+                  {nextRoutine.dupDay && (
+                    <li className="flex items-start gap-2">
+                      <span className="text-cyan-400 mt-0.5">→</span>
+                      <span><strong className="text-white">Rotación DUP:</strong> hoy toca {nextRoutine.dupDay} para distribuir la tensión del día</span>
+                    </li>
+                  )}
+                  {verdictMeta && (
+                    <li className="flex items-start gap-2">
+                      <span className="text-cyan-400 mt-0.5">→</span>
+                      <span><strong className="text-white">Readiness de hoy:</strong> {verdictMeta.label} — {adjLabel}</span>
+                    </li>
+                  )}
+                  <li className="flex items-start gap-2">
+                    <span className="text-cyan-400 mt-0.5">→</span>
+                    <span><strong className="text-white">Ajuste automático:</strong> el peso inicial sale de tu historial + dificultad percibida, y el readiness de hoy lo regula antes de arrancar</span>
+                  </li>
+                </ul>
+              </div>
+            )}
           </div>
 
-          <div className="flex flex-row sm:flex-row gap-2.5 sm:gap-3 shrink-0 w-full sm:w-auto">
+          <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 shrink-0 w-full sm:w-auto">
             {activeSession ? (
               <button
                 onClick={() => setIsWorkoutModalOpen(true)}
@@ -237,14 +326,28 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
               <>
                 <button
                   onClick={() => startWorkoutFromRoutine(nextRoutine)}
-                  className="flex-1 sm:flex-none px-4 sm:px-6 py-3.5 bg-cyan-600 hover:bg-cyan-500 text-white font-black text-sm rounded-2xl shadow-xl shadow-cyan-600/30 transition-all flex items-center justify-center gap-2 press-scale min-w-0"
+                  className="flex-1 sm:flex-none w-full sm:w-auto px-6 sm:px-9 py-4 bg-gradient-to-br from-cyan-500 to-cyan-700 hover:from-cyan-400 hover:to-cyan-600 text-white font-black text-sm rounded-2xl shadow-xl shadow-cyan-600/40 ring-2 ring-cyan-400/30 transition-all flex items-center justify-center gap-2 press-scale min-w-0"
                 >
                   <Play className="w-4 h-4 fill-white shrink-0" />
-                  <span className="truncate">Iniciar: {nextRoutine.name.split("(")[0]}</span>
+                  <span className="truncate">
+                    Iniciar sesión de hoy
+                    <span className="block text-[10px] font-bold text-cyan-100/80 normal-case">{nextRoutine.name.split("(")[0]}</span>
+                  </span>
+                </button>
+                <button
+                  onClick={() => setShowAdapt((v) => !v)}
+                  className={`flex-1 sm:flex-none px-5 sm:px-6 py-3.5 font-bold text-sm rounded-2xl border transition-all flex items-center justify-center gap-2 press-scale shrink-0 ${
+                    showAdapt
+                      ? "bg-neutral-700 border-neutral-500 text-white"
+                      : "bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border-neutral-700"
+                  }`}
+                >
+                  <SlidersHorizontal className="w-4 h-4 shrink-0" />
+                  <span>Adaptar sesión</span>
                 </button>
                 <button
                   onClick={() => startEmptyWorkout("Entrenamiento Libre")}
-                  className="px-4 sm:px-5 py-3.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 font-bold text-sm rounded-2xl border border-neutral-700 transition-all flex items-center justify-center gap-2 press-scale shrink-0"
+                  className="px-4 sm:px-5 py-3.5 bg-transparent hover:bg-neutral-800/80 text-neutral-400 hover:text-neutral-200 font-bold text-sm rounded-2xl border border-neutral-800 transition-all flex items-center justify-center gap-2 press-scale shrink-0"
                 >
                   <Plus className="w-4 h-4 shrink-0" />
                   <span className="hidden xs:inline">Sesión Libre</span>
@@ -254,6 +357,52 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Panel "Adaptar sesión" */}
+      {showAdapt && !activeSession && (
+        <div className="p-5 rounded-3xl bg-neutral-950 border border-cyan-500/25 animate-fadeIn space-y-3">
+          <div className="flex items-start gap-3">
+            <div className="p-3 rounded-2xl bg-cyan-500/15 text-cyan-300 border border-cyan-500/25 shrink-0">
+              <SlidersHorizontal className="w-5 h-5" />
+            </div>
+            <div className="space-y-1.5">
+              <h3 className="text-sm font-black text-white">Adaptar la sesión antes de arrancar</h3>
+              <p className="text-[11px] text-neutral-300 leading-relaxed">
+                {todayReadiness
+                  ? `Readiness de hoy: ${verdictMeta?.label ?? ""}. Se aplicará: ${adjLabel}.`
+                  : "Todavía no registraste tu readiness de hoy. Sin él, la sesión arranca con el ajuste de peso por historial."}
+              </p>
+              <p className="text-[10px] text-neutral-500">
+                {deloadRoutine
+                  ? `Detectamos acumulación: la descarga baja −10-15% la carga y sube el RIR.`
+                  : "Las alternativas están edificadas sobre el mismo motor de autoregulación (NUNCA pesos random)."}
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2 pt-1">
+            <button
+              onClick={() => startWorkoutFromRoutine(nextRoutine)}
+              className="flex-1 px-4 py-3 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-black text-xs transition-all press-scale"
+            >
+              Iniciar con ajuste automático
+            </button>
+            {deloadRoutine && (
+              <button
+                onClick={startDeloadWeek}
+                className="flex-1 px-4 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-black text-xs transition-all press-scale"
+              >
+                Iniciar semana de descarga
+              </button>
+            )}
+            <button
+              onClick={() => startEmptyWorkout("Entrenamiento Libre")}
+              className="flex-1 px-4 py-3 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 font-black text-xs border border-neutral-700 transition-all press-scale"
+            >
+              Sesión libre
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Pendientes de la última sesión (ejercicios no completados) */}
       {pendingCarryover && pendingCarryover.undone.length > 0 && (
@@ -572,7 +721,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-          {featuredProgram.routines.map((routine, idx) => (
+          {programRoutines.map((routine, idx) => (
             <div
               key={routine.id}
               className="p-4 sm:p-5 rounded-3xl bg-neutral-900 border border-neutral-800 hover:border-neutral-700 transition-all flex flex-col justify-between space-y-3 sm:space-y-4 press-scale"
@@ -746,6 +895,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
 
       {/* Session Detail Modal */}
       {selectedSession && (
+        <FocusTrap>
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn" onClick={() => setSelectedSession(null)}>
           <div role="dialog" aria-modal="true" aria-label={`Detalle de sesión: ${selectedSession.routineName}`} className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-2xl max-h-[90dvh] flex flex-col overflow-hidden shadow-2xl" onClick={(e) => e.stopPropagation()}>
             {/* Header */}
@@ -757,7 +907,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
                     {new Date(selectedSession.date).toLocaleDateString("es-ES", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
                   </p>
                 </div>
-                <button onClick={() => setSelectedSession(null)} aria-label="Cerrar detalle de sesión" className="p-2 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors">
+                <button onClick={() => setSelectedSession(null)} aria-label="Cerrar detalle de sesión" className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -776,6 +926,13 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
                   <p className="text-sm font-black text-emerald-400 mt-1">{selectedSession.totalSets}</p>
                 </div>
               </div>
+              {/* P2: sRPE + carga interna si la sesión la registró */}
+              {selectedSession.srpe != null && (
+                <p className="text-[11px] text-neutral-400 mt-3">
+                  sRPE <span className="text-purple-300 font-bold">{selectedSession.srpe}/10</span>
+                  {" · "}Carga interna <span className="text-purple-300 font-bold">{selectedSession.sessionLoad ?? "—"} UA</span>
+                </p>
+              )}
             </div>
 
             {/* Exercises List */}
@@ -856,12 +1013,14 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
             </div>
           </div>
         </div>
+        </FocusTrap>
       )}
 
       {/* Exercise History Modal */}
       {selectedExHistory && (() => {
         const history = getExerciseHistory(selectedExHistory.id);
         return (
+          <FocusTrap>
           <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn" onClick={() => setSelectedExHistory(null)}>
             <div role="dialog" aria-modal="true" aria-label={`Historial: ${selectedExHistory.name}`} className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-lg max-h-[90dvh] flex flex-col overflow-hidden shadow-2xl" onClick={(e) => e.stopPropagation()}>
               <div className="p-5 border-b border-neutral-800 bg-neutral-950/50 shrink-0">
@@ -870,7 +1029,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
                     <h3 className="text-lg font-black text-white">{selectedExHistory.name}</h3>
                     <p className="text-xs text-neutral-400 mt-1">{history.length} sesiones registradas</p>
                   </div>
-                  <button onClick={() => setSelectedExHistory(null)} aria-label="Cerrar historial del ejercicio" className="p-2 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors">
+                  <button onClick={() => setSelectedExHistory(null)} aria-label="Cerrar historial del ejercicio" className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors">
                     <X className="w-5 h-5" />
                   </button>
                 </div>
@@ -902,6 +1061,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
               </div>
             </div>
           </div>
+          </FocusTrap>
         );
       })()}
 

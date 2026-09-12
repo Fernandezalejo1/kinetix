@@ -7,6 +7,7 @@ import {
   resetChallenge,
   processTodaySteps,
   checkYesterdayStreak,
+  rolloverIfMissed,
   getRank,
   getCurrentDay,
   getDaysRemaining,
@@ -16,10 +17,12 @@ import {
   RANK_THRESHOLDS,
   DAILY_GOAL,
   CHALLENGE_DAYS,
+  CHALLENGE_GOALS,
+  CHALLENGE_GOAL_LABELS,
   type Rank,
   type ChallengeState,
 } from "../../utils/challengeStorage";
-import { readTodaySteps, readStepsForDate, isNativePlatform, getHealthStatus, requestHealthAuthorization } from "../../utils/healthConnect";
+import { readTodaySteps, readStepsForDate, getHealthStatus, requestHealthAuthorization, readStoredDay, saveStoredDay, subscribeStepsChanged } from "../../utils/healthConnect";
 import { localDateKey } from "../../utils/dateUtils";
 
 // ─── Rank Emblem Image ──────────────────────────────────────────
@@ -83,32 +86,41 @@ const DayCell: React.FC<{ day: number; completed: boolean; isToday: boolean; isF
 // ─── Main Component ────────────────────────────────────────────
 
 export const ChallengeHub: React.FC = () => {
-  const [challenge, setChallenge] = useState<ChallengeState>(readChallenge);
+  const [challenge, setChallenge] = useState<ChallengeState>(() => rolloverIfMissed(readChallenge()));
   const [todaySteps, setTodaySteps] = useState(0);
   const [loading, setLoading] = useState(true);
   const [prevRank, setPrevRank] = useState<Rank | null>(null);
   const [animatingRank, setAnimatingRank] = useState(false);
   const [hcAuthorized, setHcAuthorized] = useState(false);
+  // P1: meta elegida + entrada manual (web/PWA sin Health Connect).
+  const [selectedGoal, setSelectedGoal] = useState<number>(DAILY_GOAL);
+  const [manualSteps, setManualSteps] = useState("");
 
+  const dailyGoal = challenge.dailyGoal > 0 ? challenge.dailyGoal : DAILY_GOAL;
   const currentRank = getRank(todaySteps);
   const currentDay = getCurrentDay(challenge);
   const daysRemaining = getDaysRemaining(challenge);
   const completed = isChallengeCompleted(challenge);
   const progress = challenge.completedDates.length / CHALLENGE_DAYS;
 
-  // ─── Load steps from Health Connect ─────────────────────────
+  // ─── Load steps: Health Connect + manual (se usa el mayor) ──
 
   const refreshSteps = useCallback(async () => {
     try {
       const status = await getHealthStatus();
       setHcAuthorized(status.authorized);
 
+      // Manual de hoy (vale web + nativo como respaldo).
+      const manual = readStoredDay();
+      const manualToday = manual && manual.source === "manual" ? manual.steps : 0;
+
       if (status.authorized) {
         const today = await readTodaySteps();
-        setTodaySteps(today.steps);
+        const effective = Math.max(today.steps, manualToday);
+        setTodaySteps(effective);
 
         // Process today's result
-        setChallenge((prev) => processTodaySteps(prev, today.steps));
+        setChallenge((prev) => processTodaySteps(prev, effective));
 
         // Check yesterday for streak maintenance
         const yesterday = new Date();
@@ -116,8 +128,11 @@ export const ChallengeHub: React.FC = () => {
         const yesterdaySteps = await readStepsForDate(yesterday);
         setChallenge((prev) => checkYesterdayStreak(prev, yesterdaySteps));
       } else {
-        // Web fallback: read from stored steps
-        setTodaySteps(0);
+        // Web/PWA sin HC: vive de la entrada manual compartida con Nutrición.
+        setTodaySteps(manualToday);
+        if (manualToday > 0) {
+          setChallenge((prev) => processTodaySteps(prev, manualToday));
+        }
       }
     } catch {
       setTodaySteps(0);
@@ -130,7 +145,12 @@ export const ChallengeHub: React.FC = () => {
     refreshSteps();
     // Poll every 30 seconds for real-time updates
     const interval = setInterval(refreshSteps, 30000);
-    return () => clearInterval(interval);
+    // Entrada manual desde Nutrición u otra vista → refrescar.
+    const unsub = subscribeStepsChanged(() => refreshSteps());
+    return () => {
+      clearInterval(interval);
+      unsub();
+    };
   }, [refreshSteps]);
 
   // ─── Rank animation ─────────────────────────────────────────
@@ -157,8 +177,24 @@ export const ChallengeHub: React.FC = () => {
   // ─── Start / Reset ──────────────────────────────────────────
 
   const handleStart = () => {
-    const newState = startChallenge();
+    const newState = startChallenge(selectedGoal);
     setChallenge(newState);
+    refreshSteps();
+  };
+
+  // P1: carga manual de pasos (misma store que Nutrición → StepsEngine la ve).
+  const handleManualSave = () => {
+    const n = parseInt(manualSteps, 10);
+    if (isNaN(n) || n < 0 || n > 100000) return;
+    const date = localDateKey();
+    saveStoredDay({
+      date,
+      steps: n,
+      source: "manual",
+      asOf: new Date().toISOString(),
+      adjustment: null,
+    });
+    setManualSteps("");
     refreshSteps();
   };
 
@@ -205,7 +241,11 @@ export const ChallengeHub: React.FC = () => {
         <div className="relative z-20 pt-6 pb-8 px-4 flex flex-col items-center">
           <Trophy className="w-8 h-8 text-amber-400 mb-3" />
           <h1 className="text-2xl font-black text-white tracking-tight mb-1">Reto 21 Días</h1>
-          <p className="text-xs text-neutral-400">15.000 pasos diarios • 21 días consecutivos</p>
+          <p className="text-xs text-neutral-400">
+            {challenge.active
+              ? `${dailyGoal.toLocaleString("es-AR")} pasos diarios • 21 días consecutivos`
+              : "Elegí tu meta diaria • 21 días consecutivos"}
+          </p>
         </div>
       </div>
 
@@ -217,8 +257,31 @@ export const ChallengeHub: React.FC = () => {
               <Target className="w-10 h-10 text-amber-400" />
             </div>
             <h2 className="text-lg font-black text-white">Comenzá el Reto</h2>
+            {challenge.expired && (
+              <p className="text-xs font-bold text-rose-300 bg-rose-500/10 border border-rose-500/30 rounded-xl px-3 py-2">
+                El reto anterior venció (pasaron 21 días sin completarlo). Elegí una meta y empezá de nuevo.
+              </p>
+            )}
+            {/* P1: metas escaladas por nivel */}
+            <div className="grid grid-cols-2 gap-2">
+              {CHALLENGE_GOALS.map((g) => (
+                <button
+                  key={g}
+                  type="button"
+                  onClick={() => setSelectedGoal(g)}
+                  aria-pressed={selectedGoal === g}
+                  className={`min-h-[48px] px-3 py-2.5 rounded-xl border text-xs font-black transition-all ${
+                    selectedGoal === g
+                      ? "bg-cyan-500/15 text-cyan-300 border-cyan-500/40"
+                      : "bg-neutral-950 text-neutral-400 border-neutral-800"
+                  }`}
+                >
+                  {CHALLENGE_GOAL_LABELS[g]}
+                </button>
+              ))}
+            </div>
             <p className="text-sm text-neutral-400 leading-relaxed">
-              Alcanzá <span className="text-cyan-400 font-bold">15.000 pasos</span> durante{" "}
+              Alcanzá <span className="text-cyan-400 font-bold">{selectedGoal.toLocaleString("es-AR")} pasos</span> durante{" "}
               <span className="text-cyan-400 font-bold">21 días consecutivos</span>.
               Si un día no llegás, el contador se reinicia a 0.
             </p>
@@ -226,8 +289,8 @@ export const ChallengeHub: React.FC = () => {
               {(["bronze", "gold", "master", "challenger"] as Rank[]).map((r) => (
                 <div key={r} className="flex flex-col items-center gap-1">
                   <RankEmblem rank={r} size={40} />
-                  <span className="text-[9px] text-neutral-500 font-bold">{RANK_LABELS[r]}</span>
-                  <span className="text-[8px] text-neutral-600">{(RANK_THRESHOLDS[r] / 1000).toFixed(0)}k+</span>
+                  <span className="text-[11px] text-neutral-400 font-bold">{RANK_LABELS[r]}</span>
+                  <span className="text-[11px] text-neutral-400">{(RANK_THRESHOLDS[r] / 1000).toFixed(0)}k+</span>
                 </div>
               ))}
             </div>
@@ -260,21 +323,43 @@ export const ChallengeHub: React.FC = () => {
               <span className="text-3xl font-black text-white font-mono">{todaySteps.toLocaleString("es-AR")}</span>
               <span className="text-xs text-neutral-500 font-bold">pasos</span>
             </div>
-            {/* Step bar */}
+            {/* Step bar (P1: contra la meta elegida) */}
             <div className="w-full h-3 rounded-full bg-neutral-800 overflow-hidden">
               <div className="h-full rounded-full transition-all duration-700 ease-out"
                 style={{
-                  width: `${Math.min((todaySteps / DAILY_GOAL) * 100, 100)}%`,
+                  width: `${Math.min((todaySteps / dailyGoal) * 100, 100)}%`,
                   background: `linear-gradient(90deg, ${rankColors.from}, ${rankColors.to})`,
                 }} />
             </div>
-            <p className="text-[10px] text-neutral-500">
-              {todaySteps >= DAILY_GOAL ? (
+            <p className="text-[11px] text-neutral-400">
+              {todaySteps >= dailyGoal ? (
                 <span className="text-emerald-400 font-bold">¡Meta del día superada! Suma para Challenger (20.000)</span>
               ) : (
-                <>{Math.max(0, DAILY_GOAL - todaySteps).toLocaleString("es-AR")} pasos para Master</>
+                <>{Math.max(0, dailyGoal - todaySteps).toLocaleString("es-AR")} pasos para tu meta ({dailyGoal.toLocaleString("es-AR")})</>
               )}
             </p>
+            {/* P1: entrada manual cuando no hay Health Connect */}
+            {!hcAuthorized && (
+              <div className="flex gap-2 pt-1">
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  max={100000}
+                  placeholder="Pasos de hoy (manual)"
+                  value={manualSteps}
+                  onChange={(e) => setManualSteps(e.target.value)}
+                  aria-label="Pasos de hoy manual"
+                  className="flex-1 min-h-[48px] px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-xl text-sm font-bold text-white text-[16px] focus:outline-none focus:border-cyan-500"
+                />
+                <button
+                  onClick={handleManualSave}
+                  className="min-h-[48px] px-4 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-black transition-colors"
+                >
+                  Guardar
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Progress — 48px radius ring (=96 size) stroke 6 */}

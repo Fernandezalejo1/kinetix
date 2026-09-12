@@ -183,6 +183,36 @@ export function computeReadiness(input: {
   return { score, verdict };
 }
 
+/**
+ * Autoregulación diaria (P1): traduce el veredicto de readiness en un ajuste
+ * concreto de la sesión. La fatiga alta baja la carga un 10% y suma 1 RIR;
+ * la media solo suma 1 RIR (mantiene volumen, baja intensidad); "dale" no toca nada.
+ */
+export function applyReadinessToSession(
+  verdict: "dale" | "moderado" | "descanso",
+  weight: number,
+  targetRir: number
+): { weight: number; rir: number; applied: boolean; note: string } {
+  if (verdict === "descanso") {
+    const w = Math.max(0, Math.round(weight * 0.9 * 4) / 4);
+    return {
+      weight: w,
+      rir: Math.min(4, targetRir + 1),
+      applied: true,
+      note: "Readiness bajo: −10% carga y +1 RIR para disipar fatiga.",
+    };
+  }
+  if (verdict === "moderado") {
+    return {
+      weight,
+      rir: Math.min(4, targetRir + 1),
+      applied: true,
+      note: "Readiness medio: +1 RIR, mismo volumen.",
+    };
+  }
+  return { weight, rir: targetRir, applied: false, note: "" };
+}
+
 /** Media móvil de peso (suaviza el ruido diario de las pesadas). */
 export function movingAverageWeight(
   bodyMetrics: BodyMetricEntry[],

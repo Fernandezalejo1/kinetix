@@ -19,11 +19,12 @@ export const UpdateBanner: React.FC = () => {
     let waitingWorker: ServiceWorker | null = null;
 
     // Reload exactly once when the new SW (sent SKIP_WAITING) takes control.
-    navigator.serviceWorker.addEventListener("controllerchange", () => {
+    const onControllerChange = () => {
       if (refreshingRef.current) return;
       refreshingRef.current = true;
       window.location.reload();
-    });
+    };
+    navigator.serviceWorker.addEventListener("controllerchange", onControllerChange);
 
     const promptIfWaiting = () => {
       if (navigator.serviceWorker.controller && waitingWorker) {
@@ -51,7 +52,7 @@ export const UpdateBanner: React.FC = () => {
     });
 
     return () => {
-      navigator.serviceWorker.removeEventListener("controllerchange", () => {});
+      navigator.serviceWorker.removeEventListener("controllerchange", onControllerChange);
     };
   }, []);
 

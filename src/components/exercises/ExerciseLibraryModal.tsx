@@ -3,6 +3,7 @@ import { X, Search, Filter, Plus, Info, Dumbbell, Sparkles } from "lucide-react"
 import { Exercise } from "../../types";
 import { EXERCISES_DATABASE } from "../../data/exercisesData";
 import { MUSCLE_LANDMARKS_CONFIG } from "../../utils/scienceCalculators";
+import { FocusTrap } from "../FocusTrap";
 
 interface ExerciseLibraryModalProps {
   isOpen: boolean;
@@ -42,11 +43,12 @@ export const ExerciseLibraryModal: React.FC<ExerciseLibraryModalProps> = ({
   });
 
   return (
-    <div
-      id="exercise-library-modal"
-      className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-6 bg-black/80 backdrop-blur-md animate-fadeIn"
-      onClick={onClose}
-    >
+    <FocusTrap>
+      <div
+        id="exercise-library-modal"
+        className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-6 bg-black/80 backdrop-blur-md animate-fadeIn"
+        onClick={onClose}
+      >
       <div
         role="dialog"
         aria-modal="true"
@@ -229,5 +231,6 @@ export const ExerciseLibraryModal: React.FC<ExerciseLibraryModalProps> = ({
         </div>
       </div>
     </div>
+    </FocusTrap>
   );
 };

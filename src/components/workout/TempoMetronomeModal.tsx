@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import { X, Play, Pause, RotateCcw, Volume2, VolumeX, Activity, Minimize2, Maximize2 } from "lucide-react";
 import { playTickSound, unlockAudio } from "../../utils/scienceCalculators";
 import { useWorkout } from "../../context/WorkoutContext";
+import { FocusTrap } from "../FocusTrap";
 
 interface TempoMetronomeModalProps {
   isOpen: boolean;
@@ -165,11 +166,12 @@ export const TempoMetronomeModal: React.FC<TempoMetronomeModalProps> = ({
   }
 
   return (
-    <div
-      id="tempo-metronome-modal"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fadeIn"
-      onClick={onClose}
-    >
+    <FocusTrap>
+      <div
+        id="tempo-metronome-modal"
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fadeIn"
+        onClick={onClose}
+      >
       <div
         role="dialog"
         aria-modal="true"
@@ -355,5 +357,6 @@ export const TempoMetronomeModal: React.FC<TempoMetronomeModalProps> = ({
         </div>
       </div>
     </div>
+    </FocusTrap>
   );
 };

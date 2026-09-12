@@ -6,6 +6,7 @@ import { EXERCISES_DATABASE } from "../../data/exercisesData";
 import { Exercise, DifficultyLevel } from "../../types";
 import { e1rmFromSet } from "../../utils/startingLoads";
 import { localDateKey } from "../../utils/dateUtils";
+import { FocusTrap } from "../FocusTrap";
 
 interface ParsedSet {
   weight: number;
@@ -92,7 +93,8 @@ export const SessionImportModal: React.FC<{ isOpen: boolean; onClose: () => void
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn" onClick={onClose}>
+    <FocusTrap>
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn" onClick={onClose}>
       <div role="dialog" aria-modal="true" aria-label="Importar sesión pasada" className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-lg max-h-[90dvh] flex flex-col overflow-hidden shadow-2xl" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="p-5 border-b border-neutral-800 bg-neutral-950/50 shrink-0">
@@ -233,5 +235,6 @@ export const SessionImportModal: React.FC<{ isOpen: boolean; onClose: () => void
         </div>
       </div>
     </div>
+    </FocusTrap>
   );
 };

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { X, Disc } from "lucide-react";
 import { calculatePlates } from "../../utils/scienceCalculators";
+import { FocusTrap } from "../FocusTrap";
 
 interface PlateCalculatorModalProps {
   isOpen: boolean;
@@ -23,11 +24,12 @@ export const PlateCalculatorModal: React.FC<PlateCalculatorModalProps> = ({
   const result = calculatePlates(targetWeight, barWeight);
 
   return (
-    <div
-      id="plate-calculator-modal"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fadeIn"
-      onClick={onClose}
-    >
+    <FocusTrap>
+      <div
+        id="plate-calculator-modal"
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fadeIn"
+        onClick={onClose}
+      >
       <div
         role="dialog"
         aria-modal="true"
@@ -224,5 +226,6 @@ export const PlateCalculatorModal: React.FC<PlateCalculatorModalProps> = ({
         </div>
       </div>
     </div>
+    </FocusTrap>
   );
 };

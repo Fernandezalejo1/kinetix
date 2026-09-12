@@ -15,8 +15,9 @@ import {
   BrainCircuit
 } from "lucide-react";
 import { PersonalRecord, CompletedWorkout } from "../../types";
-import { calculateSmartNextWeight } from "../../utils/weightRecommendation";
+import { resolveNextWeightFromHistory } from "../../utils/progressionEngine";
 import { useWorkout } from "../../context/WorkoutContext";
+import { FocusTrap } from "../FocusTrap";
 
 interface WorkoutSummaryModalProps {
   isOpen: boolean;
@@ -47,13 +48,14 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
   const recommendations = workout.exercises
     .filter((wEx) => wEx.targetReps && wEx.exercise)
     .map((wEx) => {
-      const rec = calculateSmartNextWeight(
+      const rec = resolveNextWeightFromHistory(
         wEx.exercise,
         wEx.targetReps,
         wEx.targetSets,
         wEx.targetRir ?? 2,
         exerciseHistory,
-        personalRecords
+        personalRecords,
+        { weightUnit }
       );
       return { wEx, rec };
     })
@@ -98,11 +100,12 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fadeIn overflow-y-auto"
-      role="dialog"
-      aria-modal="true"
-    >
+    <FocusTrap>
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fadeIn overflow-y-auto"
+        role="dialog"
+        aria-modal="true"
+      >
       <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden my-auto max-h-[92dvh] flex flex-col">
         {/* Header con gradiente de victoria */}
         <div className="relative p-6 sm:p-7 text-center bg-gradient-to-b from-cyan-950/60 via-neutral-900 to-neutral-900 border-b border-neutral-800 shrink-0">
@@ -182,6 +185,23 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
             </div>
           </div>
 
+          {/* P2: sRPE + carga interna (Foster) */}
+          {workout.srpe != null && (
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-950/40 via-neutral-950 to-neutral-950 border border-purple-500/30 flex items-center gap-3">
+              <div className="w-11 h-11 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center shrink-0">
+                <span className="text-lg font-black text-purple-300">{workout.srpe}</span>
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-black text-purple-200">
+                  sRPE {workout.srpe}/10 · Carga interna {workout.sessionLoad ?? Math.round(workout.srpe * (durationMin))} UA
+                </p>
+                <p className="text-[11px] text-neutral-400 leading-snug">
+                  Esfuerzo × {durationMin} min. La app usa tu carga semanal (ACWR) para anticipar sobrecarga.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Récords Personales (PRs) */}
           {prs.length > 0 && (
             <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-950/40 via-neutral-950 to-neutral-950 border border-amber-500/30 space-y-3">
@@ -239,8 +259,8 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
 
               <div className="space-y-2">
                 {recommendations.map((r) => {
-                  const current = r.rec.nextWeight - r.rec.adjustment;
-                  const delta = r.rec.adjustment;
+                  const current = r.rec.nextWeight - r.rec.deltaWeight;
+                  const delta = r.rec.deltaWeight;
                   const isUp = delta > 0;
                   const isDown = delta < 0;
                   const Icon = isUp ? TrendingUp : isDown ? TrendingDown : Minus;
@@ -263,7 +283,7 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
                         </div>
                       </div>
                       <p className="text-[11px] text-neutral-400 leading-snug">
-                        {r.rec.reason}
+                        {r.rec.rationale}
                       </p>
                     </div>
                   );
@@ -316,6 +336,7 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
           </button>
         </div>
       </div>
-    </div>
+      </div>
+    </FocusTrap>
   );
 };

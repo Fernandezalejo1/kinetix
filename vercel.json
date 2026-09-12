@@ -5,7 +5,7 @@
   "framework": "vite",
   "rewrites": [
     {
-      "source": "/((?!assets|icon-.*|manifest|sw\\.js|favicon|robots\\.txt).*)",
+      "source": "/((?!precache-manifest|assets|icon-.*|manifest|sw\\.js|favicon|robots\\.txt).*)",
       "destination": "/index.html"
     }
   ],
@@ -79,8 +79,8 @@
           "value": "DENY"
         },
         {
-          "key": "X-XSS-Protection",
-          "value": "1; mode=block"
+          "key": "Strict-Transport-Security",
+          "value": "max-age=31536000; includeSubDomains"
         },
         {
           "key": "Referrer-Policy",

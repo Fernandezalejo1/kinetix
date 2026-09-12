@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import {
+  Home,
   Dumbbell,
   Layers,
   Activity,
@@ -18,7 +19,7 @@ import {
 import { useWorkout } from "../context/WorkoutContext";
 import { useToast } from "../context/ToastContext";
 
-export type NavTab = "workout" | "programs" | "exercises" | "analytics" | "nutrition" | "reto" | "objetivo";
+export type NavTab = "hoy" | "workout" | "programs" | "exercises" | "analytics" | "nutrition" | "reto" | "objetivo";
 
 interface NavigationProps {
   currentTab: NavTab;
@@ -59,27 +60,37 @@ export const Navigation: React.FC<NavigationProps> = ({
     setWeightUnit(next);
   };
 
-  // Close more menu on outside click
+  // Close more menu on outside click + Escape (P0 a11y)
   useEffect(() => {
     if (!moreOpen) return;
     const handler = (e: MouseEvent) => {
       if (moreRef.current && !moreRef.current.contains(e.target as Node)) setMoreOpen(false);
     };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMoreOpen(false);
+    };
     document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("keydown", onKey);
+    };
   }, [moreOpen]);
 
+  // 5 destinos primarios (Hoy, Entrenar, Progreso, Nutrición, Perfil) +
+  // overflow con el resto (Programas, Ejercicios, Reto). Lenguaje consistente.
   const navItems = [
+    { id: "hoy", label: "Hoy", shortLabel: "Hoy", icon: Home },
     { id: "workout", label: "Entrenar", shortLabel: "Entrenar", icon: Dumbbell },
-    { id: "programs", label: "Programas", shortLabel: "Programas", icon: Layers },
-    { id: "exercises", label: "Biomecánica", shortLabel: "Músculos", icon: Activity },
-    { id: "analytics", label: "Analytics & MEV", shortLabel: "Stats", icon: BarChart3 },
+    { id: "analytics", label: "Progreso", shortLabel: "Progreso", icon: BarChart3 },
     { id: "nutrition", label: "Nutrición", shortLabel: "Nutrición", icon: Utensils },
+    { id: "objetivo", label: "Perfil", shortLabel: "Perfil", icon: Target },
+    { id: "programs", label: "Programas", shortLabel: "Programas", icon: Layers },
+    { id: "exercises", label: "Ejercicios", shortLabel: "Ejercicios", icon: Activity },
     { id: "reto", label: "Reto 21 Días", shortLabel: "Reto", icon: Trophy },
-    { id: "objetivo", label: "Mi Objetivo", shortLabel: "Objetivo", icon: Target },
   ];
 
-  // Mobile: show 5 primary + overflow menu
+  // Mobile: show 5 primary + overflow menu (en el orden definido arriba)
   const mobilePrimary = navItems.slice(0, 5);
   const mobileOverflow = navItems.slice(5);
   const isOverflowActive = mobileOverflow.some((i) => i.id === currentTab);
@@ -88,10 +99,12 @@ export const Navigation: React.FC<NavigationProps> = ({
     <>
       <header className="sticky top-0 z-30 bg-neutral-950 border-b border-neutral-800 safe-area-top">
         <div className="max-w-7xl mx-auto px-2 sm:px-6 py-2 sm:py-3 flex items-center justify-between gap-2">
-          {/* Brand - compact on mobile */}
-          <div
-            className="flex items-center gap-2 cursor-pointer min-w-0 shrink-0"
-            onClick={() => onSelectTab("workout")}
+          {/* Brand - compact on mobile (P0: botón focuseable con teclado) */}
+          <button
+            type="button"
+            aria-label="Ir a Hoy"
+            className="flex items-center gap-2 cursor-pointer min-w-0 shrink-0 rounded-xl"
+            onClick={() => onSelectTab("hoy")}
           >
             <div className="w-8 h-8 sm:w-10 sm:h-10 shrink-0 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.25)]">
               <Zap className="w-4 h-4 sm:w-5 sm:h-5 fill-cyan-400" />
@@ -108,7 +121,7 @@ export const Navigation: React.FC<NavigationProps> = ({
               </p>
             </div>
             <span className="text-sm font-black tracking-tight text-white sm:hidden">KX</span>
-          </div>
+          </button>
 
           {/* Active Session Pill - takes remaining space */}
           {activeSession && (
@@ -189,8 +202,8 @@ export const Navigation: React.FC<NavigationProps> = ({
         </div>
       </header>
 
-      {/* Mobile Bottom Navigation — 5 primary + overflow menu */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-neutral-950/95 backdrop-blur-md border-t border-neutral-800 safe-area-bottom">
+      {/* Mobile Bottom Navigation — 5 primary + overflow menu (P0: nav etiquetado) */}
+      <nav aria-label="Navegación principal" className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-neutral-950/95 backdrop-blur-md border-t border-neutral-800 safe-area-bottom">
         <div className="flex items-stretch justify-around px-1">
           {mobilePrimary.map((item) => {
             const Icon = item.icon;
@@ -199,8 +212,10 @@ export const Navigation: React.FC<NavigationProps> = ({
               <button
                 key={item.id}
                 onClick={() => onSelectTab(item.id as NavTab)}
+                aria-current={isActive ? "page" : undefined}
+                aria-label={item.label}
                 className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 min-h-[56px] relative transition-all press-scale ${
-                  isActive ? "text-cyan-400" : "text-neutral-500 active:text-neutral-300"
+                  isActive ? "text-cyan-400" : "text-neutral-400 active:text-neutral-200"
                 }`}
               >
                 {isActive && (
@@ -213,7 +228,7 @@ export const Navigation: React.FC<NavigationProps> = ({
                 >
                   <Icon className={`w-[22px] h-[22px] ${isActive ? "drop-shadow-[0_0_6px_rgba(34,211,238,0.6)]" : ""}`} />
                 </span>
-                <span className={`text-[10px] leading-none ${isActive ? "font-extrabold" : "font-bold"}`}>{item.shortLabel}</span>
+                <span className={`text-[11px] leading-none ${isActive ? "font-extrabold" : "font-bold"}`}>{item.shortLabel}</span>
               </button>
             );
           })}
@@ -222,8 +237,11 @@ export const Navigation: React.FC<NavigationProps> = ({
           <div ref={moreRef} className="relative flex-1">
             <button
               onClick={() => setMoreOpen(!moreOpen)}
+              aria-expanded={moreOpen}
+              aria-haspopup="menu"
+              aria-label="Más secciones"
               className={`w-full flex flex-col items-center justify-center gap-0.5 py-1.5 min-h-[56px] relative transition-all press-scale ${
-                isOverflowActive ? "text-cyan-400" : moreOpen ? "text-white" : "text-neutral-500 active:text-neutral-300"
+                isOverflowActive ? "text-cyan-400" : moreOpen ? "text-white" : "text-neutral-400 active:text-neutral-200"
               }`}
             >
               {isOverflowActive && (
@@ -236,12 +254,12 @@ export const Navigation: React.FC<NavigationProps> = ({
               >
                 <MoreHorizontal className="w-[22px] h-[22px]" />
               </span>
-              <span className="text-[10px] font-bold leading-none">Más</span>
+              <span className="text-[11px] font-bold leading-none">Más</span>
             </button>
 
-            {/* Dropdown panel */}
+            {/* Dropdown panel (P0: no recorta en 320px) */}
             {moreOpen && (
-              <div className="absolute bottom-full right-0 mb-2 w-52 bg-neutral-900 border border-neutral-700 rounded-2xl shadow-2xl overflow-hidden animate-fadeIn">
+              <div role="menu" className="absolute bottom-full right-1 mb-2 w-52 max-w-[calc(100vw-1rem)] bg-neutral-900 border border-neutral-700 rounded-2xl shadow-2xl overflow-hidden animate-fadeIn">
                 {mobileOverflow.map((item) => {
                   const Icon = item.icon;
                   const isActive = currentTab === item.id;

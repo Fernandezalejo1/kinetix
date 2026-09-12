@@ -22,9 +22,12 @@ import { useToast } from "../../context/ToastContext";
 import { ConfirmDialog } from "../ConfirmDialog";
 import { MUSCLE_LANDMARKS_CONFIG } from "../../utils/scienceCalculators";
 import { RoutineEditorModal } from "./RoutineEditorModal";
+import { loadUserProfile } from "../../utils/userProfile";
+import { adaptRoutineToEquipment } from "../../utils/equipmentAdapter";
+import { applyDupDay } from "../../utils/dup";
 
 export const ProgramsExplorer: React.FC = () => {
-  const { startWorkoutFromRoutine, setSelectedExerciseForDetail, customRoutines, deleteCustomRoutine } = useWorkout();
+  const { startWorkoutFromRoutine, setSelectedExerciseForDetail, customRoutines, deleteCustomRoutine, workoutHistory } = useWorkout();
   const { showToast } = useToast();
   // Persist the selected program + routine so the choice survives tab switches
   // and reloads (previously it always reset to the first program on remount).
@@ -70,7 +73,14 @@ export const ProgramsExplorer: React.FC = () => {
   };
 
   const handleStartWorkout = (routine: Routine) => {
-    startWorkoutFromRoutine(routine);
+    // Sustituye ejercicios inaccesibles según el equipamiento del perfil
+    // (ej. "solo casa" nunca recibe barras/poleas aunque el plan los liste).
+    const profile = loadUserProfile();
+    const adapted = adaptRoutineToEquipment(routine, profile?.equipment ?? "gym");
+    // P4 DUP: rotación fuerza/hipertrofia/potencia por exposiciones recientes.
+    const { routine: duped, dupDay } = applyDupDay(adapted, workoutHistory, selectedProgram?.id);
+    if (dupDay) showToast(`Día DUP: ${dupDay} (rotación automática)`, "info");
+    startWorkoutFromRoutine(duped);
   };
 
   return (

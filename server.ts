@@ -14,17 +14,35 @@ const isEntryFile = (() => {
   return base === "server.ts" || base === "server.cjs" || base === "server.js";
 })();
 
+// CSP canónica compartida con vercel.json (P3: misma política en ambos).
+export const CONTENT_SECURITY_POLICY =
+  "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self'; media-src 'self' blob:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'";
+
 export const createApp = () => {
   const app = express();
+  // P3: no divulgar la versión del framework (fingerprinting).
+  app.disable("x-powered-by");
+  const isProduction = process.env.NODE_ENV === "production";
 
   // Security headers (self-host / dev). En produccion (Vercel) se
   // aplican via vercel.json; aqui cubrimos el modo servidor local.
   app.use((_req, res, next) => {
-    res.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self'; media-src 'self' blob:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'");
+    // CSP estricta SOLO en produccion. En dev, Vite inyecta el runtime de React
+    // Refresh como <script> inline y abre un WebSocket de HMR; aplicar
+    // script-src 'self' ahi hace que el navegador bloquee ese script
+    // ($RefreshReg$ is not defined) y el hot reload queda roto. El resto de los
+    // headers no interfieren con el dev server.
+    if (isProduction) {
+      res.setHeader("Content-Security-Policy", CONTENT_SECURITY_POLICY);
+    }
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("X-Frame-Options", "DENY");
     res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
     res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+    res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+    // P3 HSTS: los navegadores la ignoran en HTTP local, pero protege al
+    // self-host detrás de un terminador TLS y alinea con Vercel (HTTPS).
+    res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
     next();
   });
 

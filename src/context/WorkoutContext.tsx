@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, ReactNode } from "react";
 import {
   ActiveWorkoutSession,
   CompletedWorkout,
@@ -19,10 +19,13 @@ import {
 } from "../types";
 import { EXERCISES_DATABASE } from "../data/exercisesData";
 import { DEFAULT_NUTRITION_PROFILE, computePersonalTargets } from "../data/nutritionData";
-import { calculate1RM, isCompoundExercise, unlockAudio, playRestTimerCompletedSound, playTickSound } from "../utils/scienceCalculators";
+import { calculate1RM, isCompoundExercise } from "../utils/scienceCalculators";
+import { useRestTimer, RestTimerState } from "./useRestTimer";
 import { detectExecutionMode, isTimeBased, parseTargetSeconds } from "../utils/exerciseMode";
-import { safeParse, safeSet, safeRemove, VALIDATORS, SANITIZERS, isArrayOrNull } from "../utils/storage";
-import { calculateSmartNextWeight, smartStartingWeight } from "../utils/weightRecommendation";
+import { safeParse, safeSet, safeRemove, readVaultAwareRaw, writeVaultAwareRaw, VALIDATORS, SANITIZERS, isArrayOrNull } from "../utils/storage";
+import { resolveStartingWeight, resolveNextWeightFromHistory } from "../utils/progressionEngine";
+import { applyReadinessToSession } from "../utils/goalEngine";
+import type { ReadinessEntry } from "../types";
 import { localDateKey } from "../utils/dateUtils";
 import { latestBodyMetric } from "../utils/absEstimator";
 import {
@@ -37,17 +40,33 @@ import {
   capForStorage,
   archiveDayIfStale,
 } from "./workoutData";
+import { mergeArchived, mirrorHistoryToArchive, hydrateFromArchive, isReplacingHistory } from "../utils/longTermHistory";
+import { advanceMesocycleClock } from "../utils/mesocycle";
+import { createAutoBackup } from "../utils/backupService";
 import confetti from "canvas-confetti";
 
-export { KETO_CARB_CAP, INITIAL_NUTRITION } from "./workoutData";
-
-interface RestTimerState {
-  active: boolean;
-  totalSeconds: number;
-  remainingSeconds: number;
-  exerciseName: string;
-  endAt: number | null;
+/**
+ * Lee el veredicto de readiness de HOY (si el usuario lo registró en
+ * Objetivo). Puro localStorage: evita acoplar WorkoutContext a GoalContext.
+ */
+function todayReadinessVerdict(): "dale" | "moderado" | "descanso" | null {
+  try {
+    const raw = readVaultAwareRaw("kinetix_readiness");
+    if (!raw) return null;
+    const arr = JSON.parse(raw) as ReadinessEntry[];
+    if (!Array.isArray(arr)) return null;
+    const today = localDateKey();
+    const entry = arr.find((r) => r?.date === today);
+    if (!entry || (entry.verdict !== "dale" && entry.verdict !== "moderado" && entry.verdict !== "descanso")) {
+      return null;
+    }
+    return entry.verdict;
+  } catch {
+    return null;
+  }
 }
+
+export { KETO_CARB_CAP, INITIAL_NUTRITION } from "./workoutData";
 
 interface WorkoutContextType {
   activeSession: ActiveWorkoutSession | null;
@@ -80,7 +99,8 @@ interface WorkoutContextType {
   removeSet: (workoutExerciseId: string, setId: string) => void;
   completeSetAndTriggerTimer: (workoutExerciseId: string, setId: string, opts?: { durationSeconds?: number }) => void;
   recordExerciseDifficulty: (workoutExerciseId: string, difficulty: DifficultyLevel) => void;
-  finishWorkout: () => { prsAchieved: PersonalRecord[]; totalVolumeKg: number };
+  /** P2: acepta el sRPE sesión (Foster 1-10) y guarda carga interna. */
+  finishWorkout: (srpe?: number) => { prsAchieved: PersonalRecord[]; totalVolumeKg: number };
   cancelWorkout: () => void;
   startRestTimer: (seconds: number, exerciseName?: string) => void;
   stopRestTimer: () => void;
@@ -158,14 +178,6 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
       null,
       (v) => v === null || VALIDATORS["kinetix_active_workout"](v)
     );
-  });
-
-  const [restTimer, setRestTimer] = useState<RestTimerState>({
-    active: false,
-    totalSeconds: 90,
-    remainingSeconds: 90,
-    exerciseName: "",
-    endAt: null,
   });
 
   const [workoutHistory, setWorkoutHistory] = useState<CompletedWorkout[]>(() => {
@@ -289,71 +301,96 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
     safeSet("kinetix_custom_routines", customRoutines);
   }, [customRoutines]);
 
-  // Rest Timer Interval â€” timestamp-based so it keeps correct time even if the
-  // phone screen locks / the app is backgrounded and setInterval is throttled.
+  // ---------- Largo plazo (IndexedDB): espejo completo + recuperación ----------
+  // localStorage se recorta por capacidad (capForStorage). El archivo IDB
+  // conserva el historial COMPLETO y, al arrancar, se rehidrata el state si el
+  // archivo tiene más entradas (nunca se pierde lo recortado).
+  const hydrationDoneRef = useRef(false);
+
   useEffect(() => {
-    let interval: any = null;
-    if (restTimer.active && restTimer.endAt !== null) {
-      const tick = () => {
-        setRestTimer((prev) => {
-          if (prev.endAt === null) return prev;
-          const left = Math.max(0, Math.ceil((prev.endAt - Date.now()) / 1000));
-          if (left <= 0) {
-            if (soundEnabled) playRestTimerCompletedSound();
-            if (typeof navigator !== "undefined" && navigator.vibrate) {
-              navigator.vibrate([150, 75, 150]);
-            }
-            return { ...prev, remainingSeconds: 0, active: false };
-          }
-          if (soundEnabled && left <= 4 && left > 1 && prev.remainingSeconds > left) {
-            playTickSound();
-          }
-          return { ...prev, remainingSeconds: left };
-        });
-      };
-      tick();
-      interval = setInterval(tick, 1000);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [restTimer.active, restTimer.endAt, soundEnabled]);
+    let closed = false;
+    void (async () => {
+      const archived = await hydrateFromArchive(true);
+      if (closed || isReplacingHistory()) return;
 
-  const startRestTimer = useCallback(
-    (seconds: number, exerciseName = "") => {
-      unlockAudio();
-      setRestTimer({
-        active: true,
-        totalSeconds: seconds,
-        remainingSeconds: seconds,
-        exerciseName,
-        endAt: Date.now() + seconds * 1000,
+      let prevNutrition: NutritionLog[] = [];
+      try {
+        const raw = readVaultAwareRaw("kinetix_nutrition_history");
+        const list = raw ? JSON.parse(raw) : [];
+        if (Array.isArray(list)) prevNutrition = list as NutritionLog[];
+      } catch {
+        /* corrupto: se parte de vacío */
+      }
+
+      const nextWorkouts = mergeArchived(workoutHistory, archived.workoutHistory, (w) => w.id);
+      const nextExercises = mergeArchived(exerciseHistory, archived.exerciseHistory, (e) => e.id);
+      const nextMetrics = mergeArchived(bodyMetrics, archived.bodyMetrics, (m) => m.id);
+      const nextNutrition = mergeArchived(prevNutrition, archived.nutritionHistory, (n) => n.date);
+
+      setWorkoutHistory(current => mergeArchived(current, archived.workoutHistory, w => w.id));
+      setExerciseHistory(current => mergeArchived(current, archived.exerciseHistory, e => e.id));
+      setBodyMetrics(current => mergeArchived(current, archived.bodyMetrics, m => m.id));
+      if (nextNutrition !== prevNutrition) {
+        safeSet("kinetix_nutrition_history", capForStorage(nextNutrition, 365));
+      }
+
+      hydrationDoneRef.current = true;
+      // Siembra inicial del archivo con el estado de arranque (incluye lo que
+      // localStorage ya tenía recortado antes de instalar esta versión).
+      void mirrorHistoryToArchive({
+        workoutHistory: nextWorkouts,
+        exerciseHistory: nextExercises,
+        bodyMetrics: nextMetrics,
+        nutritionHistory: nextNutrition,
       });
-    },
-    []
-  );
-
-  const stopRestTimer = useCallback(() => {
-    setRestTimer((prev) => ({ ...prev, active: false, remainingSeconds: 0, endAt: null }));
-  }, []);
-
-  const adjustRestTimer = useCallback((deltaSeconds: number) => {
-    setRestTimer((prev) => {
-      if (prev.endAt === null) return prev;
-      const nextRemaining = Math.max(0, prev.remainingSeconds + deltaSeconds);
-      const nextTotal = Math.max(nextRemaining, prev.totalSeconds + deltaSeconds);
-      return {
-        ...prev,
-        remainingSeconds: nextRemaining,
-        totalSeconds: nextTotal,
-        active: nextRemaining > 0,
-        endAt: nextRemaining > 0 ? Date.now() + nextRemaining * 1000 : null,
-      };
+    })().catch(() => {
+      window.dispatchEvent(new CustomEvent("kinetix-storage-error"));
     });
+    return () => {
+      closed = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Espejo continuo del historial COMPLETO (sin recorte) en IndexedDB. Se
+  // desactiva hasta que la rehidratación del arranque termina para no
+  // sobrescribir el archivo con la versión recortada justo al montar.
+  useEffect(() => {
+    if (!hydrationDoneRef.current) return;
+    let rawNutrition: NutritionLog[] = [];
+    try {
+      const raw = readVaultAwareRaw("kinetix_nutrition_history");
+      const list = raw ? JSON.parse(raw) : [];
+      if (Array.isArray(list)) rawNutrition = list as NutritionLog[];
+    } catch {
+      /* sin cambios */
+    }
+    void mirrorHistoryToArchive({
+      workoutHistory,
+      exerciseHistory,
+      bodyMetrics,
+      nutritionHistory: rawNutrition,
+    });
+  }, [workoutHistory, exerciseHistory, bodyMetrics, nutritionLog.date]);
+
+  // Antes de que un recorte de retención descarte entradas de localStorage,
+  // se fuerza una copia automática del estado vigente como punto de restauración.
+  useEffect(() => {
+    const onTrim = () => {
+      void createAutoBackup(true);
+    };
+    window.addEventListener("kinetix-retention-trim", onTrim);
+    return () => window.removeEventListener("kinetix-retention-trim", onTrim);
+  }, []);
+
+  // Rest Timer Interval â€” timestamp-based so it keeps correct time even if the
+  // P3: timer de descanso vive en useRestTimer (mismo comportamiento).
+  const { restTimer, startRestTimer, stopRestTimer, adjustRestTimer } = useRestTimer(soundEnabled);
   const startWorkoutFromRoutine = useCallback((routine: Routine | CustomRoutine) => {
     try {
+      // P1: veredicto de hoy (una sola lectura por sesión).
+      const readinessVerdict = todayReadinessVerdict();
+      let readinessApplied = false;
       const workoutExercises: WorkoutExercise[] = routine.exercises.map((item: any, idx: number) => {
         const exDef = EXERCISES_DATABASE.find((e) => e.id === item.exerciseId) || EXERCISES_DATABASE[0];
         const execMode = detectExecutionMode(exDef, item.targetReps);
@@ -368,9 +405,9 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
         // Medicine ball = 3kg default; legs = 80kg; else = 40kg
         const isMedicineBall = item.exerciseId === "medicine-ball-slam";
         const defaultWeight = isMedicineBall ? 3 : (exDef.category === "legs" ? 80 : 40);
-        // Peso inicial inteligente: usa el algoritmo completo (RIR, % completado,
-        // tendencia e1RM, dificultad) o cae a estimación e1RM / genérico.
-        let prevWeight = isTime ? 0 : smartStartingWeight(
+        // Peso inicial inteligente vía motor unificado (P1: score engine +
+        // fallback e1RM/genérico) o cae a estimación e1RM / genérico.
+        let prevWeight = isTime ? 0 : resolveStartingWeight(
           exDef,
           item.targetReps,
           item.targetSets,
@@ -379,9 +416,19 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
           personalRecords,
           defaultWeight
         );
-        // Semana de descarga: bajar la carga âˆ’10-15% para favorecer la recuperaciÃ³n.
+        // Semana de descarga: bajar la carga −10-15% para favorecer la recuperación.
         if ((routine as Routine).deload && !isTime) {
           prevWeight = Math.round(prevWeight * 0.9 * 4) / 4;
+        }
+        // P1 Autoregulación por readiness de hoy: descanso → −10% + RIR+1,
+        // moderado → +1 RIR. No aplica a isométricos/tiempo ni a deload
+        // (la descarga ya regula).
+        let sessionRir = item.targetRir ?? 1;
+        if (!isTime && !(routine as Routine).deload && readinessVerdict && readinessVerdict !== "dale") {
+          const adj = applyReadinessToSession(readinessVerdict, prevWeight, sessionRir);
+          prevWeight = adj.weight;
+          sessionRir = adj.rir;
+          readinessApplied = true;
         }
         const prevReps = lastHistory ? Math.round(lastHistory.reps.reduce((a, b) => a + b, 0) / lastHistory.reps.length) : parsedReps;
         // Peso real levantado la última vez (para mostrar el delta del auto-ajuste)
@@ -396,12 +443,13 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
           weight: isTime ? 0 : prevWeight,
           reps: parsedReps,
           durationSeconds: targetDuration ?? undefined,
-          rir: item.targetRir ?? 1,
+          rir: sessionRir,
           tempo: item.targetTempo || exDef.defaultTempo,
           completed: false,
           previousWeight: lastRealWeight,
           previousReps: prevReps,
           previousRir: lastRealRir,
+          previousIsEstimate: !lastHistory,
         }));
 
         return {
@@ -447,6 +495,8 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
         routineName: routine.name,
         startTime: Date.now(),
         exercises: workoutExercises,
+        // P1: marca visible para que el logger muestre el badge de autoregulación.
+        notes: readinessApplied && readinessVerdict ? `readiness:${readinessVerdict}` : undefined,
       };
 
       setActiveSession(newSession);
@@ -492,10 +542,10 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
       .filter((h) => h.exerciseId === exercise.id)
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
 
-    // Peso inicial inteligente (RIR / % completado / tendencia e1RM / dificultad).
+    // Peso inicial inteligente vía motor unificado (P1).
     const isMedicineBall = exercise.id === "medicine-ball-slam";
     const defaultWeight = isMedicineBall ? 3 : (exercise.category === "legs" ? 80 : 40);
-    const prevWeight = smartStartingWeight(
+    const prevWeight = resolveStartingWeight(
       exercise,
       lastHistory?.targetReps,
       lastHistory?.targetSets,
@@ -523,6 +573,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
           previousWeight: lastRealWeight,
           previousReps: prevReps,
           previousRir: lastRealRir,
+          previousIsEstimate: !lastHistory,
         },
         {
           id: `set-${Date.now()}-2`,
@@ -536,6 +587,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
           previousWeight: lastRealWeight,
           previousReps: prevReps,
           previousRir: lastRealRir,
+          previousIsEstimate: !lastHistory,
         },
         {
           id: `set-${Date.now()}-3`,
@@ -580,7 +632,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
       const isMedicineBallCarry = exercise.id === "medicine-ball-slam";
       const defaultCarryWeight = isMedicineBallCarry ? 3 : exercise.category === "legs" ? 80 : 40;
-      const prevWeight = smartStartingWeight(
+      const prevWeight = resolveStartingWeight(
         exercise,
         pending?.targetReps,
         pending?.targetSets,
@@ -614,6 +666,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
         previousWeight: lastRealWeight,
         previousReps: prevReps,
         previousRir: lastRealRir,
+        previousIsEstimate: !lastHistory,
       }));
 
       const newWEx: WorkoutExercise = {
@@ -799,7 +852,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
     });
   }, []);
 
-  const finishWorkout = useCallback(() => {
+  const finishWorkout = useCallback((srpe?: number) => {
     if (!activeSession) return { prsAchieved: [], totalVolumeKg: 0 };
 
     const durationSeconds = Math.max(60, Math.floor((Date.now() - activeSession.startTime) / 1000));
@@ -913,6 +966,9 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     const averageRir = sessionRirCount > 0 ? Math.round((sessionRirTotal / sessionRirCount) * 10) / 10 : null;
 
+    // P2: sRPE sesión (Foster) + carga interna = sRPE × minutos.
+    const cleanSrpe =
+      srpe != null && Number.isFinite(srpe) ? Math.min(10, Math.max(1, Math.round(srpe))) : undefined;
     const completed: CompletedWorkout = {
       id: `completed-${Date.now()}`,
       routineName: activeSession.routineName,
@@ -925,10 +981,15 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
       prCount: newPrs.length,
       averageRir,
       fatigueScore: activeSession.perceivedFatigue || 5,
+      srpe: cleanSrpe,
+      sessionLoad: cleanSrpe != null ? Math.round(cleanSrpe * (durationSeconds / 60)) : undefined,
     };
 
     setWorkoutHistory((prev) => [completed, ...prev]);
     setExerciseHistory((prev) => [...newHistoryEntries, ...prev]);
+    // Reloj del mesociclo: registra el entreno de HOY (marca descarga
+    // realizada si es la semana 5; reinicia el ciclo si la descarga ya pasó).
+    advanceMesocycleClock([completed, ...workoutHistory]);
 
     if (newPrs.length > 0) {
       setPersonalRecords((prev) => {
@@ -950,7 +1011,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
     stopRestTimer();
 
     return { prsAchieved: newPrs, totalVolumeKg };
-  }, [activeSession, personalRecords, stopRestTimer]);
+  }, [activeSession, personalRecords, workoutHistory, stopRestTimer]);
 
   const cancelWorkout = useCallback(() => {
     setActiveSession(null);
@@ -1248,7 +1309,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     if (!ex) return last.weight;
 
-    const rec = calculateSmartNextWeight(
+    const rec = resolveNextWeightFromHistory(
       ex,
       last.targetReps,
       last.targetSets,
@@ -1266,7 +1327,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
   // el log activo: archiveDayIfStale lo mantiene sincronizado al abrir un día nuevo.
   const nutritionHistory = useMemo((): NutritionLog[] => {
     try {
-      const raw = localStorage.getItem("kinetix_nutrition_history");
+      const raw = readVaultAwareRaw("kinetix_nutrition_history");
       const list = raw ? JSON.parse(raw) : [];
       return Array.isArray(list) ? (list as NutritionLog[]) : [];
     } catch {

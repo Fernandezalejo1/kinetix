@@ -4,6 +4,7 @@
 
 import { CompletedWorkout, NutritionLog, BodyMetricEntry, PersonalRecord, ExerciseHistoryEntry } from "../types";
 import { localDateKey } from "../utils/dateUtils";
+import { readVaultAwareRaw, writeVaultAwareRaw, safeParse, safeSet, VALIDATORS } from "../utils/storage";
 
 // Sin datos semilla: el historial empieza vacío y solo muestra sesiones
 // reales del usuario. Nunca se inventan entrenamientos, PRs ni medidas.
@@ -47,7 +48,7 @@ export const SEED_IDS = new Set<string>([
 export function scrubSeedData(): void {
   try {
     const scrubArray = (key: string) => {
-      const raw = localStorage.getItem(key);
+      const raw = readVaultAwareRaw(key);
       if (!raw) return;
       let arr: unknown;
       try {
@@ -66,7 +67,7 @@ export function scrubSeedData(): void {
           )
       );
       if (clean.length !== arr.length) {
-        localStorage.setItem(key, JSON.stringify(clean));
+        writeVaultAwareRaw(key, JSON.stringify(clean));
       }
     };
     scrubArray("kinetix_workout_history");
@@ -115,7 +116,9 @@ export function trimLargeColumns(): void {
       ["kinetix_exercise_history", RETENTION_POLICY.exerciseHistory],
       ["kinetix_body_metrics", RETENTION_POLICY.bodyMetrics],
     ] as const) {
-      const raw = localStorage.getItem(key);
+      // Con vault activo el recorte lo hace el propio pipeline (memoria), y
+      // tocar el envelope aquí sería reescribir ciphertext sobre ciphertext.
+      const raw = readVaultAwareRaw(key);
       if (!raw) continue;
       let arr: unknown;
       try {
@@ -124,7 +127,8 @@ export function trimLargeColumns(): void {
         continue;
       }
       if (Array.isArray(arr) && arr.length > max) {
-        localStorage.setItem(key, JSON.stringify(arr.slice(0, max)));
+        const trimmed = arr.slice(0, max);
+        writeVaultAwareRaw(key, JSON.stringify(trimmed));
         notifyRetentionTrim(key, arr.length - max);
       }
     }
@@ -144,8 +148,7 @@ export function archiveDayIfStale(log: NutritionLog | null, today: string): void
   const dayHasData = (log.meals?.length ?? 0) > 0 || (log.waterMl ?? 0) > 0;
   if (!dayHasData) return; // día vacío: no archiva ruido
   try {
-    const raw = localStorage.getItem("kinetix_nutrition_history");
-    const list: NutritionLog[] = raw ? JSON.parse(raw) : [];
+    const list = safeParse<NutritionLog[]>("kinetix_nutrition_history", [], (v) => Array.isArray(v));
     if (!Array.isArray(list)) return;
     if (list.some((d) => d && d.date === log.date)) return; // idempotente
     list.unshift(log);
@@ -153,7 +156,7 @@ export function archiveDayIfStale(log: NutritionLog | null, today: string): void
     if (trimmed.length < list.length) {
       notifyRetentionTrim("kinetix_nutrition_history", list.length - trimmed.length);
     }
-    localStorage.setItem("kinetix_nutrition_history", JSON.stringify(trimmed));
+    safeSet("kinetix_nutrition_history", trimmed);
   } catch {
     /* cuota llena o corrupto: se pierde el archivo de ese día, no la app */
   }

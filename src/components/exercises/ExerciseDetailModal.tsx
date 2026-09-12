@@ -26,6 +26,7 @@ import { ExerciseMistakesAndTipsSection } from "./ExerciseMistakesAndTipsSection
 import { ExerciseVariationsTreeSection } from "./ExerciseVariationsTreeSection";
 import { ExerciseMobilitySection } from "./ExerciseMobilitySection";
 import { ExerciseAnalyticsSection } from "./ExerciseAnalyticsSection";
+import { FocusTrap } from "../FocusTrap";
 
 interface ExerciseDetailModalProps {
   exercise: Exercise | null;
@@ -64,11 +65,12 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
   ];
 
   return (
-    <div
-      id="exercise-detail-modal"
-      className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 md:p-6 bg-black/85 backdrop-blur-md animate-fadeIn overflow-y-auto"
-      onClick={onClose}
-    >
+    <FocusTrap>
+      <div
+        id="exercise-detail-modal"
+        className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 md:p-6 bg-black/85 backdrop-blur-md animate-fadeIn overflow-y-auto"
+        onClick={onClose}
+      >
       <div
         role="dialog"
         aria-modal="true"
@@ -185,5 +187,6 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
         </div>
       </div>
     </div>
+    </FocusTrap>
   );
 };

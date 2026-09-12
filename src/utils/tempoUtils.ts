@@ -13,11 +13,22 @@ export interface TempoPhases {
 }
 
 export function parseTempo(tempo?: string): TempoPhases {
-  const parts = (tempo ?? "").split("-").map((v) => parseInt(v, 10) || 0);
+  // P0 fix: "0" = explosivo (sin clamp a 1) y "X" = explosivo (parseInt→NaN→0).
+  // Antes Math.max(1, ...) rompía "3-1-0-1" y "Explosivo".
+  const raw = (tempo ?? "").trim().toUpperCase();
+  if (raw === "" || raw === "EXPLOSIVO" || raw === "X") {
+    return { eccentric: 2, bottomPause: 0, concentric: 0, topPause: 0 };
+  }
+  const parts = (tempo ?? "").split("-").map((v) => {
+    const t = v.trim().toUpperCase();
+    if (t === "X") return 0;
+    const n = parseInt(t, 10);
+    return Number.isFinite(n) && n >= 0 ? n : 0;
+  });
   return {
     eccentric: parts[0] ?? 3,
     bottomPause: parts[1] ?? 1,
-    concentric: Math.max(1, parts[2] ?? 1),
+    concentric: Math.max(0, parts[2] ?? 1),
     topPause: parts[3] ?? 0,
   };
 }

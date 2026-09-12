@@ -29,7 +29,9 @@ function roundToIncrement(value: number, inc: number): number {
 }
 
 function loadIncrement(exercise: Exercise): number {
-  return isCompoundExercise(exercise) ? 2.5 : 1;
+  // P1: incremento estándar único (2.5 compuesto / 1.25 aislamiento),
+  // igual que doubleProgression y placas con micro-carga.
+  return isCompoundExercise(exercise) ? 2.5 : 1.25;
 }
 
 // ─── Interfaces ─────────────────────────────────────────────────

@@ -38,13 +38,15 @@ export interface StepAdjustment {
 }
 
 // -------------------------------------------------------------
-// Reglas de banda (tolera el objetivo por defecto, perdonando ±20%).
+// Reglas de banda RELATIVAS al objetivo del usuario (P0 fix).
+// Antes eran absolutas (5000/8000/12000) e ignoraban cfg.stepGoal.
+// Ahora: <50% meta = muy poco, <80% = poco, <=120% = cumplido, >120% = muy activo.
 // -------------------------------------------------------------
-const BANDS = [
-  { label: "Muy poco activo",      max: 5000,  kcal: -250, carbsOnly: false },
-  { label: "Poco activo",          max: 8000,  kcal: -150, carbsOnly: false },
-  { label: "Objetivo cumplido",    max: 12000, kcal: 0,    carbsOnly: false },
-  { label: "Muy activo",           max: Infinity, kcal: 150, carbsOnly: true },
+const BAND_DEFS = [
+  { label: "Muy poco activo", factor: 0.5, kcal: -250, carbsOnly: false },
+  { label: "Poco activo", factor: 0.8, kcal: -150, carbsOnly: false },
+  { label: "Objetivo cumplido", factor: 1.2, kcal: 0, carbsOnly: false },
+  { label: "Muy activo", factor: Infinity, kcal: 150, carbsOnly: true },
 ] as const;
 
 const FLOOR_FACTOR = 0.8; // nunca bajar del 80% de las calorías del objetivo.
@@ -115,8 +117,8 @@ export function computeStepAdjustment(
 ): StepAdjustment {
   const stepGoal = cfg.stepGoal > 0 ? cfg.stepGoal : 10000;
 
-  // 1. Banda de pasos.
-  const band = BANDS.find((b) => steps <= b.max) ?? BANDS[BANDS.length - 1];
+  // 1. Banda de pasos (relativa a la meta del usuario).
+  const band = BAND_DEFS.find((b) => steps <= stepGoal * b.factor) ?? BAND_DEFS[BAND_DEFS.length - 1];
   let caloriesDelta: number = band.kcal;
 
   // 2. Entrenó hoy → suaviza la reducción (protege el entrenamiento).
@@ -177,7 +179,8 @@ export function computeStepAdjustment(
   // Mensaje humano explicando la regla aplicada.
   let message: string;
   if (caloriesDelta === 0) {
-    message = `Estás dentro de tu rango de pasos (${steps.toLocaleString("es-AR")} de ${stepGoal.toLocaleString("es-AR")}). Se mantiene la dieta keto de definición.`;
+    const dietKind = keto ? "keto" : "actual";
+    message = `Estás dentro de tu rango de pasos (${steps.toLocaleString("es-AR")} de ${stepGoal.toLocaleString("es-AR")}). Se mantiene la dieta ${dietKind} según tu objetivo.`;
   } else if (caloriesDelta < 0) {
     const reason = cfg.trainedToday
       ? "Entrenaste hoy, así que la reducción se suavizó para proteger tu masa muscular. "

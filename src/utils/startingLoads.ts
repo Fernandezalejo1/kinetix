@@ -94,7 +94,7 @@ export function estimateExerciseStrength(
   return { e1rm: null, source: "none" };
 }
 
-/** Redondea hacia ABAJO al incremento de platos (2,5 kg compuestos / 1 kg aislamientos). */
+/** Redondea hacia ABAJO al incremento estándar (2,5 kg compuestos / 1,25 kg aislamientos, P1). */
 function roundDownToIncrement(value: number, inc: number): number {
   return Math.max(inc, Math.floor(value / inc) * inc);
 }
@@ -113,7 +113,7 @@ export function workingLoadFrom1RM(
   const upper = match ? Math.max(parseInt(match[2], 10), parseInt(match[1], 10)) : 10;
   const reps = Math.min(Math.max(upper, 1), 15); // fuera de rango → tope 15 (conservador)
   const raw = e1rm / (1 + reps / 30);
-  const inc = isCompoundExercise(exercise) ? 2.5 : 1;
+  const inc = loadIncrementFor(exercise);
   return roundDownToIncrement(raw, inc);
 }
 
@@ -135,9 +135,9 @@ export function personalizedStartingLoad(
   return workingLoadFrom1RM(est.e1rm, targetReps, exercise);
 }
 
-/** Incremento de carga según la gramática KINETIX: compuestos 2,5 kg · aislamientos 1 kg. */
+/** Incremento estándar KINETIX (P1, único): compuestos 2,5 kg · aislamientos 1,25 kg. */
 export function loadIncrementFor(exercise: Exercise): number {
-  return isCompoundExercise(exercise) ? 2.5 : 1;
+  return isCompoundExercise(exercise) ? 2.5 : 1.25;
 }
 
 const round1 = (v: number) => Math.round(v * 10) / 10;

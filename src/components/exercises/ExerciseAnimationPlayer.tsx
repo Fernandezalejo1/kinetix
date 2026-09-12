@@ -1098,7 +1098,8 @@ export const ExerciseAnimationPlayer: React.FC<ExerciseAnimationPlayerProps> = (
           {/* Toggle Theme (White Studio like video vs Dark Studio) */}
           <button
             onClick={() => setThemeMode(themeMode === "white" ? "dark" : "white")}
-            className={`p-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1 transition-all ${
+            aria-label="Alternar fondo estudio blanco u oscuro"
+            className={`min-w-[44px] min-h-[44px] p-1.5 rounded-lg border text-xs font-semibold flex items-center justify-center gap-1 transition-all ${
               themeMode === "white"
                 ? "bg-white text-neutral-700 border-neutral-300 hover:bg-neutral-100 shadow-xs"
                 : "bg-neutral-900 text-neutral-300 border-neutral-700 hover:bg-neutral-800"
@@ -1119,11 +1120,20 @@ export const ExerciseAnimationPlayer: React.FC<ExerciseAnimationPlayerProps> = (
       <div className={`relative w-full h-84 sm:h-96 flex items-center justify-center overflow-hidden select-none ${
         themeMode === "white" ? "bg-white" : "bg-[#121215]"
       }`}>
-        {/* Canvas Animation */}
+        {/* Canvas Animation (P0: operable por teclado) */}
         <canvas
           ref={canvasRef}
           className="w-full h-full object-contain cursor-pointer"
           onClick={() => setIsPlaying(!isPlaying)}
+          tabIndex={0}
+          role="button"
+          aria-label={isPlaying ? "Pausar animación del ejercicio" : "Reproducir animación del ejercicio"}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              setIsPlaying(!isPlaying);
+            }
+          }}
         />
 
         {/* Top-Left Kinetic Phase Badge */}
@@ -1168,7 +1178,9 @@ export const ExerciseAnimationPlayer: React.FC<ExerciseAnimationPlayerProps> = (
         <div className="absolute top-3 right-3 flex items-center gap-2">
           <button
             onClick={() => setShowAnatomyLayers(!showAnatomyLayers)}
-            className={`p-2 rounded-xl text-xs font-bold backdrop-blur-md border transition-all ${
+            aria-label="Mostrar u ocultar resaltado muscular"
+            aria-pressed={showAnatomyLayers}
+            className={`min-w-[44px] min-h-[44px] p-2 rounded-xl text-xs font-bold backdrop-blur-md border transition-all flex items-center justify-center ${
               showAnatomyLayers
                 ? "bg-red-500/20 text-red-600 dark:text-red-300 border-red-500/40 shadow-xs"
                 : themeMode === "white" ? "bg-white/80 text-neutral-500 border-neutral-300" : "bg-neutral-900/80 text-neutral-400 border-neutral-700"
@@ -1180,7 +1192,9 @@ export const ExerciseAnimationPlayer: React.FC<ExerciseAnimationPlayerProps> = (
 
           <button
             onClick={() => setShowMotionTrail(!showMotionTrail)}
-            className={`p-2 rounded-xl text-xs font-bold backdrop-blur-md border transition-all ${
+            aria-label="Mostrar u ocultar trayectoria de la barra"
+            aria-pressed={showMotionTrail}
+            className={`min-w-[44px] min-h-[44px] p-2 rounded-xl text-xs font-bold backdrop-blur-md border transition-all flex items-center justify-center ${
               showMotionTrail
                 ? "bg-red-500/20 text-red-600 dark:text-red-300 border-red-500/40 shadow-xs"
                 : themeMode === "white" ? "bg-white/80 text-neutral-500 border-neutral-300" : "bg-neutral-900/80 text-neutral-400 border-neutral-700"
@@ -1240,7 +1254,8 @@ export const ExerciseAnimationPlayer: React.FC<ExerciseAnimationPlayerProps> = (
               setIsPlaying(false);
               setProgress(parseFloat(e.target.value));
             }}
-            className="w-full accent-red-600 h-1.5 bg-neutral-200 dark:bg-neutral-800 rounded-lg cursor-pointer"
+            aria-label="Línea de tiempo de la animación"
+            className="w-full accent-red-600 min-h-[32px] py-2 bg-transparent rounded-lg cursor-pointer"
           />
         </div>
 
@@ -1249,7 +1264,8 @@ export const ExerciseAnimationPlayer: React.FC<ExerciseAnimationPlayerProps> = (
             {/* Play/Pause */}
             <button
               onClick={() => setIsPlaying(!isPlaying)}
-              className="p-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold transition-all shadow-md shadow-red-600/20"
+              aria-label={isPlaying ? "Pausar animación" : "Reproducir animación"}
+              className="min-w-[44px] min-h-[44px] p-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold transition-all shadow-md shadow-red-600/20 flex items-center justify-center"
               title={isPlaying ? "Pausar" : "Reproducir"}
             >
               {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-white" />}

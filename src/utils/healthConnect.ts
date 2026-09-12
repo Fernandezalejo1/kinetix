@@ -8,6 +8,7 @@
 import { Capacitor } from "@capacitor/core";
 import { Health, HealthDataType } from "@capgo/capacitor-health";
 import { localDateKey } from "./dateUtils";
+import { readVaultAwareRaw, writeVaultAwareRaw, safeRemove } from "./storage";
 
 export interface StepsStatus {
   available: boolean;
@@ -266,7 +267,7 @@ function todayKey(): string {
 
 export function readStoredDay(): StoredDay | null {
   try {
-    const raw = localStorage.getItem(STEPS_KEY);
+    const raw = readVaultAwareRaw(STEPS_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as StoredDay;
     if (parsed.date !== todayKey()) return null; // día viejo → descartar
@@ -278,7 +279,7 @@ export function readStoredDay(): StoredDay | null {
 
 export function saveStoredDay(day: StoredDay): void {
   try {
-    localStorage.setItem(STEPS_KEY, JSON.stringify(day));
+    writeVaultAwareRaw(STEPS_KEY, JSON.stringify(day));
     emitStepsChanged();
   } catch {
     /* ignore */
@@ -287,7 +288,7 @@ export function saveStoredDay(day: StoredDay): void {
 
 export function clearStoredDay(): void {
   try {
-    localStorage.removeItem(STEPS_KEY);
+    safeRemove(STEPS_KEY);
     emitStepsChanged();
   } catch {
     /* ignore */

@@ -1,12 +1,9 @@
 import type { Exercise, WorkoutExercise } from "../types";
 import { isCompoundExercise } from "./scienceCalculators";
 
-/** Detección de "compuesto" robusta: barra y máquinas principales se tratan
- *  como compuestos (salto de 2,5 kg); el resto apunta a micro-carga (1,25 kg).
- *  Se conserva la lista legacy de isCompoundExercise por compatibilidad. */
-const COMPOUND_EQUIPMENT = new Set(["barbell", "machine", "smith"]);
+/** Delega a la fuente única `isCompoundExercise` (scienceCalculators).
+ *  P0 fix: antes toda `machine` era compuesto (pec-deck saltaba 2.5kg). */
 function isCompoundLike(ex: Exercise): boolean {
-  if (COMPOUND_EQUIPMENT.has(ex.equipment)) return true;
   return isCompoundExercise(ex);
 }
 

@@ -31,19 +31,38 @@
 
 ### 🏋️ Entrenamiento
 - ✅ **Programas de entrenamiento** con doble progresión automática (sube el peso cuando calzas el rango con el RIR objetivo)
+- ✅ **Onboarding de perfil** (experiencia, frecuencia, duración, equipamiento) con recomendación de programa y rutina **explicables**
+- ✅ **Adaptación por equipamiento**: las rutinas se ajustan a tu acceso (solo casa / mancuernas + banco / gimnasio completo) con sustituciones deterministas
+- ✅ **Mesociclos 4+1** con reloj persistente: acumulación (intro → ramp → pico) + semana de descarga por calendario o señales reales, con reinicio automático
 - ✅ **Workout logger** en vivo con banner de objetivo por ejercicio (sets × reps × RIR)
+- ✅ **Resumen de sesión** con métricas completas
 - ✅ **Doble progresión** con regla de mayoría y delta de peso por tipo de ejercicio (compuesto/aislamiento)
-- ✅ **Deload automático** por acumulación real de sobrecarga: analiza 4 semanas de RIR/volumen/tasa de fallos y genera una semana de descarga (menos volumen, más reps en reserva)
+- ✅ **Deload automático** por acumulación real de sobrecarga: analiza 4 semanas de RIR/volumen/tasa de fallos y genera una semana de descarga
+- ✅ **Detección de plateau**: si el e1RM no se mueve ≥2% en 3 sesiones, sugiere la palanca correcta según la causa (rotar ejercicio, cambio de rango/pausa, consolidar carga)
+- ✅ **VBT proxy estimado**: velocidad concéntrica sin encoder usando curvas carga-velocidad (González-Badillo / Sánchez-Medina) para orientar fuerza vs potencia
+- ✅ **DUP** (sustitución de ejercicios) integrado en la construcción de sesiones
 - ✅ **Ejercicios por tiempo** (isométricos: plancha, superman, handstand) con **timer** Iniciar/Pausar/Reiniciar + vibración — sin contador de repeticiones
-- ✅ **Timer de descanso** entre series y tracking de RIR/RPE
+- ✅ **Timer de descanso** entre series (hook `useRestTimer`) y tracking de RIR/RPE
 - ✅ **Calculadora de 1RM** con múltiples fórmulas (Brzycki, Epley, Wathan)
-- ✅ **Calculadora de placas**, metrónomo de tempo y generador de calentamiento
+- ✅ **Calculadora de placas**, metrónomo de tempo, generador de calentamiento e **importador de sesiones**
+- ✅ **Cargas iniciales recomendadas** (startingLoads) según perfil y guía editorial
 - ✅ **Patrón PPL** con abdominales en los 6 días
 
 ### 📊 Analytics
 - ✅ **Volumen semanal** con target de MEV / MAV / MRV por grupo muscular
 - ✅ **Tendencia de fuerza** y progreso por ejercicio
 - ✅ **PRs (marcas personales)** y racha de entrenamiento
+- ✅ **Revisión semanal**: mide adherencia, progreso y recuperación, devuelve veredicto + ítems de acción y **ajustes aplicables de un toque** (frecuencia, programa, fase)
+- ✅ **Metas y fases** con motor de estimaciones (goalEngine) con régimen de entrenamiento, cardio y sueño por meta
+
+### 🔒 Seguridad y Privacidad
+- ✅ **Vault v2** cifrado en reposo AES-GCM (DataKey de 32 B con doble wrap: contraseña + secreto de sesión); el texto plano vive **solo en memoria**
+- ✅ **Bloqueo por PIN** (PBKDF2-SHA-256, 150k iteraciones) con auto-bloqueo al minimizar y bloqueo tras 5 intentos fallidos
+- ✅ **Backups cifrados** con exportación/restauración; las claves de PIN/cifrado quedan **excluidas** del backup
+- ✅ **Restore transaccional**: validación de contenido por tipo antes de restaurar
+- ✅ **Restricción de cuota**: aviso cuando el almacenamiento llega al límite, con retención visible y borrado total opcional
+- ✅ **CSP y headers de seguridad** (HSTS, X-Frame-Options, Referrer-Policy, COOP) en Vercel y self-host
+- ✅ **KDF versionado** para migraciones futuras sin romper datos existentes
 
 ### 🔬 Biomecánica
 - ✅ **Base de datos de ejercicios** con anatomía, errores frecuentes, progresiones/regresiones y variaciones
@@ -63,10 +82,14 @@
 - ✅ **Persistencia** del estado del reto (no se pierde al cerrar)
 
 ### 📱 Plataforma
-- ✅ **PWA instalable** con service worker y soporte offline
+- ✅ **PWA instalable** con service worker y **precache total offline** (25 assets / 2.9 MB precacheados, resto on-demand)
+- ✅ **Home renovada (Today Hub)**: próxima sesión, última sesión, reto, agua y accesos rápidos en una vista
+- ✅ **Historial de largo plazo** sobre IndexedDB (vuelca a localStorage según cuota) + mirror cifrado opcional
 - ✅ **APK Android** con Capacitor
 - ✅ **Health Connect** (pasos y calorías en dispositivo nativo)
 - ✅ **Dark theme** optimizado para AMOLED + mobile-first
+- ✅ **Accesibilidad**: diálogos ARIA, FocusTrap, fuentes legibles
+- ✅ **CI/CD** con GitHub Actions: ESLint + TypeScript + 247 tests (Vitest) en cada push
 
 ---
 
@@ -75,20 +98,27 @@
 ```
 src/
 ├── components/
-│   ├── workout/        # WorkoutHub, LiveWorkoutLogger, PlateCalculator, TempoMetronome, WarmupGenerator
-│   ├── exercises/      # BiomechanicsHub, ExerciseDetail, Library, AnatomyVisualizer
-│   ├── programs/       # ProgramsExplorer, RoutineEditor
-│   ├── analytics/      # ScienceDashboard (MEV/MAV/MRV, PRs, progress)
-│   ├── nutrition/      # NutritionVisionHub, StepsPanel, StepsEngine, MealSchedulerPanel, WaterTracker
-│   └── challenge/      # ChallengeHub (Reto 21 Días + rangos LoL)
-├── context/            # WorkoutContext (estado global + localStorage)
-├── data/               # exercisesData, programsData, nutritionData
-├── utils/              # scienceCalculators, exerciseEnhancer, doubleProgression,
-│                       # exerciseMode, deloadDetection, stepsRules, healthConnect, challengeStorage
+│   ├── workout/        # WorkoutHub, TodayHub, LiveWorkoutLogger, PlateCalculator, TempoMetronome, WarmupGenerator, SessionImport, WorkoutSummary
+│   ├── exercises/      # ExerciseDetail, ExerciseLibrary, ExerciseAnalytics, AnimationPlayer
+│   ├── programs/       # ProgramsExplorer, RoutineEditor, EquipmentAdapter
+│   ├── analytics/      # ScienceDashboard (MEV/MAV/MRV, PRs), WeeklyReviewModal
+│   ├── nutrition/      # NutritionVisionHub, StepsPanel, MealScheduler, WaterTracker
+│   ├── challenge/      # ChallengeHub (Reto 21 Días + rangos LoL)
+│   ├── health/         # HealthSyncEngine
+│   └── PinLockScreen, VaultLockScreen, FocusTrap, SettingsModal, OnboardingIntro
+├── context/            # WorkoutContext (estado global + store), useRestTimer
+├── data/               # exercisesData, programsData, nutritionData, metrics
+├── utils/              # scienceCalculators, doubleProgression, deloadDetection, mesocycle,
+│                       # plateauDetection, progressionEngine, dup, velocity (VBT proxy),
+│                       # equipmentAdapter, userProfile, weeklyReview, goalEngine,
+│                       # starterLoads, stepsRules, healthConnect, vault, pinLock,
+│                       # backupService, indexedDb, longTermHistory, storage, encryption
 ├── types.ts
 ├── App.tsx             # Root con lazy loading
 └── main.tsx            # Entry con ErrorBoundary + PWA
 ```
+
+> **Persistencia:** localStorage para estado frecuente + **IndexedDB** para historial de largo plazo; todo cifrable con **Vault** (AES-GCM).
 
 ---
 
@@ -109,11 +139,15 @@ src/
 | Script | Descripción |
 |--------|-------------|
 | `npm run dev` | Servidor de desarrollo con HMR |
-| `npm run build` | Build de producción (Vercel) |
+| `npm run build` | Build de producción (Vite + sw-precache + verify-manifest) |
 | `npm run build:capacitor` | Build + server para Android |
 | `npm run start` | Ejecutar el servidor de producción (self-host) |
 | `npm run preview` | Previsualizar el build localmente |
+| `npm run test` | Suite de tests (Vitest, 247 tests) |
+| `npm run lint` | ESLint + TypeScript (misma validación que CI) |
+| `npm run lint:eslint` | Solo ESLint |
 | `npm run typecheck` | Verificar tipos TypeScript |
+| `npm run clean` | Limpiar artefactos del build |
 
 ---
 

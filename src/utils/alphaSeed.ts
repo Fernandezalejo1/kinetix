@@ -238,6 +238,8 @@ const SESSIONS: SeedSession[] = [
   },
 ];
 
+import { readVaultAwareRaw, writeVaultAwareRaw } from "./storage";
+
 // ─── Días de ≥15.000 pasos (lun 31/8 → sáb 5/9, 2026) ─────────────────────
 
 const STEP_DAYS = [
@@ -253,7 +255,7 @@ const STEP_DAYS = [
 
 function readArray<T>(key: string): T[] {
   try {
-    const raw = localStorage.getItem(key);
+    const raw = readVaultAwareRaw(key);
     if (!raw) return [];
     const v = JSON.parse(raw);
     return Array.isArray(v) ? (v as T[]) : [];
@@ -264,7 +266,7 @@ function readArray<T>(key: string): T[] {
 
 function writeArray(key: string, arr: unknown[]): void {
   try {
-    localStorage.setItem(key, JSON.stringify(arr));
+    writeVaultAwareRaw(key, JSON.stringify(arr));
   } catch {
     /* ignore */
   }
@@ -446,6 +448,8 @@ export function applyAlphaSeed(): void {
         currentStreak: STEP_DAYS.length,
         bestStreak: STEP_DAYS.length,
         lastCheckedDate: "2026-09-05",
+        dailyGoal: 15000,
+        expired: false,
       });
     }
 

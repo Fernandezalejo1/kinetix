@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { X, Flame, ShieldAlert, CheckCircle } from "lucide-react";
 import { generateWarmupPyramid } from "../../utils/scienceCalculators";
+import { FocusTrap } from "../FocusTrap";
 
 interface WarmupGeneratorModalProps {
   isOpen: boolean;
@@ -8,6 +9,8 @@ interface WarmupGeneratorModalProps {
   exerciseName: string;
   initialWorkingWeight?: number;
   weightUnit: "kg" | "lbs";
+  equipment?: string;
+  barWeightKg?: number;
 }
 
 export const WarmupGeneratorModal: React.FC<WarmupGeneratorModalProps> = ({
@@ -16,13 +19,17 @@ export const WarmupGeneratorModal: React.FC<WarmupGeneratorModalProps> = ({
   exerciseName,
   initialWorkingWeight = 100,
   weightUnit,
+  equipment = "barbell",
+  barWeightKg,
 }) => {
   const [workingWeight, setWorkingWeight] = useState<number>(initialWorkingWeight);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
 
   if (!isOpen) return null;
 
-  const steps = generateWarmupPyramid(workingWeight);
+  // P0: barra por defecto según unidad (20kg / 45lb) y pirámide según equipo.
+  const bar = barWeightKg ?? (weightUnit === "lbs" ? 45 : 20);
+  const steps = generateWarmupPyramid(workingWeight, bar, { equipment, weightUnit });
 
   const toggleStep = (idx: number) => {
     setCompletedSteps((prev) =>
@@ -31,11 +38,12 @@ export const WarmupGeneratorModal: React.FC<WarmupGeneratorModalProps> = ({
   };
 
   return (
-    <div
-      id="warmup-generator-modal"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fadeIn"
-      onClick={onClose}
-    >
+    <FocusTrap>
+      <div
+        id="warmup-generator-modal"
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fadeIn"
+        onClick={onClose}
+      >
       <div
         role="dialog"
         aria-modal="true"
@@ -172,5 +180,6 @@ export const WarmupGeneratorModal: React.FC<WarmupGeneratorModalProps> = ({
         </div>
       </div>
     </div>
+    </FocusTrap>
   );
 };

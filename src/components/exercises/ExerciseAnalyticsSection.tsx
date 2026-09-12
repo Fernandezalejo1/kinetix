@@ -3,7 +3,10 @@ import { Activity, BarChart2, Zap, Shield, Sparkles, TrendingUp, TrendingDown, M
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, BarChart, Bar } from "recharts";
 import { Exercise, ExerciseHistoryEntry, PersonalRecord } from "../../types";
 import { calculate1RM } from "../../utils/scienceCalculators";
-import { calculateSmartNextWeight } from "../../utils/weightRecommendation";
+import { resolveNextWeightFromHistory } from "../../utils/progressionEngine";
+import { detectStrengthPlateau } from "../../utils/plateauDetection";
+import { velocityZoneForSet } from "../../utils/velocity";
+import { e1rmFromSet } from "../../utils/startingLoads";
 import { useWorkout } from "../../context/WorkoutContext";
 import { ExerciseHistoryProgressionChart } from "./ExerciseHistoryProgressionChart";
 
@@ -84,6 +87,8 @@ export const ExerciseAnalyticsSection: React.FC<ExerciseAnalyticsSectionProps> =
             prs={personalRecords}
             weightUnit={weightUnit}
           />
+          <PlateauBanner exercise={exercise} history={exerciseHistory} />
+          <VelocityBanner exercise={exercise} history={exerciseHistory} />
           <ExerciseHistoryProgressionChart exercise={exercise} />
         </div>
       )}
@@ -293,19 +298,20 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({ exercise, histo
   if (!lastSession) return null;
 
   const targetReps = lastSession.targetReps;
-  const rec = calculateSmartNextWeight(
+  const rec = resolveNextWeightFromHistory(
     exercise,
     targetReps,
     lastSession.targetSets,
     lastSession.targetRir ?? exercise.defaultRir ?? 2,
     history,
-    prs
+    prs,
+    { weightUnit }
   );
 
   if (rec.nextWeight <= 0) return null;
 
-  const current = rec.nextWeight - rec.adjustment;
-  const delta = rec.adjustment;
+  const current = rec.nextWeight - rec.deltaWeight;
+  const delta = rec.deltaWeight;
   const isUp = delta > 0;
   const isDown = delta < 0;
   const Icon = isUp ? TrendingUp : isDown ? TrendingDown : Minus;
@@ -337,7 +343,55 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({ exercise, histo
             {delta > 0 ? `(+${delta})` : delta < 0 ? `(${delta})` : ""}
           </span>
         </div>
-        <p className="text-[11px] text-neutral-400 leading-snug mt-1">{rec.reason}</p>
+        <p className="text-[11px] text-neutral-400 leading-snug mt-1">{rec.rationale}</p>
+      </div>
+    </div>
+  );
+};
+
+/** P2: banner de plateau (e1RM plano ±2% en 3 sesiones) con palanca sugerida. */
+const PlateauBanner: React.FC<{ exercise: Exercise; history: ExerciseHistoryEntry[] }> = ({ exercise, history }) => {
+  const lastSession = history
+    .filter((h) => h.exerciseId === exercise.id && h.weight > 0)
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+  const result = detectStrengthPlateau(exercise.id, history, lastSession?.targetReps);
+  if (!result.plateau) return null;
+  return (
+    <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-950/40 via-neutral-950 to-neutral-950 border border-amber-500/30 flex items-start gap-3">
+      <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shrink-0">
+        <TrendingDown className="w-5 h-5 text-amber-400" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-xs font-black text-amber-300 uppercase tracking-wider">
+          Plateau detectado ({result.changePct}% en {result.sessionsUsed} sesiones)
+        </p>
+        <p className="text-[11px] text-neutral-300 leading-snug mt-1">{result.suggestion}</p>
+      </div>
+    </div>
+  );
+};
+
+/** P2: VBT proxy — zona de velocidad estimada del mejor set reciente. */
+const VelocityBanner: React.FC<{ exercise: Exercise; history: ExerciseHistoryEntry[] }> = ({ exercise, history }) => {
+  const lastSession = history
+    .filter((h) => h.exerciseId === exercise.id && h.weight > 0)
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+  if (!lastSession?.bestSet || !(lastSession.bestSet.weight > 0)) return null;
+  const est = e1rmFromSet(lastSession.bestSet.weight, lastSession.bestSet.reps, lastSession.bestSet.rir);
+  const vbt = velocityZoneForSet(exercise.category, lastSession.bestSet.weight, est.valid ? est.average : null);
+  if (!vbt) return null;
+  return (
+    <div className="p-4 rounded-2xl bg-neutral-950 border border-neutral-800 flex items-center gap-3">
+      <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center shrink-0">
+        <Zap className="w-5 h-5 text-cyan-400" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[11px] font-black text-white uppercase tracking-wider">
+          Velocidad estimada ~{vbt.velocityMs} m/s · {vbt.label}
+        </p>
+        <p className="text-[11px] text-neutral-400 leading-snug">
+          Proxy sin encoder (±0.05 m/s): orienta si estás en fuerza o potencia. No prescribe carga.
+        </p>
       </div>
     </div>
   );

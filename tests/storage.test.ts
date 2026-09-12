@@ -5,6 +5,7 @@ import {
   SANITIZERS,
   safeParse,
   isDateKey,
+  isDateStamp,
   isNonNegativeNum,
   isNonNegativeInt,
   isId,
@@ -44,6 +45,17 @@ describe("storage: type guards unitarios", () => {
     expect(isId("  ")).toBe(false);
     expect(isId("")).toBe(false);
     expect(isId(42)).toBe(false);
+  });
+
+  it("isDateStamp acepta el día local y el timestamp ISO completo", () => {
+    expect(isDateStamp("2026-09-10")).toBe(true);
+    expect(isDateStamp("2026-09-11T16:00:00.000Z")).toBe(true);
+    expect(isDateStamp("2026-02-28T23:59:59.999Z")).toBe(true);
+    expect(isDateStamp("2026-02-30T16:00:00.000Z")).toBe(false);
+    expect(isDateStamp("2026-13-01T10:00:00.000Z")).toBe(false);
+    expect(isDateStamp("nope")).toBe(false);
+    expect(isDateStamp(42)).toBe(false);
+    expect(isDateStamp("2026-09-10T16:00")).toBe(true);
   });
 });
 
@@ -124,6 +136,93 @@ describe("storage: validadores de entidad", () => {
   it("rechaza nutrition_log con fecha inválida", () => {
     const log = { date: "nope", meals: [], waterMl: 0 };
     expect(VALIDATORS.kinetix_nutrition_log(log)).toBe(false);
+  });
+});
+
+describe("storage: datos del formato REAL de la app (regresión)", () => {
+  // La app guarda workouts con `date: new Date().toISOString()` y `sets` como
+  // lista de WorkoutSet. Si el validador los rechaza (requería YYYY-MM-DD y
+  // sets numérico), safeParse+sanitize devolvía [] al recargar y se perdía
+  // TODO el historial. Debían pasar sin recorte.
+  it("acepta un workout real con fecha ISO completa y sets como lista", () => {
+    const realWorkout = {
+      id: "completed-1726000000000",
+      routineName: "Push A",
+      date: "2026-09-11T16:00:00.000Z",
+      durationSeconds: 3600,
+      totalVolumeKg: 1200,
+      totalSets: 18,
+      exercises: [
+        {
+          id: "wex-1",
+          exerciseId: "bench-press",
+          exercise: { id: "bench-press", name: "Press de banca" },
+          sets: [
+            { id: "s1", setNumber: 1, type: "normal", weight: 80, reps: 8, rir: 1, completed: true, completedAt: 1726000000001 },
+            { id: "s2", setNumber: 2, type: "normal", weight: 80, reps: 7, rir: 2, completed: true },
+          ],
+          targetRestSeconds: 120,
+        },
+      ],
+      prCount: 1,
+      averageRir: 1.5,
+      fatigueScore: 5,
+    };
+    expect(VALIDATORS.kinetix_workout_history([realWorkout])).toBe(true);
+    expect(SANITIZERS.kinetix_workout_history([realWorkout])).toEqual([realWorkout]);
+  });
+
+  it("sigue aceptando el formato legacy (SETS numérico y día local)", () => {
+    const legacy = {
+      id: "w1",
+      routineName: "Push A",
+      date: "2026-09-10",
+      durationSeconds: 3600,
+      totalVolumeKg: 1200,
+      totalSets: 18,
+      exercises: [{ exerciseId: "bench-press", sets: 4 }],
+      prCount: 0,
+      averageRir: 2,
+    };
+    expect(VALIDATORS.kinetix_workout_history([legacy])).toBe(true);
+  });
+
+  it("acepta exercise_history con fecha ISO completa (WorkoutContext:897)", () => {
+    const entry = {
+      id: "eh-1",
+      exerciseId: "bench",
+      date: "2026-09-11T16:00:00.000Z",
+      weight: 80,
+      sets: 3,
+      reps: [8, 8, 7],
+      rir: 1,
+      volumeKg: 1920,
+    };
+    expect(VALIDATORS.kinetix_exercise_history([entry])).toBe(true);
+  });
+
+  it("un historial real completo sobrevive a safeParse sin ser vaciado", () => {
+    const history = [
+      {
+        id: "completed-1",
+        routineName: "Push A",
+        date: "2026-09-11T16:00:00.000Z",
+        durationSeconds: 3600,
+        totalVolumeKg: 1200,
+        totalSets: 18,
+        exercises: [{ id: "wx", exerciseId: "bench", exercise: {}, sets: [{ weight: 80, reps: 8, completed: true }], targetRestSeconds: 120 }],
+        prCount: 0,
+        averageRir: 2,
+      },
+    ];
+    localStorage.setItem("kinetix_workout_history", JSON.stringify(history));
+    const result = safeParse(
+      "kinetix_workout_history",
+      [],
+      VALIDATORS.kinetix_workout_history,
+      SANITIZERS.kinetix_workout_history
+    );
+    expect(result).toEqual(history);
   });
 });
 

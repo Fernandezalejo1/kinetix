@@ -27,11 +27,13 @@ import { StepsPanel } from "./StepsPanel";
 import { WaterTracker } from "./WaterTracker";
 import { ElectrolytesTracker } from "./ElectrolytesTracker";
 import { SupplementGuide } from "./SupplementGuide";
+import { FocusTrap } from "../FocusTrap";
 import {
   NUTRITION_GOALS,
   NUTRITION_GOAL_KEYS,
-  QUICK_MEALS,
   QUICK_MEAL_CATEGORIES,
+  quickMealsFor,
+  proteinPerMeal,
   computeFiberTarget,
   computeBMR,
   computeTDEE,
@@ -166,7 +168,9 @@ export const NutritionVisionHub: React.FC = () => {
     showToast("Objetivos diarios actualizados", "success");
   };
 
-  const filteredQuickMeals = quickCategory === "todos" ? QUICK_MEALS : QUICK_MEALS.filter((m) => m.category === quickCategory);
+  // P2: platos según objetivo (keto → cetogénicos; resto → con carbos).
+  const goalMeals = quickMealsFor(nutritionGoal);
+  const filteredQuickMeals = quickCategory === "todos" ? goalMeals : goalMeals.filter((m) => m.category === quickCategory);
 
   const macroCards: {
     label: string;
@@ -505,7 +509,8 @@ export const NutritionVisionHub: React.FC = () => {
 
       {/* Edit targets modal */}
       {editingTargets && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-end sm:items-center justify-center p-4">
+        <FocusTrap>
+          <div className="fixed inset-0 z-50 bg-black/70 flex items-end sm:items-center justify-center p-4">
           <form onSubmit={saveTargets} role="dialog" aria-modal="true" aria-label="Objetivos diarios" className="w-full max-w-md rounded-3xl bg-neutral-900 border border-neutral-800 p-5 space-y-4">
             <h4 className="text-sm font-black text-white uppercase tracking-wider">Objetivos diarios</h4>
             <div className="grid grid-cols-2 gap-3">
@@ -542,12 +547,14 @@ export const NutritionVisionHub: React.FC = () => {
               </button>
             </div>
           </form>
-        </div>
+          </div>
+        </FocusTrap>
       )}
 
       {/* Profile editor modal */}
       {profileOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-end sm:items-center justify-center p-4">
+        <FocusTrap>
+          <div className="fixed inset-0 z-50 bg-black/70 flex items-end sm:items-center justify-center p-4">
           <form onSubmit={saveProfile} role="dialog" aria-modal="true" aria-label="Mi Perfil Nutricional" className="w-full max-w-lg rounded-3xl bg-neutral-900 border border-neutral-800 p-5 space-y-4 max-h-[88dvh] overflow-y-auto scrollbar-thin">
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-black text-white uppercase tracking-wider">Mi Perfil Nutricional</h4>
@@ -687,12 +694,14 @@ export const NutritionVisionHub: React.FC = () => {
               </button>
             </div>
           </form>
-        </div>
+          </div>
+        </FocusTrap>
       )}
 
       {/* Weight editor modal */}
       {weightEditorOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-end sm:items-center justify-center p-4">
+        <FocusTrap>
+          <div className="fixed inset-0 z-50 bg-black/70 flex items-end sm:items-center justify-center p-4">
           <form onSubmit={saveWeight} role="dialog" aria-modal="true" aria-label="Registrar peso corporal" className="w-full max-w-md rounded-3xl bg-neutral-900 border border-neutral-800 p-5 space-y-4">
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-black text-white uppercase tracking-wider">Registrar peso corporal</h4>
@@ -733,7 +742,8 @@ export const NutritionVisionHub: React.FC = () => {
               </button>
             </div>
           </form>
-        </div>
+          </div>
+        </FocusTrap>
       )}
 
       {/* Daily Meal Scheduler Plan */}
@@ -750,8 +760,12 @@ export const NutritionVisionHub: React.FC = () => {
       <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-neutral-900 via-neutral-900 to-neutral-950 border border-neutral-800 shadow-2xl space-y-4">
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <h3 className="text-base font-black text-white tracking-tight">Platos Rápidos</h3>
-          <span className="text-[11px] text-neutral-400 font-mono">{filteredQuickMeals.length} disponibles</span>
+          <span className="text-[11px] text-neutral-400 font-mono">{filteredQuickMeals.length} disponibles · {nutritionGoal === "keto" ? "keto" : "con carbos"}</span>
         </div>
+        {/* P2: timing de proteína — 0.4 g/kg × 4 comidas para maximizar MPS. */}
+        <p className="text-[11px] text-neutral-400 leading-relaxed">
+          Apuntá a <span className="text-cyan-300 font-bold">{proteinPerMeal(profileWeight)} g de proteína por comida</span> (4 comidas) para maximizar la síntesis proteica del día.
+        </p>
 
         <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-thin text-[11px] font-bold">
           {QUICK_MEAL_CATEGORIES.map((cat) => (

@@ -1,4 +1,5 @@
 import { CompletedWorkout, Routine, WorkoutSet } from "../types";
+import { readVaultAwareRaw } from "./storage";
 
 /**
  * Deload Detection — "Deload automático por acumulación real de sobrecarga".
@@ -45,7 +46,108 @@ export const DELOAD_THRESHOLDS = {
   failureRateHigh: 30,
   weeklyOverloadRir: 1.5,
   weeklyOverloadHardRate: 40,
+  /** P2: ACWR (carga aguda/crónica, Gabbett) > 1.5 = spike de carga interna. */
+  acwrHigh: 1.5,
+  /** P2: noches con <6h de sueño en 7 días que suman señal de recuperación. */
+  poorSleepNights: 2,
+  /** P2: días con veredicto "descanso" en 7 días que suman señal. */
+  lowReadinessDays: 2,
 };
+
+/** P2: carga interna de una sesión (Foster: sRPE × minutos, UA). */
+export function sessionLoadOf(workout: CompletedWorkout): number | null {
+  if (workout.sessionLoad != null && Number.isFinite(workout.sessionLoad)) return workout.sessionLoad;
+  if (workout.srpe != null && Number.isFinite(workout.srpe) && workout.durationSeconds > 0) {
+    return Math.round(workout.srpe * (workout.durationSeconds / 60));
+  }
+  return null;
+}
+
+/** P2: suma de carga interna por semana (0 = más reciente). null = sin datos sRPE. */
+export function weeklySessionLoads(history: CompletedWorkout[], weeks: number = 4): (number | null)[] {
+  const now = Date.now();
+  const out: (number | null)[] = [];
+  for (let w = 0; w < weeks; w++) {
+    const start = now - (w + 1) * WEEK_MS;
+    const end = now - w * WEEK_MS;
+    const wks = history.filter((h) => {
+      const t = new Date(h.date).getTime();
+      return Number.isFinite(t) && t >= start && t < end;
+    });
+    if (wks.length === 0) {
+      out.push(null);
+      continue;
+    }
+    const loads = wks.map(sessionLoadOf).filter((l): l is number => l != null);
+    out.push(loads.length > 0 ? loads.reduce((a, b) => a + b, 0) : null);
+  }
+  return out;
+}
+
+/**
+ * P2: ratio carga aguda/crónica (Gabbett): semana actual vs promedio de las
+ * 4 previas. >1.5 = spike con riesgo elevado de lesión/sobre-entreno.
+ * null si no hay sRPE suficiente (no se inventa carga).
+ */
+export function acuteChronicWorkloadRatio(history: CompletedWorkout[]): number | null {
+  const loads = weeklySessionLoads(history, 5);
+  const [acute, ...chronic] = loads;
+  if (acute == null || acute <= 0) return null;
+  const valid = chronic.filter((l): l is number => l != null && l > 0);
+  if (valid.length < 2) return null;
+  const chronicAvg = valid.reduce((a, b) => a + b, 0) / valid.length;
+  if (chronicAvg <= 0) return null;
+  return Math.round((acute / chronicAvg) * 100) / 100;
+}
+
+/** P2: señales de recuperación (sueño + readiness) leídas de localStorage. */
+export function getRecoverySignals(now = Date.now()): { poorSleepNights: number; lowReadinessDays: number } {
+  let poorSleepNights = 0;
+  let lowReadinessDays = 0;
+  try {
+    const cutoff = now - 7 * 86400000;
+    const sleepRaw = readVaultAwareRaw("kinetix_sleep_log");
+    if (sleepRaw) {
+      const arr = JSON.parse(sleepRaw) as { date?: string; bed?: string; wake?: string; sleepHours?: number }[];
+      if (Array.isArray(arr)) {
+        for (const s of arr) {
+          const t = s?.date ? new Date(s.date + "T12:00:00").getTime() : NaN;
+          if (!Number.isFinite(t) || t < cutoff) continue;
+          let hours = typeof s.sleepHours === "number" ? s.sleepHours : NaN;
+          if (!Number.isFinite(hours) && s.bed && s.wake) {
+            const [bh, bm] = s.bed.split(":").map(Number);
+            const [wh, wm] = s.wake.split(":").map(Number);
+            if (!isNaN(bh) && !isNaN(wh)) {
+              let mins = wh * 60 + (isNaN(wm) ? 0 : wm) - (bh * 60 + (isNaN(bm) ? 0 : bm));
+              if (mins < 0) mins += 24 * 60;
+              hours = mins / 60;
+            }
+          }
+          if (Number.isFinite(hours) && hours < 6) poorSleepNights++;
+        }
+      }
+    }
+    const rdyRaw = readVaultAwareRaw("kinetix_readiness");
+    if (rdyRaw) {
+      const arr = JSON.parse(rdyRaw) as { date?: string; verdict?: string }[];
+      if (Array.isArray(arr)) {
+        for (const r of arr) {
+          const t = r?.date ? new Date(r.date + "T12:00:00").getTime() : NaN;
+          if (!Number.isFinite(t) || t < cutoff) continue;
+          if (r.verdict === "descanso") lowReadinessDays++;
+        }
+      }
+    }
+  } catch {
+    /* sin datos = sin señales */
+  }
+  return { poorSleepNights, lowReadinessDays };
+}
+
+export interface RecoveryExtra {
+  poorSleepNights?: number;
+  lowReadinessDays?: number;
+}
 
 function weekBounds(now: number, weeksBack: number): [number, number] {
   const start = now - (weeksBack + 1) * WEEK_MS;
@@ -99,8 +201,10 @@ export function computeWeeklyDeloadMetrics(
 /**
  * Detecta si hay que hacer deload por ACUMULACIÓN REAL: se exigen varias
  * señales simultáneas y sostenidas (no una sola sesión dura).
+ * P2: + señal 5 (ACWR por sRPE) y señales de recuperación (sueño/readiness)
+ * vía `extra`. Sin sRPE/sueño no se inventa nada: esas señales se omiten.
  */
-export function analyzeDeload(history: CompletedWorkout[], weeks: number = 4): DeloadRecommendation {
+export function analyzeDeload(history: CompletedWorkout[], weeks: number = 4, extra?: RecoveryExtra): DeloadRecommendation {
   const weekly = computeWeeklyDeloadMetrics(history, weeks);
 
   // Solo semanas realmente entrenadas (>= 1 sesión)
@@ -165,6 +269,25 @@ export function analyzeDeload(history: CompletedWorkout[], weeks: number = 4): D
     }
   }
 
+  // Señal 5 (P2): spike de carga interna — ACWR > 1.5 (Gabbett).
+  const acwr = acuteChronicWorkloadRatio(history);
+  if (acwr != null && acwr >= DELOAD_THRESHOLDS.acwrHigh) {
+    reasons.push(`Carga interna disparada (ACWR ${acwr}: esta semana muy por encima de tu promedio)`);
+  }
+
+  // Señales 6-7 (P2): recuperación — sueño y readiness de los últimos 7 días.
+  const poorSleep = extra?.poorSleepNights ?? 0;
+  const lowRdy = extra?.lowReadinessDays ?? 0;
+  let recoverySignals = 0;
+  if (poorSleep >= DELOAD_THRESHOLDS.poorSleepNights) {
+    reasons.push(`Dormiste <6 h en ${poorSleep} noches esta semana (recuperación comprometida)`);
+    recoverySignals++;
+  }
+  if (lowRdy >= DELOAD_THRESHOLDS.lowReadinessDays) {
+    reasons.push(`Readiness en "descanso" ${lowRdy} días esta semana`);
+    recoverySignals++;
+  }
+
   // Cuántas semanas consecutivas con señal sostenida
   let consecutiveOverloadWeeks = 0;
   for (const m of trainedWeeks) {
@@ -177,7 +300,11 @@ export function analyzeDeload(history: CompletedWorkout[], weeks: number = 4): D
     else break;
   }
 
-  const due = consecutiveOverloadWeeks >= 2 && reasons.length >= 2;
+  // P2: la recuperación puede adelantar la descarga aunque el RIR aún no
+  // colapse: 2 señales de recuperación + 1 de carga también es "due".
+  const due =
+    (consecutiveOverloadWeeks >= 2 && reasons.length >= 2) ||
+    (recoverySignals >= 2 && reasons.length >= 3);
   // "ready": señales presentes pero aún no suficientes semanas o señales
   const ready = reasons.length >= 1 && !due;
 

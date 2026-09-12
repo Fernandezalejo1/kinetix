@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
   X,
+  Check,
   Download,
   Upload,
   Bell,
   BellOff,
   ShieldAlert,
+  ShieldCheck,
   Database,
   Footprints,
   FileText,
@@ -24,7 +26,37 @@ import {
   cancelNativeReminder,
 } from "../utils/reminderNotifications";
 import { encryptJson, decryptBackup, isEncryptedBackup, EncryptedBackup } from "../utils/encryption";
+import {
+  createAutoBackup,
+  collectFullState,
+  replaceFullState,
+  listAutoBackups,
+  restoreAutoBackup,
+  EXCLUDED_BACKUP_KEYS,
+} from "../utils/backupService";
+import { AutoBackupMeta, idbBackupDelete } from "../utils/indexedDb";
+import {
+  hasAppPin,
+  setAppPin,
+  changeAppPin,
+  removeAppPin,
+  verifyAppPin,
+  isAutoLockOn,
+  setAutoLockOn,
+  PIN_LENGTH,
+  isValidPin,
+} from "../utils/pinLock";
+import {
+  VAULT_MIN_PASSWORD,
+  changeVaultPassword,
+  disableVault,
+  enableVault,
+  isVaultEnabled,
+  isVaultUnlocked,
+  lockVault,
+} from "../utils/vault";
 import { RETENTION_POLICY } from "../context/workoutData";
+import { FocusTrap } from "./FocusTrap";
 
 interface SettingsModalProps {
   open: boolean;
@@ -32,7 +64,7 @@ interface SettingsModalProps {
 }
 
 const REMINDER_KEY = "kinetix_reminder";
-const EXCLUDED_KEYS = ["kinetix_pin_hash", "kinetix_pin_attempts", "kinetix_pin_skipped", "kinetix_reminder", "kinetix_backup_saved"];
+const EXCLUDED_KEYS = EXCLUDED_BACKUP_KEYS;
 
 interface ReminderConfig {
   enabled: boolean;
@@ -61,6 +93,28 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
   const [passValue, setPassValue] = useState("");
   const [confirmWipe, setConfirmWipe] = useState(false);
   const [wipeTyped, setWipeTyped] = useState("");
+  const [autoBackups, setAutoBackups] = useState<AutoBackupMeta[]>([]);
+  const [autoBackupBusy, setAutoBackupBusy] = useState(false);
+  const [pinMode, setPinMode] = useState<"setup" | "change" | "remove" | null>(null);
+  const [pinCurrent, setPinCurrent] = useState("");
+  const [pinInput, setPinInput] = useState("");
+  const [pinInput2, setPinInput2] = useState("");
+  const [pinBusy, setPinBusy] = useState(false);
+  const [pinEnabled, setPinEnabled] = useState<boolean>(() => hasAppPin());
+  const [autoLockOn, setAutoLockOnState] = useState<boolean>(() => isAutoLockOn());
+  // P4 Vault (cifrado en reposo).
+  const [vaultOn, setVaultOn] = useState<boolean>(() => {
+    try {
+      return isVaultEnabled();
+    } catch {
+      return false;
+    }
+  });
+  const [vaultMode, setVaultMode] = useState<"setup" | "lock" | "disable" | "change" | null>(null);
+  const [vaultCurrent, setVaultCurrent] = useState("");
+  const [vaultInput, setVaultInput] = useState("");
+  const [vaultInput2, setVaultInput2] = useState("");
+  const [vaultBusy, setVaultBusy] = useState(false);
   const isMounted = useRef(true);
 
   // Persist reminder config
@@ -125,18 +179,208 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
     return () => window.removeEventListener("kinetix-retention-trim", handler);
   }, [showToast]);
 
-  const exportData = (cipherOpts?: { password?: string }) => {
-    const data: Record<string, unknown> = {};
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && key.startsWith("kinetix_") && !EXCLUDED_KEYS.includes(key)) {
-        try {
-          data[key] = JSON.parse(localStorage.getItem(key) || "null");
-        } catch {
-          data[key] = localStorage.getItem(key);
-        }
+  // Lista de copias automáticas (IndexedDB) al abrir Configuración.
+  useEffect(() => {
+    if (!open) return;
+    let active = true;
+    void listAutoBackups().then((list) => {
+      if (active && isMounted.current) setAutoBackups(list);
+    });
+    return () => {
+      active = false;
+    };
+  }, [open]);
+
+  const handleCreateAutoBackup = async () => {
+    setAutoBackupBusy(true);
+    const created = await createAutoBackup(true);
+    setAutoBackupBusy(false);
+    if (created) showToast("Copia creada. Solo vive en este dispositivo.", "success");
+    else showToast("No se pudo crear la copia. Comprobá el almacenamiento del dispositivo.", "error");
+    const list = await listAutoBackups();
+    if (isMounted.current) setAutoBackups(list);
+  };
+
+  const handleRestoreAutoBackup = async (id: number) => {
+    const data = await restoreAutoBackup(id);
+    if (!data) {
+      showToast("No se pudo leer la copia", "error");
+      return;
+    }
+    if (!window.confirm("Se reemplazarán TODOS tus datos actuales con los de la copia automática seleccionada. ¿Continuar?")) return;
+    applyBackup({ data });
+  };
+
+  const handleDeleteAutoBackup = async (id: number) => {
+    if (!window.confirm("¿Eliminar esta copia automática? Se borra de este dispositivo de forma permanente.")) return;
+    await idbBackupDelete(id);
+    const list = await listAutoBackups();
+    if (isMounted.current) setAutoBackups(list);
+    showToast("Copia eliminada", "info");
+  };
+
+  const handleClearAutoBackups = async () => {
+    if (autoBackups.length === 0) return;
+    if (!window.confirm(`¿Eliminar las ${autoBackups.length} copias automáticas guardadas? No se puede deshacer.`)) return;
+    setAutoBackupBusy(true);
+    for (const b of autoBackups) await idbBackupDelete(b.id);
+    setAutoBackupBusy(false);
+    const list = await listAutoBackups();
+    if (isMounted.current) setAutoBackups(list);
+    showToast("Copias automáticas eliminadas", "info");
+  };
+
+  const formatBackupDate = (iso: string) => {
+    const d = new Date(iso);
+    return `${d.toLocaleDateString("es")} ${d.toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" })}`;
+  };
+
+  const resetPinDialog = () => {
+    setPinMode(null);
+    setPinCurrent("");
+    setPinInput("");
+    setPinInput2("");
+  };
+
+  // P4 Vault: los flujos recargan la app (ver vault.ts), así que tras el
+  // éxito no hace falta actualizar estado local.
+  const resetVaultDialog = () => {
+    setVaultMode(null);
+    setVaultCurrent("");
+    setVaultInput("");
+    setVaultInput2("");
+  };
+
+  const checkVaultInputs = (needCurrent: boolean, needNew: boolean): boolean => {
+    if (needCurrent && vaultCurrent.length === 0) {
+      showToast("Ingresá la contraseña actual del vault", "error");
+      return false;
+    }
+    if (needNew) {
+      if (vaultInput.length < VAULT_MIN_PASSWORD || vaultInput2.length < VAULT_MIN_PASSWORD) {
+        showToast(`La contraseña necesita al menos ${VAULT_MIN_PASSWORD} caracteres`, "error");
+        return false;
+      }
+      if (vaultInput !== vaultInput2) {
+        showToast("Las contraseñas no coinciden", "error");
+        return false;
       }
     }
+    return true;
+  };
+
+  const confirmVaultSetup = async () => {
+    if (!checkVaultInputs(false, true)) return;
+    setVaultBusy(true);
+    try {
+      await enableVault(vaultInput);
+      showToast("Vault habilitado. Datos cifrados en reposo.", "success");
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : "No se pudo habilitar el vault", "error");
+      setVaultBusy(false);
+    }
+  };
+
+  const confirmVaultLock = async () => {
+    setVaultBusy(true);
+    try {
+      await lockVault();
+      showToast("Vault bloqueado. En disco queda solo cifrado.", "success");
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : "No se pudo bloquear", "error");
+      setVaultBusy(false);
+    }
+  };
+
+  const confirmVaultDisable = async () => {
+    if (!checkVaultInputs(true, false)) return;
+    if (!window.confirm("¿Desactivar el cifrado en reposo? Tus datos quedarán en claro en este dispositivo.")) return;
+    setVaultBusy(true);
+    try {
+      await disableVault(vaultCurrent);
+      showToast("Vault desactivado.", "info");
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : "No se pudo desactivar", "error");
+      setVaultBusy(false);
+    }
+  };
+
+  const confirmVaultChange = async () => {
+    if (!checkVaultInputs(true, true)) return;
+    setVaultBusy(true);
+    try {
+      await changeVaultPassword(vaultCurrent, vaultInput);
+      showToast("Contraseña del vault actualizada.", "success");
+      resetVaultDialog();
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : "No se pudo cambiar", "error");
+    } finally {
+      setVaultBusy(false);
+    }
+  };
+
+  const confirmPinSetup = async () => {
+    if (!isValidPin(pinInput) || !isValidPin(pinInput2)) {
+      showToast(`El PIN debe tener exactamente ${PIN_LENGTH} dígitos`, "error");
+      return;
+    }
+    if (pinInput !== pinInput2) {
+      showToast("Los PIN no coinciden", "error");
+      return;
+    }
+    setPinBusy(true);
+    const ok = await setAppPin(pinInput);
+    setPinBusy(false);
+    if (ok) {
+      setPinEnabled(true);
+      showToast("PIN configurado. La app se bloqueará al cerrarla.", "success");
+      resetPinDialog();
+    } else {
+      showToast("No se pudo guardar el PIN (almacenamiento no disponible)", "error");
+    }
+  };
+
+  const confirmPinChange = async () => {
+    if (!isValidPin(pinInput) || !isValidPin(pinInput2) || pinInput !== pinInput2) {
+      showToast("El PIN nuevo debe ser de 4 dígitos y coincidir en ambos campos", "error");
+      return;
+    }
+    setPinBusy(true);
+    const ok = await changeAppPin(pinCurrent, pinInput);
+    setPinBusy(false);
+    if (ok) {
+      showToast("PIN actualizado", "success");
+      resetPinDialog();
+    } else {
+      showToast("El PIN actual es incorrecto", "error");
+    }
+  };
+
+  const confirmPinRemove = async () => {
+    setPinBusy(true);
+    const ok = await verifyAppPin(pinCurrent);
+    setPinBusy(false);
+    if (!ok) {
+      showToast("El PIN actual es incorrecto", "error");
+      return;
+    }
+    removeAppPin();
+    setPinEnabled(false);
+    showToast("PIN eliminado. La app ya no se bloquea.", "info");
+    resetPinDialog();
+  };
+
+  const toggleAutoLock = () => {
+    const next = !autoLockOn;
+    setAutoLockOn(next);
+    setAutoLockOnState(next);
+    showToast(next ? "Se bloqueará al minimizar o cerrar la app" : "Ya no se bloqueará al minimizar la app", "info");
+  };
+
+  const exportData = async (cipherOpts?: { password?: string }) => {
+    let data: Record<string, unknown>;
+    try { data = await collectFullState(); }
+    catch { showToast("No se pudo leer el historial completo para exportar", "error"); return; }
     const payload = {
       app: "KINETIX",
       version: 1,
@@ -173,7 +417,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
   };
 
   const IMPORT_VERSION = 1;
-  const MAX_BACKUP_SIZE = 5 * 1024 * 1024; // 5 MB
+  const MAX_BACKUP_SIZE = 100 * 1024 * 1024; // complete long-term backups
 
   // Json-safe check para claves desconocidas del backup: solo estructuras
   // JSON serializables, nunca funciones/undefined/prototypes.
@@ -200,97 +444,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
 
   /** Snapshot JSON-puro de las claves kinetix_ actuales (excluidas las
    *  reservadas), para poder restaurarlas si una restauración falla. */
-  const snapshotKinetixKeys = (): Map<string, string> => {
-    const snapshot = new Map<string, string>();
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && key.startsWith("kinetix_") && !EXCLUDED_KEYS.includes(key)) {
-        const raw = localStorage.getItem(key);
-        if (raw !== null) snapshot.set(key, raw);
-      }
+  const applyBackup = async (parsed: { data: Record<string, unknown> }) => {
+    if (!Object.keys(parsed.data).some(key => key.startsWith("kinetix_") && !EXCLUDED_KEYS.includes(key))) {
+      showToast("El backup no contiene datos de KINETIX", "error"); return;
     }
-    return snapshot;
-  };
-
-  /** Borra todas las claves kinetix_ no reservadas. Devuelve las que
-   *  estaban presentes para poder restaurarlas después si hace falta. */
-  const clearKinetixKeys = (): string[] => {
-    const removed: string[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && key.startsWith("kinetix_") && !EXCLUDED_KEYS.includes(key)) {
-        localStorage.removeItem(key);
-        removed.push(key);
-      }
+    try {
+      await replaceFullState(parsed.data);
+      window.location.reload();
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "No se pudo restaurar el backup", "error");
     }
-    return removed;
-  };
-
-  // M1 — Restauración TRANSACCIONAL: primero se captura un snapshot del estado
-  // actual. Si cualquier escritura del backup falla (cuota, bloqueo), se
-  // restaura el estado anterior completo y NO se muestra "restaurado".
-  const applyBackup = (parsed: { data: Record<string, unknown> }) => {
-    const data = parsed.data;
-    // M1 — Validación por esquema: importar solo entradas con la forma
-    // esperada (las claves conocidas pasan su type guard; las desconocidas
-    // deben ser JSON-safe). Lo inválido se descarta.
-    const validEntries: [string, unknown][] = [];
-    let skipped = 0;
-    for (const [key, value] of Object.entries(data)) {
-      if (!key.startsWith("kinetix_") || EXCLUDED_KEYS.includes(key)) continue;
-      const ok = key in VALIDATORS ? VALIDATORS[key](value) : isJsonSafe(value);
-      if (ok) validEntries.push([key, value]);
-      else skipped++;
-    }
-    if (validEntries.length === 0) {
-      showToast("El backup no contiene datos válidos para importar", "error");
-      return;
-    }
-
-    const snapshot = snapshotKinetixKeys();
-
-    // 1) Vaciar el estado actual.
-    clearKinetixKeys();
-
-    // 2) Escribir el backup. Si CUALQUIER escritura falla, todo se revierte.
-    let failed = false;
-    for (const [key, value] of validEntries) {
-      try {
-        localStorage.setItem(key, JSON.stringify(value));
-      } catch {
-        failed = true;
-        break;
-      }
-    }
-
-    if (failed) {
-      // 3a) Fallo: restaurar el estado anterior completo.
-      clearKinetixKeys();
-      let rollbackOk = true;
-      for (const [key, raw] of snapshot) {
-        try {
-          localStorage.setItem(key, raw);
-        } catch {
-          rollbackOk = false;
-        }
-      }
-      showToast(
-        rollbackOk
-          ? "La restauración falló por falta de espacio. Tus datos actuales se conservaron."
-          : "La restauración falló y no se pudo volver al estado anterior por completo.",
-        "error"
-      );
-      return;
-    }
-
-    // 3b) Éxito: confirmar y recargar.
-    showToast(
-      skipped > 0
-        ? `Datos restaurados (${skipped} entradas inválidas omitidas). Recargando…`
-        : "Datos restaurados. Recargando…",
-      skipped > 0 ? "info" : "success"
-    );
-    setTimeout(() => window.location.reload(), 1200);
   };
 
   const confirmImport = (parsed: { data: Record<string, unknown> }) => {
@@ -316,7 +479,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
 
   const importFile = (file: File) => {
     if (file.size > MAX_BACKUP_SIZE) {
-      showToast("El archivo es demasiado grande (máx. 5 MB)", "error");
+      showToast("El archivo es demasiado grande (máx. 100 MB)", "error");
       return;
     }
     const reader = new FileReader();
@@ -342,19 +505,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
     reader.readAsText(file);
   };
 
-  const wipeAllData = () => {
-    const keysToRemove: string[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && key.startsWith("kinetix_") && !EXCLUDED_KEYS.includes(key)) {
-        keysToRemove.push(key);
-      }
+  const wipeAllData = async () => {
+    try {
+      await replaceFullState({}, true);
+      window.location.reload();
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "No se pudieron borrar los datos", "error");
     }
-    keysToRemove.forEach((k) => localStorage.removeItem(k));
-    setConfirmWipe(false);
-    setWipeTyped("");
-    showToast("Se eliminaron todos tus datos. Recargando…", "info");
-    setTimeout(() => window.location.reload(), 1200);
   };
 
   const requestNotification = async () => {
@@ -422,10 +579,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
   if (!open) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm animate-fadeIn"
-      onClick={onClose}
-    >
+    <FocusTrap>
+      <div
+        className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm animate-fadeIn"
+        onClick={onClose}
+      >
       <div
         role="dialog"
         aria-modal="true"
@@ -442,6 +600,38 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
         </div>
 
         <div className="p-5 space-y-5">
+          {/* Privacidad: qué se guarda, dónde y qué pasa si se pierde */}
+          <section className="space-y-3">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              <h4 className="text-sm font-black text-white uppercase tracking-wider">Privacidad & almacenamiento</h4>
+            </div>
+            <p className="text-[11px] text-neutral-400 leading-relaxed">
+              KINETIX es <strong className="text-neutral-200">100% local y offline</strong>: no hay servidores ni
+              telemetría, y nada sale de este dispositivo.
+            </p>
+            <div className="rounded-2xl bg-neutral-950 border border-neutral-800 p-3.5 space-y-2 text-[11px] text-neutral-400">
+              <p className="text-[10px] font-black text-neutral-300 uppercase tracking-wider">En este dispositivo guardamos</p>
+              <ul className="space-y-1.5">
+                <li className="flex items-start gap-1.5"><Check className="w-3.5 h-3.5 mt-0.5 text-emerald-400 shrink-0" /> Historial de entrenamientos, series, RIR/RPE y volumen</li>
+                <li className="flex items-start gap-1.5"><Check className="w-3.5 h-3.5 mt-0.5 text-emerald-400 shrink-0" /> Marcas personales (PR) y progresión de pesos</li>
+                <li className="flex items-start gap-1.5"><Check className="w-3.5 h-3.5 mt-0.5 text-emerald-400 shrink-0" /> Peso corporal y medidas</li>
+                <li className="flex items-start gap-1.5"><Check className="w-3.5 h-3.5 mt-0.5 text-emerald-400 shrink-0" /> Nutrición: comidas, agua, objetivos y macros</li>
+                <li className="flex items-start gap-1.5"><Check className="w-3.5 h-3.5 mt-0.5 text-emerald-400 shrink-0" /> Sueño, readiness y cardio</li>
+                <li className="flex items-start gap-1.5"><Check className="w-3.5 h-3.5 mt-0.5 text-emerald-400 shrink-0" /> Tu perfil y preferencias (unidad, sonido, plan, recordatorio)</li>
+              </ul>
+              <p className="text-[10px] text-neutral-500 leading-relaxed pt-1">
+                Los permisos de Health Connect (pasos/sueño/peso) se piden por separado y solo se leen cuando vos los
+                otorgás; podés revocarlos en cualquier momento desde los ajustes del sistema.
+              </p>
+            </div>
+            <p className="text-[10px] text-amber-400/90 leading-relaxed flex items-start gap-1.5">
+              <ShieldAlert className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+              Si borrás los datos del navegador, desinstalás la app o se daña el dispositivo, estos datos se pierden.
+              Exportá un backup periódicamente (sección siguiente) y guardalo en un lugar seguro.
+            </p>
+          </section>
+
           {/* Backup section */}
           <section className="space-y-3">
             <div className="flex items-center gap-2">
@@ -457,7 +647,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
               El backup contiene datos personales (peso, medidas, historial). Guardalo en un lugar seguro y no lo compartas.
             </p>
             <p className="text-[10px] text-neutral-500 leading-relaxed">
-              Política de retención: se conservan como máximo {RETENTION_POLICY.workoutHistory.toLocaleString("es")} entrenamientos, {RETENTION_POLICY.exerciseHistory.toLocaleString("es")} registros de ejercicios, {RETENTION_POLICY.bodyMetrics.toLocaleString("es")} mediciones corporales y {RETENTION_POLICY.nutritionDays} días de nutrición. Para conservar más, exportá un backup periódicamente.
+              El historial completo se conserva en un archivo local y se incluye en tus backups.
+              La app mantiene una copia reciente para abrir más rápido; los registros antiguos siguen guardados.
             </p>
             <div className="grid grid-cols-2 gap-2">
               <button
@@ -485,6 +676,58 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
               <Lock className="w-4 h-4" />
               Exportar datos cifrado (con contraseña)
             </button>
+            <button
+              onClick={handleCreateAutoBackup}
+              disabled={autoBackupBusy}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-cyan-300 text-xs font-bold border border-cyan-500/30 transition-colors touch-target disabled:opacity-40 disabled:pointer-events-none"
+            >
+              <Database className="w-4 h-4" />
+              {autoBackupBusy ? "Creando copia…" : "Crear copia de seguridad ahora"}
+            </button>
+            <div className="rounded-2xl bg-neutral-950 border border-neutral-800 p-3 space-y-2">
+              <p className="text-[10px] font-black text-neutral-300 uppercase tracking-wider">Copias automáticas (en este dispositivo)</p>
+              <p className="text-[10px] text-neutral-500 leading-relaxed">
+                Cada 6 horas con datos se guarda una copia completa en este dispositivo (hasta {autoBackups.length || 24} copias, se conservan las más recientes). No usan nube.
+              </p>
+              {autoBackups.length === 0 ? (
+                <p className="text-[10px] text-neutral-600">Todavía no hay copias automáticas.</p>
+              ) : (
+                <ul className="space-y-1.5 max-h-40 overflow-y-auto scrollbar-thin">
+                  {autoBackups.map((b) => (
+                    <li key={b.id} className="flex items-center justify-between gap-2 p-2 rounded-lg bg-neutral-900 border border-neutral-800">
+                      <span className="text-[10px] text-neutral-300 font-medium">
+                        {formatBackupDate(b.createdAt)}
+                        <span className="block text-neutral-500 font-normal">{b.entries} claves · copia Nº {b.id}</span>
+                      </span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          onClick={() => handleRestoreAutoBackup(b.id)}
+                          className="px-2.5 py-1.5 rounded-lg bg-cyan-600/20 hover:bg-cyan-600/40 text-cyan-300 text-[10px] font-bold border border-cyan-500/30 transition-colors"
+                        >
+                          Restaurar
+                        </button>
+                        <button
+                          onClick={() => handleDeleteAutoBackup(b.id)}
+                          aria-label={`Eliminar copia ${b.id}`}
+                          className="p-1.5 rounded-lg bg-red-950/30 hover:bg-red-900/40 text-red-300 text-[10px] border border-red-500/30 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {autoBackups.length > 0 && (
+                <button
+                  onClick={handleClearAutoBackups}
+                  disabled={autoBackupBusy}
+                  className="w-full py-2 rounded-lg bg-red-950/30 hover:bg-red-900/40 text-red-300 text-[10px] font-bold border border-red-500/30 transition-colors disabled:opacity-40"
+                >
+                  Vaciar todas las copias
+                </button>
+              )}
+            </div>
             <input
               ref={fileInputRef}
               type="file"
@@ -653,6 +896,244 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
             <StepsPanel />
           </section>
 
+          {/* Bloqueo con PIN */}
+          <section className="space-y-3 pt-4 border-t border-neutral-800">
+            <div className="flex items-center gap-2">
+              <Lock className="w-4 h-4 text-amber-400" />
+              <h4 className="text-sm font-black text-white uppercase tracking-wider">Bloqueo con PIN</h4>
+            </div>
+            <p className="text-[11px] text-neutral-400 leading-relaxed">
+              Bloqueá la app con un PIN de {PIN_LENGTH} dígitos. Se guarda solo como hash (PBKDF2) en este dispositivo y
+              nunca entra en los backups ni se exporta. Después de {5} intentos fallidos se bloquea por 30 segundos.
+            </p>
+
+            {!pinEnabled ? (
+              <button
+                onClick={() => setPinMode("setup")}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-amber-950/40 hover:bg-amber-900/50 text-amber-300 text-xs font-bold border border-amber-500/30 transition-colors touch-target"
+              >
+                <Lock className="w-4 h-4" />
+                Crear PIN de bloqueo
+              </button>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-950/30 border border-emerald-500/30">
+                  <span className="text-[11px] font-black text-emerald-300 uppercase">PIN activo</span>
+                  <span className="text-[10px] text-neutral-500">La app está protegida</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setPinMode("change")}
+                    className="py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-amber-300 text-xs font-bold border border-neutral-700 transition-colors touch-target"
+                  >
+                    Cambiar PIN
+                  </button>
+                  <button
+                    onClick={() => setPinMode("remove")}
+                    className="py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-red-300 text-xs font-bold border border-neutral-700 transition-colors touch-target"
+                  >
+                    Eliminar PIN
+                  </button>
+                </div>
+                <button
+                  onClick={toggleAutoLock}
+                  className="w-full flex items-center justify-between p-3 rounded-xl bg-neutral-950 border border-neutral-800 transition-colors"
+                >
+                  <span className="text-[11px] font-bold text-neutral-300">Bloquear al minimizar o cerrar la app</span>
+                  <span
+                    className={`relative w-11 h-6 rounded-full transition-colors ${autoLockOn ? "bg-emerald-600" : "bg-neutral-700"}`}
+                    aria-pressed={autoLockOn}
+                  >
+                    <span
+                      className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all ${autoLockOn ? "left-5" : "left-0.5"}`}
+                    />
+                  </span>
+                </button>
+              </div>
+            )}
+
+            {pinMode && (
+              <div className="space-y-3 p-4 rounded-2xl bg-neutral-950 border border-amber-500/30 animate-fadeIn">
+                <p className="text-[11px] font-black text-amber-300 uppercase tracking-wider">
+                  {pinMode === "setup" ? "Crear PIN" : pinMode === "change" ? "Cambiar PIN" : "Eliminar PIN"}
+                </p>
+                {pinMode !== "setup" && (
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={PIN_LENGTH}
+                    value={pinCurrent}
+                    onChange={(e) => setPinCurrent(e.target.value.replace(/\D/g, ""))}
+                    placeholder={`PIN actual (${PIN_LENGTH} dígitos)`}
+                    autoComplete="off"
+                    className="w-full px-3 py-2.5 bg-neutral-900 border border-neutral-800 rounded-xl text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-amber-500 text-center"
+                  />
+                )}
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={PIN_LENGTH}
+                  value={pinInput}
+                  onChange={(e) => setPinInput(e.target.value.replace(/\D/g, ""))}
+                  placeholder="PIN nuevo (4 dígitos)"
+                  autoComplete="off"
+                  disabled={pinMode === "remove"}
+                  className="w-full px-3 py-2.5 bg-neutral-900 border border-neutral-800 rounded-xl text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-amber-500 text-center disabled:opacity-40"
+                />
+                {pinMode !== "remove" && (
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={PIN_LENGTH}
+                    value={pinInput2}
+                    onChange={(e) => setPinInput2(e.target.value.replace(/\D/g, ""))}
+                    placeholder="Confirmar PIN nuevo"
+                    autoComplete="off"
+                    className="w-full px-3 py-2.5 bg-neutral-900 border border-neutral-800 rounded-xl text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-amber-500 text-center"
+                  />
+                )}
+                <div className="flex gap-2">
+                  <button
+                    onClick={resetPinDialog}
+                    className="flex-1 py-2.5 rounded-xl bg-neutral-800 text-neutral-300 text-xs font-bold hover:bg-neutral-700 transition-colors touch-target"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={
+                      pinMode === "setup"
+                        ? confirmPinSetup
+                        : pinMode === "change"
+                          ? confirmPinChange
+                          : confirmPinRemove
+                    }
+                    disabled={pinBusy}
+                    className="flex-1 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white text-xs font-black transition-colors touch-target"
+                  >
+                    {pinBusy ? "Verificando…" : "Confirmar"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </section>
+
+          {/* P4 Vault: cifrado en reposo */}
+          <section className="space-y-3 pt-4 border-t border-neutral-800">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-violet-400" />
+              <h4 className="text-sm font-black text-white uppercase tracking-wider">Vault · Cifrado en reposo</h4>
+            </div>
+            <p className="text-[11px] text-neutral-400 leading-relaxed">
+              Cifra tu historial, peso y nutrición con AES-GCM (PBKDF2) en este dispositivo. Con el vault bloqueado,
+              ni el archivo local ni las copias guardan texto plano. Sin la contraseña no hay recuperación posible.
+              Mientras el vault esté activo, el archivo de largo plazo y las copias automáticas se pausan (el respaldo
+              es la exportación manual cifrada).
+            </p>
+
+            {!vaultOn ? (
+              <button
+                onClick={() => setVaultMode("setup")}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-violet-950/40 hover:bg-violet-900/50 text-violet-300 text-xs font-bold border border-violet-500/30 transition-colors touch-target"
+              >
+                <ShieldCheck className="w-4 h-4" />
+                Habilitar cifrado en reposo
+              </button>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 rounded-xl bg-violet-950/30 border border-violet-500/30">
+                  <span className="text-[11px] font-black text-violet-300 uppercase">Vault activo</span>
+                  <span className="text-[10px] text-neutral-500">
+                    {isVaultUnlocked() ? "Desbloqueado en esta pestaña" : "Bloqueado"}
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    onClick={() => setVaultMode("lock")}
+                    className="py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-violet-300 text-xs font-bold border border-neutral-700 transition-colors touch-target"
+                  >
+                    Bloquear
+                  </button>
+                  <button
+                    onClick={() => setVaultMode("change")}
+                    className="py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-violet-300 text-xs font-bold border border-neutral-700 transition-colors touch-target"
+                  >
+                    Cambiar clave
+                  </button>
+                  <button
+                    onClick={() => setVaultMode("disable")}
+                    className="py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-red-300 text-xs font-bold border border-neutral-700 transition-colors touch-target"
+                  >
+                    Desactivar
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {vaultMode && (
+              <div className="space-y-3 p-4 rounded-2xl bg-neutral-950 border border-violet-500/30 animate-fadeIn">
+                <p className="text-[11px] font-black text-violet-300 uppercase tracking-wider">
+                  {vaultMode === "setup" ? "Habilitar vault" : vaultMode === "lock" ? "Bloquear ahora" : vaultMode === "disable" ? "Desactivar vault" : "Cambiar contraseña"}
+                </p>
+                {(vaultMode === "lock" || vaultMode === "disable" || vaultMode === "change") && (
+                  <input
+                    type="password"
+                    value={vaultCurrent}
+                    onChange={(e) => setVaultCurrent(e.target.value)}
+                    placeholder="Contraseña actual del vault"
+                    autoComplete="off"
+                    className="w-full px-3 py-2.5 bg-neutral-900 border border-neutral-800 rounded-xl text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-violet-500 text-center"
+                  />
+                )}
+                {(vaultMode === "setup" || vaultMode === "change") && (
+                  <>
+                    <input
+                      type="password"
+                      value={vaultInput}
+                      onChange={(e) => setVaultInput(e.target.value)}
+                      placeholder={`Nueva contraseña (mín ${VAULT_MIN_PASSWORD} caracteres)`}
+                      autoComplete="off"
+                      className="w-full px-3 py-2.5 bg-neutral-900 border border-neutral-800 rounded-xl text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-violet-500 text-center"
+                    />
+                    <input
+                      type="password"
+                      value={vaultInput2}
+                      onChange={(e) => setVaultInput2(e.target.value)}
+                      placeholder="Confirmar contraseña"
+                      autoComplete="off"
+                      className="w-full px-3 py-2.5 bg-neutral-900 border border-neutral-800 rounded-xl text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-violet-500 text-center"
+                    />
+                  </>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    onClick={resetVaultDialog}
+                    className="flex-1 py-2.5 rounded-xl bg-neutral-800 text-neutral-300 text-xs font-bold hover:bg-neutral-700 transition-colors touch-target"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={
+                      vaultMode === "setup"
+                        ? confirmVaultSetup
+                        : vaultMode === "lock"
+                          ? confirmVaultLock
+                          : vaultMode === "disable"
+                            ? confirmVaultDisable
+                            : confirmVaultChange
+                    }
+                    disabled={vaultBusy}
+                    className="flex-1 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-40 text-white text-xs font-black transition-colors touch-target"
+                  >
+                    {vaultBusy ? "Procesando…" : "Confirmar"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </section>
+
           {/* Peligro: borrar todos los datos */}
           <section className="space-y-3 pt-4 border-t border-neutral-800">
             <div className="flex items-center gap-2">
@@ -782,5 +1263,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
         </div>
       )}
     </div>
+    </FocusTrap>
   );
 };

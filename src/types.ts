@@ -174,6 +174,7 @@ export interface WorkoutSet {
   previousWeight?: number;
   previousReps?: number;
   previousRir?: number;
+  previousIsEstimate?: boolean;
 }
 
 export interface WorkoutExercise {
@@ -217,7 +218,14 @@ export interface CompletedWorkout {
   fatigueScore?: number;
   energyLevel?: number;
   comments?: string;
+  /** P2 sRPE sesión (Foster 1-10, 30 min post-sesión ideal). */
+  srpe?: number;
+  /** P2 carga interna sesión = sRPE × minutos (UA, Foster). */
+  sessionLoad?: number;
 }
+
+/** Día de periodización ondulante (DUP, P4). */
+export type DupDay = "fuerza" | "hipertrofia" | "potencia";
 
 export interface Routine {
   id: string;
@@ -227,6 +235,9 @@ export interface Routine {
   estimatedDurationMin: number;
   /** Marca una versión "deload" (descarga) de la rutina: menos volumen/carga. */
   deload?: boolean;
+  /** P4 DUP: día aplicado por rotación automática (solo informan, no cambian el match por nombre). */
+  dupDay?: DupDay;
+  dupAdjusted?: number;
   exercises: {
     exerciseId: string;
     targetSets: number;
@@ -449,5 +460,28 @@ export interface CardioEntry {
   date: string; // YYYY-MM-DD
   type: "liss" | "hiit";
   minutes: number;
+}
+
+// ---------------------------------------------------------------------------
+// Perfil de entrenamiento del usuario (onboarding personalizado)
+// ---------------------------------------------------------------------------
+
+export type ExperienceLevel = "principiante" | "intermedio" | "avanzado";
+
+export type EquipmentAccess = "gym" | "basic" | "home";
+
+/** Perfil de entrenamiento capturado en el onboarding. Guía las
+ *  recomendaciones (programa, frecuencia, duración de sesión) de forma
+ *  explicable, sin usar heurísticas ocultas. */
+export interface UserProfile {
+  goal: GoalPhase;
+  experience: ExperienceLevel;
+  /** Sesiones por semana (2-6). */
+  daysPerWeek: number;
+  /** Duración preferida por sesión en minutos (15-180). */
+  sessionMinutes: number;
+  equipment: EquipmentAccess;
+  /** Fecha ISO de cuando el usuario completó el onboarding. */
+  completedAt?: string;
 }
 
