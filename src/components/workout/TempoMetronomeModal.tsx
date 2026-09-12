@@ -58,7 +58,7 @@ export const TempoMetronomeModal: React.FC<TempoMetronomeModalProps> = ({
   // index or second, so the interval is created once and never recreated each
   // second while running.
   useEffect(() => {
-    let timer: any = null;
+    let timer: ReturnType<typeof setInterval> | null = null;
     if (isRunning && phases.length > 0) {
       unlockAudio();
       timer = setInterval(() => {
@@ -268,7 +268,7 @@ export const TempoMetronomeModal: React.FC<TempoMetronomeModalProps> = ({
           <div className="grid grid-flow-col auto-cols-fr gap-2 pt-2">
             {phases.map((p, idx) => {
               const isCurrent = idx === currentPhaseIndex;
-              const label = (p as any).shortName || p.name;
+              const label = p.shortName || p.name;
               return (
                 <div
                   key={idx}

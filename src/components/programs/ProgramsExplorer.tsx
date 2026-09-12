@@ -1,15 +1,10 @@
 import React, { useState } from "react";
 import {
-  BookOpen,
   Play,
-  Sparkles,
   Info,
-  Calendar,
   Layers,
   Activity,
   Dumbbell,
-  CheckCircle2,
-  AlertCircle,
   Plus,
   Edit3,
   Trash2

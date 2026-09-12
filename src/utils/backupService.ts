@@ -105,9 +105,15 @@ export async function collectFullState(): Promise<Record<string, unknown>> {
   const archive = await hydrateFromArchive(true);
   for (const [key, kind] of Object.entries(ARCHIVE_KEYS)) {
     // strict: kind es string; se acota a las claves reales del archivo.
-    const archived = archive[kind as keyof typeof archive] as unknown as any[];
-    state[key] = mergeArchived((state[key] as any[]) ?? [], archived,
-      entry => key === "kinetix_nutrition_history" ? entry.date : entry.id);
+    const archived = archive[kind as keyof typeof archive] as unknown[] | null;
+    state[key] = mergeArchived(
+      (state[key] as unknown[] | undefined) ?? [],
+      archived,
+      (entry) =>
+        (key === "kinetix_nutrition_history"
+          ? (entry as { date?: string }).date
+          : (entry as { id?: string }).id) as string
+    );
   }
   return state;
 }

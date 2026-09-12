@@ -1,24 +1,16 @@
-import React, { useState, useMemo, memo, useCallback } from "react";
+import React, { useState, useMemo } from "react";
 import {
-  Activity,
   Trophy,
   Flame,
   TrendingUp,
-  ShieldCheck,
-  Zap,
-  Info,
   Calendar,
   Layers,
   Sparkles,
   ArrowRight,
-  ArrowUpRight,
   Sliders,
-  Scale,
   Gauge,
   CheckCircle2,
-  AlertCircle,
   HelpCircle,
-  Dumbbell,
   ChevronDown,
   ChevronUp
 } from "lucide-react";
@@ -26,11 +18,10 @@ import { useWorkout } from "../../context/WorkoutContext";
 import {
   computeWeeklyVolumeStatus,
   calculateAutoProgression,
-  MUSCLE_LANDMARKS_CONFIG,
   calculate1RM
 } from "../../utils/scienceCalculators";
 import { resolveNextWeightFromHistory } from "../../utils/progressionEngine";
-import { MuscleGroup, Exercise, ExerciseHistoryEntry, WorkoutSet, AutoProgressionRecommendation } from "../../types";
+import { MuscleGroup, ExerciseHistoryEntry, WorkoutSet, AutoProgressionRecommendation } from "../../types";
 import { EXERCISES_DATABASE } from "../../data/exercisesData";
 import { MuscleRanksPanel } from "./MuscleRanksPanel";
 import { ManualPrForm, DeletePrButton } from "./ManualPrForm";
@@ -74,10 +65,7 @@ import {
   RadarChart,
   PolarGrid,
   PolarAngleAxis,
-  Radar,
-  BarChart,
-  Bar,
-  Cell
+  Radar
 } from "recharts";
 
 export const ScienceDashboard: React.FC = () => {
@@ -354,15 +342,15 @@ export const ScienceDashboard: React.FC = () => {
         <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-neutral-800">
           <div className="flex gap-2 overflow-x-auto text-xs font-bold">
             {[
-              { id: "all", label: "Todos los Ejercicios" },
-              { id: "increase", label: `Listos para Subir (${readyToIncreaseCount})` },
-              { id: "push", label: "Empuje (Push)" },
-              { id: "pull", label: "Tracción (Pull)" },
-              { id: "legs", label: "Piernas (Legs)" },
+              { id: "all" as const, label: "Todos los Ejercicios" },
+              { id: "increase" as const, label: `Listos para Subir (${readyToIncreaseCount})` },
+              { id: "push" as const, label: "Empuje (Push)" },
+              { id: "pull" as const, label: "Tracción (Pull)" },
+              { id: "legs" as const, label: "Piernas (Legs)" },
             ].map((f) => (
               <button
                 key={f.id}
-                onClick={() => setProgressionFilter(f.id as any)}
+                onClick={() => setProgressionFilter(f.id)}
                 className={`px-3.5 py-1.5 rounded-xl transition-all whitespace-nowrap ${
                   progressionFilter === f.id
                     ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/20"
@@ -945,9 +933,9 @@ export const ScienceDashboard: React.FC = () => {
                 <YAxis stroke="#737373" fontSize={10} tickLine={false} width={45} />
                 <Tooltip
                   contentStyle={{ backgroundColor: "#171717", borderColor: "#404040", borderRadius: "12px", color: "#fff", fontSize: "12px", padding: "10px 12px" }}
-                  wrapperStyle={{ minWidth: "140px" } as any}
+                  wrapperStyle={{ minWidth: "140px" }}
                   cursor={{ stroke: "#52525b", strokeWidth: 1, strokeDasharray: "4 4" }}
-                  formatter={(val: any) => [`${Number(val).toLocaleString("es-ES")} ${weightUnit}`, "Tonelaje"]}
+                  formatter={(val) => [`${Number(val).toLocaleString("es-ES")} ${weightUnit}`, "Tonelaje"]}
                 />
                 <Area type="monotone" dataKey="tonnage" stroke="#22d3ee" strokeWidth={2} fillOpacity={1} fill="url(#tonnageGrad)" dot={false} activeDot={{ r: 6, strokeWidth: 2, stroke: "#22d3ee", fill: "#fff" }} />
               </AreaChart>

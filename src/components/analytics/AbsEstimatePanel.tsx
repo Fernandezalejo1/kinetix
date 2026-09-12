@@ -2,7 +2,6 @@ import React, { useMemo, useState } from "react";
 import {
   Target,
   Scale,
-  Ruler,
   Percent,
   CalendarClock,
   Info,
@@ -409,7 +408,7 @@ export const AbsEstimatePanel: React.FC = () => {
                     <YAxis stroke="#525252" fontSize={9} tickLine={false} domain={["dataMin - 1", "dataMax + 1"]} width={45} />
                     <Tooltip
                       contentStyle={{ backgroundColor: "#171717", borderColor: "#404040", borderRadius: "12px", color: "#fff", fontSize: "11px" }}
-                      formatter={(val: any, name: any) => [
+                      formatter={(val, name) => [
                         `${val} kg`,
                         name === "media7" ? "Media 7 días" : "Peso",
                       ]}
@@ -437,7 +436,7 @@ export const AbsEstimatePanel: React.FC = () => {
                     <YAxis stroke="#525252" fontSize={9} tickLine={false} domain={["dataMin - 1", "dataMax + 1"]} width={45} />
                     <Tooltip
                       contentStyle={{ backgroundColor: "#171717", borderColor: "#404040", borderRadius: "12px", color: "#fff", fontSize: "11px" }}
-                      formatter={(val: any) => [`${val}%`, "Grasa"]}
+                      formatter={(val) => [`${val}%`, "Grasa"]}
                     />
                     <Area type="monotone" dataKey="grasa" stroke="#22d3ee" strokeWidth={2} fill="url(#grasaGrad)" connectNulls />
                   </ComposedChart>
@@ -461,7 +460,7 @@ export const AbsEstimatePanel: React.FC = () => {
                     <YAxis stroke="#525252" fontSize={9} tickLine={false} domain={["dataMin - 1", "dataMax + 1"]} width={45} />
                     <Tooltip
                       contentStyle={{ backgroundColor: "#171717", borderColor: "#404040", borderRadius: "12px", color: "#fff", fontSize: "11px" }}
-                      formatter={(val: any) => [`${val} cm`, "Cintura"]}
+                      formatter={(val) => [`${val} cm`, "Cintura"]}
                     />
                     <Area type="monotone" dataKey="cintura" stroke="#a78bfa" strokeWidth={2} fill="url(#cinturaGrad)" connectNulls />
                   </ComposedChart>

@@ -197,7 +197,7 @@ export function resolveNextWeightFromHistory(
   targetRir: number | undefined,
   history: ExerciseHistoryEntry[],
   prs: PersonalRecord[],
-  opts?: { weightUnit?: "kg" | "lbs" | string }
+  _opts?: { weightUnit?: "kg" | "lbs" | string }
 ): UnifiedProgression {
   const rir = targetRir ?? 2;
   const smart = calculateSmartNextWeight(exercise, targetReps, targetSets, rir, history, prs);

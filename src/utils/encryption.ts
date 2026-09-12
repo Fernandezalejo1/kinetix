@@ -18,13 +18,6 @@ const ALLOWED_HASHES = new Set(["SHA-256", "SHA-384", "SHA-512"]);
 export const textEncoder = () => new TextEncoder();
 export const textDecoder = () => new TextDecoder();
 
-function concatU8(a: Uint8Array, b: Uint8Array): Uint8Array {
-  const out = new Uint8Array(a.length + b.length);
-  out.set(a, 0);
-  out.set(b, a.length);
-  return out;
-}
-
 /** KDF params seguros: usa lo declarado en el backup cuando está dentro de
  *  rango; si el archivo no declara nada, usa los defaults. Un archivo con
  *  valores absurdos (ej. 10^9 iteraciones) se rechaza en vez de congelar. */

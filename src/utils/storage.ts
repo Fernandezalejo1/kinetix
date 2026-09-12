@@ -153,28 +153,6 @@ export async function secureSetEnvelope(key: string, value: unknown): Promise<vo
   lsSet(key, JSON.stringify(env));
 }
 
-async function rewrapEnvelope(key: string, env: VaultEnvelope, useSession: boolean): Promise<void> {
-  const dataKey = await unwrapDataKey(env, useSession);
-  const raw = new Uint8Array(await crypto.subtle.exportKey("raw", dataKey));
-  const saltPw = randomBytes(16);
-  const pwKey = await derivePwKey(_b64.e(saltPw), SESSION_ITERS, SESSION_HASH);
-  const ivPw = randomBytes(12);
-  const wrappedPw = await aeadEncrypt(pwKey, ivPw, raw);
-  const next: VaultEnvelope = {
-    app: "KINETIX", encrypted: true, format: ENVELOPE_FORMAT,
-    kdfPw: { ...kdfPwParams(), salt: _b64.e(saltPw) }, ivPw: _b64.e(ivPw), wrappedPw,
-    iv: _b64.e(randomBytes(12)),
-    ciphertext: env.ciphertext,
-  };
-  if (sessionSecret) {
-    const sk = await deriveSessionKey(sessionSecret);
-    const ivSes = randomBytes(12);
-    next.ivSes = _b64.e(ivSes);
-    next.wrappedSes = await aeadEncrypt(sk, ivSes, raw);
-  }
-  lsSet(key, JSON.stringify(next));
-}
-
 function isLegacyEnvelope(raw: string): boolean {
   try {
     const parsed: unknown = JSON.parse(raw);

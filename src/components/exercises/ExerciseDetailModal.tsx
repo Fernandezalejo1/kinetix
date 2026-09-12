@@ -8,13 +8,7 @@ import {
   GitBranch,
   Sparkles,
   BarChart2,
-  Box,
-  Film,
-  Zap,
-  BookOpen,
-  ArrowRight,
-  Shield,
-  Lightbulb
+  Shield
 } from "lucide-react";
 import { Exercise } from "../../types";
 import { useWorkout } from "../../context/WorkoutContext";

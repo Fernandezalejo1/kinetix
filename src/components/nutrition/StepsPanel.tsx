@@ -47,7 +47,7 @@ export interface StepsPanelProps {
   compact?: boolean;
 }
 
-export const StepsPanel: React.FC<StepsPanelProps> = ({ compact }) => {
+export const StepsPanel: React.FC<StepsPanelProps> = ({ compact: _compact }) => {
   const { nutritionLog, nutritionProfile, updateMacroTargets } = useWorkout();
   const { showToast } = useToast();
 
@@ -194,7 +194,7 @@ export const StepsPanel: React.FC<StepsPanelProps> = ({ compact }) => {
         showToast("No se otorgaron los permisos de Health Connect.", "error");
       }
       refreshStatus();
-    } catch (e) {
+    } catch {
       showToast("Error al conectar Health Connect.", "error");
     } finally {
       setConnecting(false);

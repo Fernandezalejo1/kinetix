@@ -16,7 +16,7 @@
 
 import { Exercise, ExerciseHistoryEntry, PersonalRecord, DifficultyLevel } from "../types";
 import { calculate1RM, isCompoundExercise } from "./scienceCalculators";
-import { parseRepsRange, RepsRange } from "./doubleProgression";
+import { parseRepsRange } from "./doubleProgression";
 import { e1rmFromSet } from "./startingLoads";
 
 // ─── Helpers ────────────────────────────────────────────────────
@@ -76,7 +76,7 @@ export function assessSessionPerformance(
   session: ExerciseHistoryEntry,
   targetReps: string | undefined,
   targetSets: number | undefined,
-  targetRir: number | undefined
+  _targetRir: number | undefined
 ): SessionPerformance {
   const avgReps =
     session.reps.length > 0
@@ -203,7 +203,7 @@ export function calculateSmartNextWeight(
   targetSets: number | undefined,
   targetRir: number,
   history: ExerciseHistoryEntry[],
-  prs: PersonalRecord[]
+  _prs: PersonalRecord[]
 ): WeightRecommendation {
   const inc = loadIncrement(exercise);
   const sorted = history

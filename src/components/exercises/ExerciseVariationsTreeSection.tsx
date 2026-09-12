@@ -1,5 +1,5 @@
 import React from "react";
-import { GitBranch, ArrowDownRight, ArrowUpRight, Layers } from "lucide-react";
+import { GitBranch, ArrowDownRight, ArrowUpRight } from "lucide-react";
 import { Exercise } from "../../types";
 
 interface ExerciseVariationsTreeSectionProps {

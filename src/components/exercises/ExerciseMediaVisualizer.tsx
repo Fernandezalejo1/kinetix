@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Video, Film, Box, Sparkles, ExternalLink, Activity, Info, Flame, CheckCircle2, Dumbbell, ShieldAlert, Target } from "lucide-react";
+import { Video, Film, Box, ExternalLink, Activity, Info, Flame, Dumbbell, Target } from "lucide-react";
 import { Exercise } from "../../types";
 import { Exercise3DVisualizer } from "./Exercise3DVisualizer";
 import { ExerciseAnimationPlayer } from "./ExerciseAnimationPlayer";

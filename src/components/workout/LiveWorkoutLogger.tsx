@@ -1,26 +1,19 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
-  X,
   Plus,
   Trash2,
   Check,
-  RotateCcw,
   Disc,
   Flame,
   Activity,
   Info,
   Clock,
-  ChevronUp,
-  ChevronDown,
   Volume2,
   VolumeX,
-  Play,
-  Pause,
   Sparkles,
   ArrowRightLeft,
   CheckCircle2,
   Minimize2,
-  Trophy,
   Frown,
   Meh,
   Smile,
@@ -33,7 +26,7 @@ import {
 import { useWorkout } from "../../context/WorkoutContext";
 import { useToast } from "../../context/ToastContext";
 import { ConfirmDialog } from "../ConfirmDialog";
-import { SetType, Exercise, WorkoutExercise, WorkoutSet, DifficultyLevel, PersonalRecord, CompletedWorkout } from "../../types";
+import { SetType, WorkoutExercise, WorkoutSet, DifficultyLevel, PersonalRecord, CompletedWorkout } from "../../types";
 
 // P2: motivos de sesión parcial (etiquetado honesto del "por qué no se completó").
 const PARTIAL_REASONS = [
@@ -154,7 +147,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
     isWorkoutModalOpen,
     setIsWorkoutModalOpen,
     restTimer,
-    startRestTimer,
+    startRestTimer: _startRestTimer,
     stopRestTimer,
     adjustRestTimer,
     soundEnabled,
@@ -208,13 +201,13 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
 
   // Screen Wake Lock API — evita que la pantalla se apague mientras entrenas
   useEffect(() => {
-    let wakeLockSentinel: any = null;
+    let wakeLockSentinel: WakeLockSentinel | null = null;
     let isReleased = false;
 
     const requestWakeLock = async () => {
       if (typeof navigator !== "undefined" && "wakeLock" in navigator && activeSession) {
         try {
-          wakeLockSentinel = await (navigator as any).wakeLock.request("screen");
+          wakeLockSentinel = await navigator.wakeLock.request("screen");
         } catch {
           // Ignorar si el usuario denegó o el sistema no lo permite
         }
@@ -265,7 +258,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
 
   // Live session stopwatch timer
   useEffect(() => {
-    let interval: any = null;
+    let interval: ReturnType<typeof setInterval> | null = null;
     if (activeSession) {
       interval = setInterval(() => {
         const secs = Math.floor((Date.now() - activeSession.startTime) / 1000);
@@ -278,16 +271,6 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
       if (interval) clearInterval(interval);
     };
   }, [activeSession]);
-
-  const checkAndShowDifficultySurvey = useCallback((wEx: WorkoutExercise) => {
-    const allCompleted = wEx.sets.filter(s => s.type !== "warmup").every(s => s.completed);
-    const hasWarmup = wEx.sets.some(s => s.type === "warmup");
-    const workingSets = wEx.sets.filter(s => s.type !== "warmup");
-    const alreadyHasDifficulty = wEx.notes?.startsWith("difficulty:");
-    if (allCompleted && workingSets.length > 0 && !alreadyHasDifficulty && !difficultySurvey) {
-      setDifficultySurvey({ exerciseId: wEx.id, exerciseName: wEx.exercise.nameEs });
-    }
-  }, [difficultySurvey]);
 
   if (!activeSession || !isWorkoutModalOpen) {
     if (summaryModal.isOpen && summaryModal.workout) {
@@ -691,11 +674,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-neutral-800/60">
-                      {wEx.sets.map((set, sIdx) => {
-                        const isWarmup = set.type === "warmup";
-                        const isDrop = set.type === "dropset";
-                        const isMyo = set.type === "myorep";
-
+                      {wEx.sets.map((set) => {
                         return (
                           <tr
                             key={set.id}

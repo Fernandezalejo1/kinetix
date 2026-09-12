@@ -265,9 +265,6 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
                   const isDown = delta < 0;
                   const Icon = isUp ? TrendingUp : isDown ? TrendingDown : Minus;
                   const color = isUp ? "text-emerald-400" : isDown ? "text-amber-400" : "text-neutral-400";
-                  const iconBg = isUp ? "bg-emerald-500/15 border-emerald-500/30"
-                    : isDown ? "bg-amber-500/15 border-amber-500/30"
-                    : "bg-neutral-800 border-neutral-700";
                   return (
                     <div
                       key={r.wEx.id}

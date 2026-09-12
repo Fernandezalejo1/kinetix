@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { existsSync, readFileSync } from "fs";
 import path from "path";
 import { AddressInfo } from "net";
+import type { Server } from "http";
 import { build as viteBuild } from "vite";
 import { createApp, mountApp } from "../server";
 
@@ -11,8 +12,7 @@ const DIST_INDEX = path.resolve(__dirname, "..", "dist", "index.html");
 // con el server de producción y verifica que el HTML + un asset del bundle
 // responden 200. Detecta roturas de build/empaquetado que tsc no ve.
 describe("E2E smoke (build de producción)", () => {
-  let server: Awaited<ReturnType<typeof createApp>> | null = null;
-  let httpServer: ReturnType<typeof createApp> extends never ? never : any = null;
+  let httpServer: Server | null = null;
   let base = "";
 
   beforeAll(async () => {
@@ -25,10 +25,11 @@ describe("E2E smoke (build de producción)", () => {
 
     process.env.NODE_ENV = "production";
     const app = createApp();
-    await mountApp(app as any);
-    httpServer = app.listen(0, "127.0.0.1");
-    await new Promise<void>((r) => httpServer.once("listening", () => r()));
-    const port = (httpServer.address() as AddressInfo).port;
+    await mountApp(app);
+    const srv = app.listen(0, "127.0.0.1");
+    httpServer = srv;
+    await new Promise<void>((r) => srv.once("listening", () => r()));
+    const port = (srv.address() as AddressInfo).port;
     base = `http://127.0.0.1:${port}`;
   }, 60000);
 

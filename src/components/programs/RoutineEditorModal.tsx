@@ -4,13 +4,10 @@ import {
   Plus,
   Trash2,
   GripVertical,
-  Clock,
   Dumbbell,
   Save,
-  ArrowRightLeft,
   ChevronDown,
   ChevronUp,
-  Copy,
   Layers,
   Link2,
   Unlink2
@@ -33,7 +30,7 @@ export const RoutineEditorModal: React.FC<RoutineEditorModalProps> = ({
   onClose,
   routine,
 }) => {
-  const { saveCustomRoutine, deleteCustomRoutine, weightUnit } = useWorkout();
+  const { saveCustomRoutine, deleteCustomRoutine } = useWorkout();
   const [name, setName] = useState(routine?.name || "Mi Rutina");
   const [description, setDescription] = useState(routine?.description || "");
   const [targetSplit, setTargetSplit] = useState(routine?.targetSplit || "Push (Empuje)");

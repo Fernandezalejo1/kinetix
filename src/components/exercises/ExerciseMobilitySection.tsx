@@ -1,5 +1,5 @@
 import React from "react";
-import { Sparkles, Play, ShieldCheck, HeartPulse } from "lucide-react";
+import { Sparkles, Play } from "lucide-react";
 import { Exercise } from "../../types";
 
 interface ExerciseMobilitySectionProps {

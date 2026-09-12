@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { Activity, BarChart2, Zap, Shield, Sparkles, TrendingUp, TrendingDown, Minus, Calculator, Trophy, Layers, BrainCircuit } from "lucide-react";
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, BarChart, Bar } from "recharts";
+import { Activity, Zap, Shield, Sparkles, TrendingUp, TrendingDown, Minus, Calculator, Trophy, BrainCircuit } from "lucide-react";
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from "recharts";
+import type { TooltipValueType } from "recharts";
 import { Exercise, ExerciseHistoryEntry, PersonalRecord } from "../../types";
 import { calculate1RM } from "../../utils/scienceCalculators";
 import { resolveNextWeightFromHistory } from "../../utils/progressionEngine";
@@ -259,7 +260,7 @@ export const ExerciseAnalyticsSection: React.FC<ExerciseAnalyticsSectionProps> =
                       color: "#fff",
                       fontSize: "12px",
                     }}
-                    formatter={(val: any) => [`${val} ${weightUnit}`, "Carga Teórica"]}
+                    formatter={(val: TooltipValueType | undefined) => [`${val} ${weightUnit}`, "Carga Teórica"]}
                   />
                   <Area type="monotone" dataKey="weight" stroke="#22d3ee" strokeWidth={2.5} fill="url(#curveGrad)" />
                 </AreaChart>

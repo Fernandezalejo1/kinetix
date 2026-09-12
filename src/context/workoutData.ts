@@ -4,7 +4,7 @@
 
 import { CompletedWorkout, NutritionLog, BodyMetricEntry, PersonalRecord, ExerciseHistoryEntry } from "../types";
 import { localDateKey } from "../utils/dateUtils";
-import { readVaultAwareRaw, writeVaultAwareRaw, safeParse, safeSet, VALIDATORS } from "../utils/storage";
+import { readVaultAwareRaw, writeVaultAwareRaw, safeParse, safeSet } from "../utils/storage";
 
 // Sin datos semilla: el historial empieza vacío y solo muestra sesiones
 // reales del usuario. Nunca se inventan entrenamientos, PRs ni medidas.

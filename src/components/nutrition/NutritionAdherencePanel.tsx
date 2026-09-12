@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { CalendarDays, Flame, Droplets, TrendingUp, Wheat } from "lucide-react";
 import { useWorkout } from "../../context/WorkoutContext";
-import { localDateKey, localDateKeyOfDaysAgo } from "../../utils/dateUtils";
+import { localDateKey } from "../../utils/dateUtils";
 
 /**
  * FIX (prioridad alta): ADHERENCIA NUTRICIONAL.

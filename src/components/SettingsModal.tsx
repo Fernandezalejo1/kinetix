@@ -18,7 +18,6 @@ import { StepsPanel } from "./nutrition/StepsPanel";
 import { useToast } from "../context/ToastContext";
 import { useWorkout } from "../context/WorkoutContext";
 import { parseWorkoutCsv, ImportResult } from "../utils/csvImporter";
-import { VALIDATORS, isArray, isPlainObject } from "../utils/storage";
 import { localDateKey } from "../utils/dateUtils";
 import {
   nativeRemindersAvailable,
@@ -55,7 +54,6 @@ import {
   isVaultUnlocked,
   lockVault,
 } from "../utils/vault";
-import { RETENTION_POLICY } from "../context/workoutData";
 import { FocusTrap } from "./FocusTrap";
 
 interface SettingsModalProps {
@@ -103,7 +101,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
   const [pinEnabled, setPinEnabled] = useState<boolean>(() => hasAppPin());
   const [autoLockOn, setAutoLockOnState] = useState<boolean>(() => isAutoLockOn());
   // P4 Vault (cifrado en reposo).
-  const [vaultOn, setVaultOn] = useState<boolean>(() => {
+  const [vaultOn, _setVaultOn] = useState<boolean>(() => {
     try {
       return isVaultEnabled();
     } catch {
@@ -419,22 +417,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
   const IMPORT_VERSION = 1;
   const MAX_BACKUP_SIZE = 100 * 1024 * 1024; // complete long-term backups
 
-  // Json-safe check para claves desconocidas del backup: solo estructuras
-  // JSON serializables, nunca funciones/undefined/prototypes.
-  const isJsonSafe = (v: unknown): boolean =>
-    v === null ||
-    typeof v === "string" ||
-    typeof v === "number" ||
-    typeof v === "boolean" ||
-    isArray(v) ||
-    isPlainObject(v);
-
   const parseBackupPayload = (pdf: unknown): { data: unknown } | null => {
-    if (!pdf || (pdf as any).app !== "KINETIX" || (pdf as any).version !== IMPORT_VERSION) {
+    const candidate = pdf as { app?: unknown; version?: unknown; data?: unknown } | null;
+    if (!pdf || candidate?.app !== "KINETIX" || candidate?.version !== IMPORT_VERSION) {
       showToast("El archivo no es un backup válido de KINETIX", "error");
       return null;
     }
-    const data = (pdf as any)?.data;
+    const data = candidate?.data;
     if (!data || typeof data !== "object" || Array.isArray(data)) {
       showToast("El archivo no es un backup válido de KINETIX", "error");
       return null;
@@ -561,8 +550,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
       const result = parseWorkoutCsv(text);
       setCsvPreview(result);
       showToast(`Archivo procesado: ${result.importedSetsCount} series detectadas`, "info");
-    } catch (err: any) {
-      showToast(err.message || "Error al leer el archivo CSV", "error");
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : "Error al leer el archivo CSV", "error");
     }
   };
 

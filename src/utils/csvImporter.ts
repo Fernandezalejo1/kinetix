@@ -182,7 +182,6 @@ export function parseWorkoutCsv(csvText: string): ImportResult {
 
   // Índices de columnas
   let colDate = -1;
-  let colWorkoutName = -1;
   let colExercise = -1;
   let colWeight = -1;
   let colReps = -1;
@@ -190,7 +189,6 @@ export function parseWorkoutCsv(csvText: string): ImportResult {
 
   if (isStrong) {
     colDate = header.findIndex((h) => h === "date");
-    colWorkoutName = header.findIndex((h) => h === "workoutname");
     colExercise = header.findIndex((h) => h === "exercisename");
     colWeight = header.findIndex((h) => h === "weight");
     colReps = header.findIndex((h) => h === "reps");
@@ -198,7 +196,6 @@ export function parseWorkoutCsv(csvText: string): ImportResult {
   } else {
     // Hevy
     colDate = header.findIndex((h) => h === "starttime" || h === "date");
-    colWorkoutName = header.findIndex((h) => h === "title" || h === "workoutname");
     colExercise = header.findIndex((h) => h === "exercisetitle" || h === "exercisename");
     colWeight = header.findIndex((h) => h === "weightkg" || h === "weight");
     colReps = header.findIndex((h) => h === "reps");

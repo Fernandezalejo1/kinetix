@@ -7,22 +7,15 @@ import {
   Zap,
   Sparkles,
   Award,
-  Flame,
-  ArrowUpRight,
-  ChevronRight,
   Info,
   Layers,
-  Scale,
-  Clock,
   CheckCircle2,
-  Target,
   Activity
 } from "lucide-react";
 import {
   ResponsiveContainer,
   AreaChart,
   Area,
-  LineChart,
   Line,
   BarChart,
   Bar,
@@ -30,13 +23,12 @@ import {
   YAxis,
   Tooltip,
   Legend,
-  ReferenceLine,
-  ReferenceDot,
   CartesianGrid,
   Cell,
   ComposedChart
 } from "recharts";
-import { Exercise, CompletedWorkout, PersonalRecord } from "../../types";
+import type { TooltipContentProps } from "recharts";
+import { Exercise } from "../../types";
 import { useWorkout } from "../../context/WorkoutContext";
 import { calculate1RM } from "../../utils/scienceCalculators";
 
@@ -72,8 +64,6 @@ export const ExerciseHistoryProgressionChart: React.FC<ExerciseHistoryProgressio
   const [chartMode, setChartMode] = useState<"strength" | "volume" | "combined">("strength");
   // Timeframe filter: "4w" | "8w" | "12w" | "all"
   const [timeframe, setTimeframe] = useState<"4w" | "8w" | "12w" | "all">("8w");
-  // Toggle for showing PR marker annotations on chart
-  const [showPrMarkers, setShowPrMarkers] = useState(true);
 
   // 1. Extract and build historical progression points for this specific exercise
   const progressionHistory = useMemo(() => {
@@ -332,7 +322,7 @@ export const ExerciseHistoryProgressionChart: React.FC<ExerciseHistoryProgressio
   }, [progressionHistory]);
 
   // Custom High-End Biomechanical Tooltip for Recharts
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload, label: _label }: Partial<TooltipContentProps>) => {
     if (active && payload && payload.length) {
       const data: ProgressionDataPoint = payload[0].payload;
       return (

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { X, Search, Filter, Plus, Info, Dumbbell, Sparkles } from "lucide-react";
+import { X, Search, Plus, Info, Dumbbell, Sparkles } from "lucide-react";
 import { Exercise } from "../../types";
 import { EXERCISES_DATABASE } from "../../data/exercisesData";
 import { MUSCLE_LANDMARKS_CONFIG } from "../../utils/scienceCalculators";

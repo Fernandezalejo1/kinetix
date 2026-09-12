@@ -1,11 +1,8 @@
 import React, { useState } from "react";
 import {
-  Activity,
   Search,
   Dumbbell,
-  Sparkles,
   Info,
-  Layers,
   ChevronRight,
   ShieldCheck,
   Bone
@@ -19,7 +16,7 @@ import { MUSCLE_LANDMARKS_CONFIG } from "../../utils/scienceCalculators";
 export const BiomechanicsHub: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [selectedProfile, setSelectedProfile] = useState<string>("all");
+  const [selectedProfile, _setSelectedProfile] = useState<string>("all");
   const [activeExerciseDetail, setActiveExerciseDetail] = useState<Exercise | null>(null);
   const [previewAnatomyView, setPreviewAnatomyView] = useState<"front" | "back">("front");
   const [hoveredExercise, setHoveredExercise] = useState<Exercise>(EXERCISES_DATABASE[0]);

@@ -454,7 +454,6 @@ export function applyAlphaSeed(): void {
     }
 
     localStorage.setItem(SEED_FLAG, "1");
-    // eslint-disable-next-line no-console
     console.info(
       `[alphaSeed] importados ${newWorkouts.length} sesiones, ${newHistory.length} historiales, ${newPrs.length} PRs, ${STEP_DAYS.length} días de pasos`
     );

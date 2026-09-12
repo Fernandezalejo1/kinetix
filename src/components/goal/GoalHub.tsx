@@ -94,7 +94,7 @@ export const GoalHub: React.FC<GoalHubProps> = ({ onGoToPrograms }) => {
     addCardio,
     removeCardio,
   } = useGoal();
-  const { bodyMetrics, nutritionProfile, nutritionLog, updateMacroTargets } = useWorkout();
+  const { bodyMetrics, nutritionProfile, updateMacroTargets } = useWorkout();
   const { showToast } = useToast();
 
   const today = localDateKey();

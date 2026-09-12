@@ -19,10 +19,10 @@ import {
 } from "../types";
 import { EXERCISES_DATABASE } from "../data/exercisesData";
 import { DEFAULT_NUTRITION_PROFILE, DEFAULT_WEIGHT_KG, computePersonalTargets } from "../data/nutritionData";
-import { calculate1RM, isCompoundExercise } from "../utils/scienceCalculators";
+import { calculate1RM } from "../utils/scienceCalculators";
 import { useRestTimer, RestTimerState } from "./useRestTimer";
 import { detectExecutionMode, isTimeBased, parseTargetSeconds } from "../utils/exerciseMode";
-import { safeParse, safeSet, safeRemove, readVaultAwareRaw, writeVaultAwareRaw, VALIDATORS, SANITIZERS, isArrayOrNull } from "../utils/storage";
+import { safeParse, safeSet, safeRemove, readVaultAwareRaw, VALIDATORS, SANITIZERS, isArrayOrNull } from "../utils/storage";
 import { resolveStartingWeight, resolveNextWeightFromHistory } from "../utils/progressionEngine";
 import { applyReadinessToSession } from "../utils/goalEngine";
 import type { ReadinessEntry } from "../types";
@@ -416,7 +416,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
       // P1: veredicto de hoy (una sola lectura por sesión).
       const readinessVerdict = todayReadinessVerdict();
       let readinessApplied = false;
-      const workoutExercises: WorkoutExercise[] = routine.exercises.map((item: any, idx: number) => {
+      const workoutExercises: WorkoutExercise[] = routine.exercises.map((item, idx: number) => {
         const exDef = EXERCISES_DATABASE.find((e) => e.id === item.exerciseId) || EXERCISES_DATABASE[0];
         const execMode = detectExecutionMode(exDef, item.targetReps);
         const isTime = execMode === "time";
@@ -495,7 +495,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
       // para NO contarlo como serie efectiva de fuerza. Solo si el usuario lo
       // dejó habilitado (toggle visible en "Hoy" antes de iniciar) y la rutina
       // no prescribe ya cardio (ej. D7 NIGHTWING incluye elliptical "20 min").
-      const alreadyHasCardio = routine.exercises.some((item: any) => {
+      const alreadyHasCardio = routine.exercises.some((item) => {
         const def = EXERCISES_DATABASE.find((e) => e.id === item.exerciseId);
         return def && (def.executionMode === "time" || /min/i.test(String(item.targetReps ?? "")));
       });
@@ -897,7 +897,6 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
       let maxWeight = 0;
       let exerciseRirTotal = 0;
       let exerciseRirCount = 0;
-      let timeSeconds = 0;
       let bestE1rm = 0;
       let bestSetData: { weight: number; reps: number; rir?: number } | undefined;
       const timeBased = isTimeBased(wEx.exercise, wEx.targetReps);
@@ -908,7 +907,6 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
           exerciseSets++;
           if (timeBased) {
             const secs = s.durationSeconds ?? 0;
-            timeSeconds += secs;
             totalSeconds += secs;
             exerciseReps.push(secs);
           } else {
@@ -919,7 +917,6 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
             maxWeight = Math.max(maxWeight, s.weight);
 
             // Track best e1RM for bestSet
-            const e1rmCheck = calculate1RM(s.weight, s.reps);
             const effectiveReps = s.rir != null ? Math.min(s.reps + Math.min(s.rir, 10), 12) : s.reps;
             const bestE = calculate1RM(s.weight, effectiveReps);
             if (bestE.valid && bestE.average > bestE1rm) {
@@ -1030,7 +1027,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
           origin: { y: 0.6 },
           colors: ["#3b82f6", "#10b981", "#8b5cf6", "#f59e0b"],
         });
-      } catch (_) {}
+      } catch {}
     }
 
     setActiveSession(null);

@@ -12,12 +12,10 @@ import {
   Activity,
   Layers,
   Sparkles,
-  TrendingUp,
   TrendingDown,
   Target,
   Trash2,
   X,
-  Zap,
   AlertTriangle,
   ChevronDown,
   HelpCircle,
@@ -41,7 +39,7 @@ const TempoMetronomeModal = React.lazy(() =>
 const SessionImportModal = React.lazy(() =>
   import("./SessionImportModal").then((m) => ({ default: m.SessionImportModal }))
 );
-import { Program, Routine } from "../../types";
+import { Program, Routine, Exercise, WorkoutExercise, WorkoutSet, CompletedWorkout } from "../../types";
 import { isTimeBased } from "../../utils/exerciseMode";
 import {
   loadUserProfile,
@@ -86,7 +84,7 @@ interface WorkoutHubProps {
 
 export const WorkoutHub: React.FC<WorkoutHubProps> = ({
   onGoToPrograms,
-  onGoToBiomechanics,
+  onGoToBiomechanics: _onGoToBiomechanics,
 }) => {
   const {
     activeSession,
@@ -108,8 +106,8 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
   const [isWarmupOpen, setIsWarmupOpen] = useState(false);
   const [isTempoOpen, setIsTempoOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
-  const [selectedSession, setSelectedSession] = useState<any | null>(null);
-  const [selectedExHistory, setSelectedExHistory] = useState<any | null>(null);
+  const [selectedSession, setSelectedSession] = useState<CompletedWorkout | null>(null);
+  const [selectedExHistory, setSelectedExHistory] = useState<{ id: string; name: string } | null>(null);
   const [confirmAction, setConfirmAction] = useState<null | {
     type: "ghost" | "clearAll" | "deleteOne";
     id?: string;
@@ -204,7 +202,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
     return null;
   }, [workoutHistory]);
 
-  const handleCarryOver = (exercise: any, pending?: any) => {
+  const handleCarryOver = (exercise: Exercise, pending?: WorkoutExercise | null) => {
     carryOverPendingExercise(exercise, pending);
     showToast(`${exercise?.nameEs || "Ejercicio"} sumado a la sesión de hoy`, "success");
   };
@@ -995,10 +993,10 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
 
             {/* Exercises List */}
             <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-4 overscroll-contain scrollbar-thin">
-              {selectedSession.exercises?.map((wEx: any, idx: number) => {
+              {selectedSession.exercises?.map((wEx: WorkoutExercise, idx: number) => {
                 const isTime = isTimeBased(wEx.exercise, wEx.targetReps);
                 const incompleteSets = wEx.sets?.filter(
-                  (s: any) => !s.completed && s.type !== "warmup" && s.type !== "cardio"
+                  (s: WorkoutSet) => !s.completed && s.type !== "warmup" && s.type !== "cardio"
                 ).length ?? 0;
                 return (
                 <div key={wEx.id || idx} className="rounded-2xl bg-neutral-950 border border-neutral-800 overflow-hidden">
@@ -1040,7 +1038,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
                           </tr>
                         </thead>
                         <tbody>
-                          {wEx.sets?.map((set: any) => (
+                          {wEx.sets?.map((set: WorkoutSet) => (
                             <tr key={set.id} className="border-t border-neutral-800/50">
                               <td className="text-center py-2 text-neutral-400 font-mono tabular-nums">{set.setNumber}</td>
                               <td className="text-center py-2">

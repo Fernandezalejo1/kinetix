@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { Activity, Zap, Compass, Sparkles } from "lucide-react";
 import { Exercise } from "../../types";
 import { AnatomyVisualizer } from "./AnatomyVisualizer";
-import { MUSCLE_LANDMARKS_CONFIG } from "../../utils/scienceCalculators";
 
 interface ExerciseAnatomySectionProps {
   exercise: Exercise;

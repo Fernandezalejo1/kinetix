@@ -282,7 +282,9 @@ let audioCtx: AudioContext | null = null;
 function getAudioContext(): AudioContext | null {
   if (typeof window === "undefined") return null;
   if (!audioCtx) {
-    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    const AudioContextClass =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (AudioContextClass) {
       audioCtx = new AudioContextClass();
     }
@@ -303,7 +305,7 @@ export function unlockAudio(): boolean {
       ctx.resume().catch(() => {});
     }
     return ctx.state === "running" || ctx.state === "suspended";
-  } catch (_) {
+  } catch {
     return false;
   }
 }
@@ -373,7 +375,7 @@ export function playTickSound() {
     gain.connect(ctx.destination);
     osc.start(now);
     osc.stop(now + 0.1);
-  } catch (_) {}
+  } catch {}
 }
 
 // -------------------------------------------------------------

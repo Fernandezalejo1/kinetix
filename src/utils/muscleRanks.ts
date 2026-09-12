@@ -126,11 +126,6 @@ export function computeMuscleRanks(
     const ratio = bw ? bestKg / bw : 0;
     const rank = rankForRatio(ratio, group.thresholds);
 
-    const order: { r: Rank; v: number; label: string }[] = [
-      { r: "gold", v: group.thresholds.gold, label: "Oro" },
-      { r: "master", v: group.thresholds.master, label: "Master" },
-      { r: "challenger", v: group.thresholds.challenger, label: "Challenger" },
-    ];
     let nextLabel: string | null = null;
     let nextRatio: number | null = null;
     let progress = 1;

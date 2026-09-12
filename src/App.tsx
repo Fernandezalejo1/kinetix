@@ -143,11 +143,12 @@ const AppContent: React.FC = () => {
         // El back del usuario llegó a una entrada fantasma de un modal ya
         // cerrado o a la raíz: en Android nativo cerramos la app cuando no hay
         // más modal que desplegar; en web dejamos que el navegador la gestione.
+        const bridge = (window as unknown as { AndroidBridge?: { closeApp: () => void } }).AndroidBridge;
         if (window.history.state && window.history.state.modal) {
           dismissPhantomRef.current = true;
           window.history.back();
-        } else if ((window as any).AndroidBridge) {
-          (window as any).AndroidBridge.closeApp();
+        } else if (bridge) {
+          bridge.closeApp();
         }
       }
     };

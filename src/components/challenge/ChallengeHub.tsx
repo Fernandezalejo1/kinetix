@@ -88,7 +88,7 @@ const DayCell: React.FC<{ day: number; completed: boolean; isToday: boolean; isF
 export const ChallengeHub: React.FC = () => {
   const [challenge, setChallenge] = useState<ChallengeState>(() => rolloverIfMissed(readChallenge()));
   const [todaySteps, setTodaySteps] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [_loading, setLoading] = useState(true);
   const [prevRank, setPrevRank] = useState<Rank | null>(null);
   const [animatingRank, setAnimatingRank] = useState(false);
   const [hcAuthorized, setHcAuthorized] = useState(false);

@@ -135,7 +135,6 @@ export const HealthSyncEngine: React.FC = () => {
       document.removeEventListener("visibilitychange", onVisible);
       unsub();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return null;

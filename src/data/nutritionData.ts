@@ -254,7 +254,7 @@ export function quickMealsFor(goal: NutritionGoal): QuickMealPreset[] {
  * Proteína por comida para maximizar síntesis proteica (Morton/Schoenfeld):
  * 0.4 g/kg × 4 comidas. Ej. 80 kg → 32 g por comida.
  */
-export function proteinPerMeal(weightKg: number, meals = 4): number {
+export function proteinPerMeal(weightKg: number, _meals = 4): number {
   if (!(weightKg > 0)) return 0;
   return Math.round(weightKg * 0.4 * 10) / 10;
 }

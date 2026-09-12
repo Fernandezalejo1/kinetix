@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { installTestEnv } from "./helpers/testEnv";
+import type { NutritionLog } from "../src/types";
 
 const db = vi.hoisted(() => ({ archive: {} as Record<string, unknown>, backups: [1], fail: false }));
 vi.mock("../src/utils/indexedDb", () => ({
@@ -28,7 +29,7 @@ describe("complete persistence lifecycle", () => {
     localStorage.setItem("kinetix_workout_history", JSON.stringify([{ ...workout("new"), totalSets: 2 }]));
     const state = await collectFullState();
     expect(state.kinetix_workout_history).toHaveLength(2);
-    expect((state.kinetix_workout_history as any[]).find(w => w.id === "new").totalSets).toBe(2);
+    expect((state.kinetix_workout_history as Array<{ id: string; totalSets: number }>).find(w => w.id === "new")!.totalSets).toBe(2);
   });
   it("restores a smaller backup without resurrecting the previous archive", async () => {
     db.archive.workoutHistory = [workout("old"), workout("other")];
@@ -61,7 +62,7 @@ describe("complete persistence lifecycle", () => {
   });
   it("continuous mirrors preserve nutrition older than the cache", async () => {
     db.archive.nutritionHistory = [{ date: "2020-01-01", meals: [] }];
-    await mirrorHistoryToArchive({ workoutHistory: [], exerciseHistory: [], bodyMetrics: [], nutritionHistory: [{ date: "2026-01-01", meals: [] }] as any });
-    expect((db.archive.nutritionHistory as any[]).map(n => n.date)).toEqual(["2026-01-01", "2020-01-01"]);
+    await mirrorHistoryToArchive({ workoutHistory: [], exerciseHistory: [], bodyMetrics: [], nutritionHistory: [{ date: "2026-01-01", meals: [] } as unknown as NutritionLog] });
+    expect((db.archive.nutritionHistory as Array<{ date: string }>).map(n => n.date)).toEqual(["2026-01-01", "2020-01-01"]);
   });
 });

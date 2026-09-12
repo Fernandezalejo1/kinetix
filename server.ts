@@ -6,7 +6,7 @@ import { createServer as createViteServer } from "vite";
 // en lugar de ser importado (ej: tests). Funciona en ESM (tsx) y CJS (esbuild).
 const isEntryFile = (() => {
   try {
-    const req = (globalThis as any).require;
+    const req = (globalThis as { require?: { main?: unknown } }).require;
     if (typeof req !== "undefined" && req.main === module) return true;
   } catch {}
   const entry = process.argv[1] || "";

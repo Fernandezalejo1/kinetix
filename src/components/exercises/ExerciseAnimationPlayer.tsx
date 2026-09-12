@@ -5,22 +5,14 @@ import {
   RotateCcw,
   Volume2,
   VolumeX,
-  Maximize2,
-  Minimize2,
   ChevronRight,
   ChevronLeft,
   ExternalLink,
-  Flame,
   Activity,
   Layers,
-  Sparkles,
-  Info,
-  Sliders,
   Crosshair,
-  Eye,
   Sun,
-  Moon,
-  Compass
+  Moon
 } from "lucide-react";
 import { Exercise } from "../../types";
 
@@ -31,14 +23,13 @@ interface ExerciseAnimationPlayerProps {
 
 export const ExerciseAnimationPlayer: React.FC<ExerciseAnimationPlayerProps> = ({
   exercise,
-  mode,
 }) => {
   const [isPlaying, setIsPlaying] = useState(true);
   const [progress, setProgress] = useState(0); // 0 to 1 loop
   const [speed, setSpeed] = useState<number>(1.0);
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(false);
   const [themeMode, setThemeMode] = useState<"white" | "dark">("white"); // Default to clean white as in GymVisual/Hevy video
-  const [viewAngle, setViewAngle] = useState<"iso_3d" | "lateral">("iso_3d"); // 3D Isometric like video
+  const [viewAngle, _setViewAngle] = useState<"iso_3d" | "lateral">("iso_3d"); // 3D Isometric like video
   const [showMotionTrail, setShowMotionTrail] = useState(false);
   const [showAnatomyLayers, setShowAnatomyLayers] = useState(true);
   const [currentRep, setCurrentRep] = useState(1);
