@@ -352,7 +352,8 @@ export const EXERCISES_DATABASE: Exercise[] = [
     defaultTempo: "3-0-1-1",
     defaultRir: 0,
     thumbnailSvgType: "leg-curl",
-    gifUrl: "/assets/exercises/seated-leg-curl.gif"
+    gifUrl: "/assets/exercises/seated-leg-curl.gif",
+    videoUrl: "/assets/exercises/seated-leg-curl.mp4",
   },
   {
     id: "barbell-hip-thrust",
@@ -384,7 +385,8 @@ export const EXERCISES_DATABASE: Exercise[] = [
     defaultTempo: "2-0-1-2",
     defaultRir: 1,
     thumbnailSvgType: "hip-thrust",
-    gifUrl: "/assets/exercises/barbell-hip-thrust.gif"
+    gifUrl: "/assets/exercises/barbell-hip-thrust.gif",
+    videoUrl: "/assets/exercises/barbell-hip-thrust.mp4",
   },
   {
     id: "standing-calf-raise",
@@ -2525,7 +2527,8 @@ export const EXERCISES_DATABASE: Exercise[] = [
     progressions: ["Pausa 2s en el estiramiento", "Más carga progresiva semanal"],
     regressions: ["Press inclinado en máquina", "Press con mancuernas ligeras"],
     defaultTempo: "3-1-1-0",
-    defaultRir: 1
+    defaultRir: 1,
+    videoUrl: "/assets/exercises/smith-incline-bench-press.mp4",
   },
   {
     id: "low-to-high-cable-flye",
@@ -2552,7 +2555,8 @@ export const EXERCISES_DATABASE: Exercise[] = [
     progressions: ["Más carga o pausa en contracción"],
     regressions: ["Apertura baja con mancuerna muy ligera"],
     defaultTempo: "3-0-1-2",
-    defaultRir: 0
+    defaultRir: 0,
+    videoUrl: "/assets/exercises/low-to-high-cable-flye.mp4",
   },
   {
     id: "cable-pullover",
@@ -2580,7 +2584,8 @@ export const EXERCISES_DATABASE: Exercise[] = [
     progressions: ["Pausa en estiramiento completo"],
     regressions: ["Pullover con mancuerna en banco"],
     defaultTempo: "3-1-1-0",
-    defaultRir: 1
+    defaultRir: 1,
+    videoUrl: "/assets/exercises/cable-pullover.mp4",
   },
   {
     id: "serratus-punches",
@@ -2636,7 +2641,8 @@ export const EXERCISES_DATABASE: Exercise[] = [
     progressions: ["Más carga controlada"],
     regressions: ["Remo en polea con menos peso"],
     defaultTempo: "3-1-1-0",
-    defaultRir: 1
+    defaultRir: 1,
+    videoUrl: "/assets/exercises/seated-cable-row.mp4",
   },
   {
     id: "lat-pushdown",
@@ -2664,7 +2670,8 @@ export const EXERCISES_DATABASE: Exercise[] = [
     progressions: ["Pausa en contracción"],
     regressions: ["Lat pushdown con banda"],
     defaultTempo: "3-1-1-0",
-    defaultRir: 1
+    defaultRir: 1,
+    videoUrl: "/assets/exercises/lat-pushdown.mp4",
   },
   {
     id: "rear-delt-fly-machine",
@@ -2692,7 +2699,8 @@ export const EXERCISES_DATABASE: Exercise[] = [
     progressions: ["Más repeticiones o pausa en contracción"],
     regressions: ["Rear delt fly con banda ligera"],
     defaultTempo: "3-0-1-1",
-    defaultRir: 1
+    defaultRir: 1,
+    videoUrl: "/assets/exercises/rear-delt-fly-machine.mp4",
   },
   {
     id: "bulgarian-split-squat",
@@ -2720,7 +2728,8 @@ export const EXERCISES_DATABASE: Exercise[] = [
     progressions: ["Mancuernas más pesadas"],
     regressions: ["Split squat estático sin elevación"],
     defaultTempo: "3-1-1-0",
-    defaultRir: 1
+    defaultRir: 1,
+    videoUrl: "/assets/exercises/bulgarian-split-squat.mp4",
   },
   {
     id: "box-jump",
@@ -2749,7 +2758,8 @@ export const EXERCISES_DATABASE: Exercise[] = [
     regressions: ["Step-ups explosivos"],
     defaultTempo: "Explosivo",
     defaultRir: 2,
-    executionMode: "explosive"
+    executionMode: "explosive",
+    videoUrl: "/assets/exercises/box-jump.mp4",
   },
   {
     id: "handstand-hold",
@@ -2778,7 +2788,8 @@ export const EXERCISES_DATABASE: Exercise[] = [
     regressions: ["Pike hold (pica estática)"],
     defaultTempo: "Sostén isométrico",
     defaultRir: 2,
-    executionMode: "time"
+    executionMode: "time",
+    videoUrl: "/assets/exercises/handstand-hold.mp4",
   },
   {
     id: "l-sit-hold",
@@ -2807,7 +2818,8 @@ export const EXERCISES_DATABASE: Exercise[] = [
     regressions: ["Tuck L-sit (rodillas juntas)"],
     defaultTempo: "Sostén isométrico",
     defaultRir: 2,
-    executionMode: "time"
+    executionMode: "time",
+    videoUrl: "/assets/exercises/l-sit-hold.mp4",
   },
   {
     id: "windshield-wipers",
@@ -2863,7 +2875,8 @@ export const EXERCISES_DATABASE: Exercise[] = [
     progressions: ["Más rango o peso en tobillos"],
     regressions: ["Dragon flag de rodillas (negative only)"],
     defaultTempo: "3-0-2-0",
-    defaultRir: 1
+    defaultRir: 1,
+    videoUrl: "/assets/exercises/dragon-flag.mp4",
   },
   {
     id: "explosive-step-up",
@@ -2892,7 +2905,8 @@ export const EXERCISES_DATABASE: Exercise[] = [
     regressions: ["Step-up controlado (sin salto)"],
     defaultTempo: "Explosivo",
     defaultRir: 2,
-    executionMode: "explosive"
+    executionMode: "explosive",
+    videoUrl: "/assets/exercises/explosive-step-up.mp4",
   },
   {
     id: "pike-push-up",
@@ -2920,7 +2934,8 @@ export const EXERCISES_DATABASE: Exercise[] = [
     progressions: ["Pies elevados y mayor profundidad"],
     regressions: ["Pike push-up con rodillas flexionadas"],
     defaultTempo: "3-0-1-0",
-    defaultRir: 1
+    defaultRir: 1,
+    videoUrl: "/assets/exercises/pike-push-up.mp4",
   },
   {
     id: "seated-calf-raise",
@@ -2948,7 +2963,8 @@ export const EXERCISES_DATABASE: Exercise[] = [
     progressions: ["Más carga o pausa más larga"],
     regressions: ["Gemelo sentado con barras o cuerpo libre"],
     defaultTempo: "3-2-1-0",
-    defaultRir: 1
+    defaultRir: 1,
+    videoUrl: "/assets/exercises/seated-calf-raise.mp4",
   },
   {
     id: "weighted-chin-up",
@@ -2976,7 +2992,8 @@ export const EXERCISES_DATABASE: Exercise[] = [
     progressions: ["Más peso o pausa abajo"],
     regressions: ["Dominadas asistidas o negativas"],
     defaultTempo: "3-1-1-0",
-    defaultRir: 1
+    defaultRir: 1,
+    videoUrl: "/assets/exercises/weighted-chin-up.mp4",
   },
   {
     id: "inverted-row",
@@ -3004,7 +3021,8 @@ export const EXERCISES_DATABASE: Exercise[] = [
     progressions: ["Pies elevados o peso extra"],
     regressions: ["Remo invertido con rodillas flexionadas"],
     defaultTempo: "3-1-1-0",
-    defaultRir: 1
+    defaultRir: 1,
+    videoUrl: "/assets/exercises/inverted-row.mp4",
   },
   {
     id: "dumbbell-rear-delt-fly",
@@ -3032,7 +3050,8 @@ export const EXERCISES_DATABASE: Exercise[] = [
     progressions: ["Pausa en contracción"],
     regressions: ["Rear delt fly con banda"],
     defaultTempo: "3-0-1-1",
-    defaultRir: 1
+    defaultRir: 1,
+    videoUrl: "/assets/exercises/dumbbell-rear-delt-fly.mp4",
   },
   {
     id: "superman-hold",
@@ -3061,6 +3080,7 @@ export const EXERCISES_DATABASE: Exercise[] = [
     regressions: ["Superman de piernas o torso por separado"],
     defaultTempo: "Sostén isométrico",
     defaultRir: 2,
-    executionMode: "time"
-  }
+executionMode: "time",
+    videoUrl: "/assets/exercises/superman-hold.mp4",
+}
 ];
