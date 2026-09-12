@@ -102,7 +102,7 @@ interface WorkoutContextType {
   completeSetAndTriggerTimer: (workoutExerciseId: string, setId: string, opts?: { durationSeconds?: number }) => void;
   recordExerciseDifficulty: (workoutExerciseId: string, difficulty: DifficultyLevel) => void;
   /** P2: acepta el sRPE sesión (Foster 1-10) y guarda carga interna. */
-  finishWorkout: (srpe?: number) => { prsAchieved: PersonalRecord[]; totalVolumeKg: number };
+  finishWorkout: (srpe?: number, partialReason?: string) => { prsAchieved: PersonalRecord[]; totalVolumeKg: number };
   cancelWorkout: () => void;
   startRestTimer: (seconds: number, exerciseName?: string) => void;
   stopRestTimer: () => void;
@@ -525,34 +525,35 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const startEmptyWorkout = useCallback((name = "Entrenamiento Libre") => {
     try {
-      // Add cardio block (20 min treadmill) â€” marcado como "cardio"
-      // para NO contarlo como serie efectiva de fuerza en volumen/deload/volumen semanal.
-      const cardioDef = EXERCISES_DATABASE.find((e) => e.id === "elliptical-machine-walk") || EXERCISES_DATABASE[0];
-      const cardioSets: WorkoutSet[] = [
-        { id: `cardio-${Date.now()}`, setNumber: 1, type: "cardio", weight: 0, reps: 1, rir: 2, tempo: "--",
-          completed: false, previousWeight: 0, previousReps: 1, previousRir: 2 },
-      ];
-      const cardioEx: WorkoutExercise = {
-        id: `wex-cardio-${Date.now()}`,
-        exerciseId: cardioDef.id,
-        exercise: cardioDef,
-        targetRestSeconds: 0,
-        sets: cardioSets,
-        notes: "cardio:20min",
-      };
-
       const newSession: ActiveWorkoutSession = {
         id: `session-${Date.now()}`,
         routineName: name,
         startTime: Date.now(),
-        exercises: [cardioEx],
+        exercises: [],
       };
+      // Cardio opcional coherente con el toggle global ("Hoy"): la sesión libre
+      // solo arranca con 20 min de elíptica si el usuario lo dejó habilitado.
+      if (includeCardio) {
+        const cardioDef = EXERCISES_DATABASE.find((e) => e.id === "elliptical-machine-walk") || EXERCISES_DATABASE[0];
+        const cardioSets: WorkoutSet[] = [
+          { id: `cardio-${Date.now()}`, setNumber: 1, type: "cardio", weight: 0, reps: 1, rir: 2, tempo: "--",
+            completed: false, previousWeight: 0, previousReps: 1, previousRir: 2 },
+        ];
+        newSession.exercises.push({
+          id: `wex-cardio-${Date.now()}`,
+          exerciseId: cardioDef.id,
+          exercise: cardioDef,
+          targetRestSeconds: 0,
+          sets: cardioSets,
+          notes: "cardio:20min",
+        });
+      }
       setActiveSession(newSession);
       setIsWorkoutModalOpen(true);
     } catch (err) {
       console.error("[KINETIX] startEmptyWorkout failed:", err);
     }
-  }, []);
+  }, [includeCardio]);
 
   const addExerciseToActiveWorkout = useCallback((exercise: Exercise) => {
     const lastHistory = exerciseHistory
@@ -869,7 +870,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
     });
   }, []);
 
-  const finishWorkout = useCallback((srpe?: number) => {
+  const finishWorkout = useCallback((srpe?: number, partialReason?: string) => {
     if (!activeSession) return { prsAchieved: [], totalVolumeKg: 0 };
 
     const durationSeconds = Math.max(60, Math.floor((Date.now() - activeSession.startTime) / 1000));
@@ -1000,6 +1001,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
       fatigueScore: activeSession.perceivedFatigue || 5,
       srpe: cleanSrpe,
       sessionLoad: cleanSrpe != null ? Math.round(cleanSrpe * (durationSeconds / 60)) : undefined,
+      partialReason,
     };
 
     setWorkoutHistory((prev) => [completed, ...prev]);

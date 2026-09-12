@@ -25,9 +25,11 @@ import { RoutineEditorModal } from "./RoutineEditorModal";
 import { loadUserProfile } from "../../utils/userProfile";
 import { adaptRoutineToEquipment } from "../../utils/equipmentAdapter";
 import { applyDupDay } from "../../utils/dup";
+import { previewExerciseCount } from "../../utils/sessionPreview";
+import { CardioToggle } from "../workout/CardioToggle";
 
 export const ProgramsExplorer: React.FC = () => {
-  const { startWorkoutFromRoutine, setSelectedExerciseForDetail, customRoutines, deleteCustomRoutine, workoutHistory } = useWorkout();
+  const { startWorkoutFromRoutine, setSelectedExerciseForDetail, customRoutines, deleteCustomRoutine, workoutHistory, includeCardio } = useWorkout();
   const { showToast } = useToast();
   // Persist the selected program + routine so the choice survives tab switches
   // and reloads (previously it always reset to the first program on remount).
@@ -168,7 +170,7 @@ export const ProgramsExplorer: React.FC = () => {
                   </div>
 
                   <div className="text-[11px] text-neutral-400 font-mono">
-                    {routine.exercises.length} ejercicios · {routine.estimatedDurationMin} min
+                    {previewExerciseCount(routine, includeCardio)} ejercicios · {routine.estimatedDurationMin} min
                   </div>
 
                   <div className="flex items-center gap-2 pt-2 border-t border-neutral-800">
@@ -311,6 +313,7 @@ export const ProgramsExplorer: React.FC = () => {
                 Iniciar Este Entrenamiento
               </button>
             </div>
+            <CardioToggle />
           </div>
 
           {/* Exercises in Routine List */}

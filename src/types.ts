@@ -222,6 +222,8 @@ export interface CompletedWorkout {
   srpe?: number;
   /** P2 carga interna sesión = sRPE × minutos (UA, Foster). */
   sessionLoad?: number;
+  /** P2 motivo de sesión parcial (series planificadas sin completar). */
+  partialReason?: string;
 }
 
 /** Día de periodización ondulante (DUP, P4). */

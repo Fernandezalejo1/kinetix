@@ -60,6 +60,8 @@ import { getMesocycleInfo } from "../../utils/mesocycle";
 import { getUndoneExercisesFromSession } from "../../utils/pendingExercises";
 import { localDateKey } from "../../utils/dateUtils";
 import { READINESS_VERDICTS } from "../../utils/goalEngine";
+import { previewExerciseCount } from "../../utils/sessionPreview";
+import { CardioToggle } from "./CardioToggle";
 
 const GOAL_LABELS: Record<string, string> = {
   cut: "Definición",
@@ -89,6 +91,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
     carryOverPendingExercise,
     weightUnit,
     nutritionLog,
+    includeCardio,
   } = useWorkout();
 
   const [isPlateOpen, setIsPlateOpen] = useState(false);
@@ -286,7 +289,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-cyan-400 mt-0.5">→</span>
-                    <span><strong className="text-white">Rutina de hoy:</strong> {nextRoutine.name} — {nextRoutine.exercises.length} ejercicios{userProfile?.sessionMinutes ? ` · ~${userProfile.sessionMinutes} min` : ""}</span>
+                    <span><strong className="text-white">Rutina de hoy:</strong> {nextRoutine.name} — {previewExerciseCount(nextRoutine, includeCardio)} ejercicios{userProfile?.sessionMinutes ? ` · ~${userProfile.sessionMinutes} min` : ""}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-cyan-400 mt-0.5">→</span>
@@ -356,6 +359,11 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
             )}
           </div>
         </div>
+        {!activeSession && (
+          <div className="mt-3 border-t border-neutral-800/60 pt-3">
+            <CardioToggle className="max-w-sm" />
+          </div>
+        )}
       </div>
 
       {/* Panel "Adaptar sesión" */}
@@ -424,6 +432,11 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
                 <h3 className="text-lg font-black text-white mt-2">Ejercicios sin terminar</h3>
                 <p className="text-xs text-neutral-300 leading-relaxed mt-1">
                   Dejaste series incompletas en "{pendingCarryover.session.routineName}". Sumá los que te faltaron a la sesión de hoy.
+                  {pendingCarryover.session.partialReason && (
+                    <span className="mt-1 inline-flex items-center gap-1 text-[11px] font-bold text-amber-300 bg-amber-500/10 border border-amber-500/25 rounded-full px-2 py-0.5">
+                      Motivo: {pendingCarryover.session.partialReason}
+                    </span>
+                  )}
                 </p>
               </div>
             </div>
@@ -732,7 +745,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
                     DÍA {idx + 1} • {routine.targetSplit}
                   </span>
                   <span className="text-[11px] sm:text-xs font-mono text-cyan-400 font-bold whitespace-nowrap">
-                    {routine.exercises.length} Ejercicios
+                    {previewExerciseCount(routine, includeCardio)} Ejercicios
                   </span>
                 </div>
                 <h4 className="text-base sm:text-lg font-black text-white line-clamp-2">{routine.name}</h4>

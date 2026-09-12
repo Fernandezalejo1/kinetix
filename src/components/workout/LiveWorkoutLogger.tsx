@@ -26,12 +26,21 @@ import {
   Smile,
   Zap,
   Target,
-  TrendingUp
+  TrendingUp,
+  AlertCircle
 } from "lucide-react";
 import { useWorkout } from "../../context/WorkoutContext";
 import { useToast } from "../../context/ToastContext";
 import { ConfirmDialog } from "../ConfirmDialog";
 import { SetType, Exercise, WorkoutExercise, WorkoutSet, DifficultyLevel, PersonalRecord, CompletedWorkout } from "../../types";
+
+// P2: motivos de sesión parcial (etiquetado honesto del "por qué no se completó").
+const PARTIAL_REASONS = [
+  "Me quedé sin tiempo",
+  "Fatiga / baja energía",
+  "Dolor o molestia",
+  "Calidad de sueño",
+];
 const PlateCalculatorModal = React.lazy(() =>
   import("./PlateCalculatorModal").then((m) => ({ default: m.PlateCalculatorModal }))
 );
@@ -184,6 +193,8 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
   // P2: encuesta sRPE post-sesión (Foster 1-10) antes de cerrar.
   const [srpeSurvey, setSrpeSurvey] = useState(false);
   const [srpeValue, setSrpeValue] = useState<number | null>(null);
+  // P2: motivo opcional cuando la sesión termina con series sin completar.
+  const [partialReason, setPartialReason] = useState<string | null>(null);
   const [confirmRemoveEx, setConfirmRemoveEx] = useState<string | null>(null);
   const [summaryModal, setSummaryModal] = useState<{
     isOpen: boolean;
@@ -303,10 +314,11 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
   const handleFinish = () => {
     if (!activeSession) return;
     setSrpeValue(null);
+    setPartialReason(null);
     setSrpeSurvey(true);
   };
 
-  const doFinish = (srpe: number | undefined) => {
+  const doFinish = (srpe: number | undefined, reason?: string | null) => {
     if (!activeSession) return;
     const durSecs = Math.max(60, Math.floor((Date.now() - activeSession.startTime) / 1000));
     const effectiveSets = activeSession.exercises.reduce(
@@ -316,7 +328,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
     const routineTitle = activeSession.routineName;
     const exercisesSnapshot = [...activeSession.exercises];
 
-    const { prsAchieved, totalVolumeKg } = finishWorkout(srpe);
+    const { prsAchieved, totalVolumeKg } = finishWorkout(srpe, reason ?? undefined);
 
     const completedObj: CompletedWorkout = {
       id: `completed-${Date.now()}`,
@@ -928,12 +940,23 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                               <input
                                 type="number"
                                 inputMode="decimal"
+                                min="0"
+                                step={weightStep}
                                 value={weightDisplay(set.weight)}
                                 onChange={(e) =>
                                   updateSet(wEx.id, set.id, {
                                     weight: weightKgFromDisplay(parseFloat(e.target.value) || 0),
                                   })
                                 }
+                                onBlur={(e) => {
+                                  const raw = parseFloat(e.target.value);
+                                  if (!Number.isFinite(raw)) return;
+                                  // Anti-errores de tipeo: ajusta a múltiplo del paso (2.5 kg / 5 lbs)
+                                  const snapped = Math.max(0, Math.round(raw / weightStep) * weightStep);
+                                  if (Math.abs(snapped - raw) > 0.001) {
+                                    updateSet(wEx.id, set.id, { weight: weightKgFromDisplay(snapped) });
+                                  }
+                                }}
                                 className="flex-1 min-w-0 text-center bg-transparent font-bold text-white text-sm focus:outline-none touch-target"
                               />
                               <button
@@ -989,10 +1012,12 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                               <input
                                 type="number"
                                 inputMode="numeric"
+                                min="1"
+                                max="99"
                                 value={set.reps}
                                 onChange={(e) =>
                                   updateSet(wEx.id, set.id, {
-                                    reps: parseInt(e.target.value, 10) || 0,
+                                    reps: Math.min(99, Math.max(1, parseInt(e.target.value, 10) || 1)),
                                   })
                                 }
                                 className="flex-1 min-w-0 text-center bg-transparent font-bold text-white text-sm focus:outline-none touch-target"
@@ -1188,15 +1213,49 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
               1-2 muy suave · 3-4 moderado · 5-6 duro · 7-8 muy duro · 9-10 máximo
             </p>
 
+            {/* P2: motivo de sesión parcial (visible solo si quedan series sin completar) */}
+            {(() => {
+              const incomplete = activeSession.exercises.some((wex) => wex.sets.some((s) => !s.completed));
+              if (!incomplete) return null;
+              return (
+                <>
+                  <div className="pt-2 border-t border-neutral-800">
+                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-neutral-300 uppercase tracking-wider">
+                      <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
+                      Quedaron series sin completar — ¿por qué?
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5 mt-2" role="radiogroup" aria-label="Motivo de sesión parcial">
+                      {PARTIAL_REASONS.map((r) => (
+                        <button
+                          key={r}
+                          type="button"
+                          role="radio"
+                          aria-checked={partialReason === r}
+                          onClick={() => setPartialReason(partialReason === r ? null : r)}
+                          className={`min-h-[44px] px-2 rounded-xl border text-[11px] font-bold transition-colors touch-target ${
+                            partialReason === r
+                              ? "bg-amber-500/15 text-amber-300 border-amber-500/40"
+                              : "bg-neutral-950 text-neutral-300 border-neutral-800 hover:border-neutral-600"
+                          }`}
+                        >
+                          {r}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
+
             <div className="flex gap-2">
               <button
-                onClick={() => doFinish(undefined)}
+                onClick={() => doFinish(undefined, partialReason)}
                 className="flex-1 py-3 text-xs text-neutral-500 hover:text-neutral-300 font-medium transition-colors min-h-[48px]"
               >
                 Omitir
               </button>
               <button
-                onClick={() => doFinish(srpeValue ?? undefined)}
+                onClick={() => doFinish(srpeValue ?? undefined, partialReason)}
                 disabled={srpeValue == null}
                 className="flex-1 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-black transition-colors min-h-[48px]"
               >
