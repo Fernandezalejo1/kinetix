@@ -115,7 +115,7 @@ export const TodayHub: React.FC<TodayHubProps> = ({
       {/* Encabezado del día */}
       <div className="flex items-end justify-between gap-3 flex-wrap">
         <div>
-          <p className="text-[10px] font-black uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
+          <p className="text-[11px] font-black uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
             <Zap className="w-3.5 h-3.5 fill-cyan-400" /> HOY
           </p>
           <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight capitalize mt-1">
@@ -124,7 +124,7 @@ export const TodayHub: React.FC<TodayHubProps> = ({
           <p className="text-xs text-neutral-400 mt-1 capitalize">{todayLabel}</p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-neutral-900 border border-neutral-800 text-neutral-300">
+          <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-neutral-900 border border-neutral-800 text-neutral-300">
             {phaseInfo ? `${phaseInfo.emoji ?? ""} ${phaseInfo.label}` : "Plan KINETIX"}
           </span>
         </div>
@@ -141,7 +141,7 @@ export const TodayHub: React.FC<TodayHubProps> = ({
               <Play className="w-5 h-5 fill-emerald-300" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-black uppercase tracking-wider text-emerald-400">Sesión activa</p>
+              <p className="text-[11px] font-black uppercase tracking-wider text-emerald-400">Sesión activa</p>
               <p className="text-sm font-black text-white truncate mt-0.5">{activeSession.routineName}</p>
               <p className="text-[11px] text-neutral-400 mt-0.5">
                 {activeSession.exercises.length} ejercicios · tocá para continuar
@@ -158,7 +158,7 @@ export const TodayHub: React.FC<TodayHubProps> = ({
         <div className="relative z-10 space-y-5">
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
                 Hoy te toca
               </span>
               <span className="flex items-center gap-1.5 text-[11px] text-neutral-400 font-bold">
@@ -170,7 +170,7 @@ export const TodayHub: React.FC<TodayHubProps> = ({
             </h2>
             <p className="text-sm text-neutral-400 mt-1 max-w-xl leading-relaxed">
               {nextRoutine.name}
-              <span className="text-neutral-500">
+              <span className="text-neutral-400">
                 {" · "}{nextExerciseCount} ejercicios
                 {nextLastDays === null
                   ? " · primera vez con esta rutina"
@@ -180,7 +180,7 @@ export const TodayHub: React.FC<TodayHubProps> = ({
               </span>
             </p>
             {nextRoutine.description && (
-              <p className="text-xs text-neutral-500 mt-2 leading-relaxed max-w-md">{nextRoutine.description}</p>
+              <p className="text-xs text-neutral-400 mt-2 leading-relaxed max-w-md">{nextRoutine.description}</p>
             )}
           </div>
 
@@ -227,7 +227,7 @@ export const TodayHub: React.FC<TodayHubProps> = ({
                   role="radio"
                   aria-checked={currentEquipment === opt.value}
                   onClick={() => changeTodayEquipment(opt.value)}
-                  className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-[10px] sm:text-[11px] font-bold transition-all touch-target ${
+                  className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-[11px] font-bold transition-all touch-target ${
                     currentEquipment === opt.value
                       ? "bg-cyan-600 text-white shadow-lg shadow-cyan-600/25"
                       : "bg-neutral-900 text-neutral-400 hover:text-white border border-neutral-800"
@@ -239,11 +239,11 @@ export const TodayHub: React.FC<TodayHubProps> = ({
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 text-[11px] text-neutral-500">
+          <div className="flex flex-wrap items-center gap-2 text-[11px] text-neutral-400">
             <button onClick={onGoToWorkout} className="flex items-center gap-1 font-bold text-neutral-400 hover:text-white transition-colors">
               Cambiar sesión <ArrowRight className="w-3.5 h-3.5" />
             </button>
-            <span className="text-neutral-700">·</span>
+            <span aria-hidden="true" className="text-neutral-500">·</span>
             <button
               onClick={() => setIsReviewOpen(true)}
               className="flex items-center gap-1 font-bold text-neutral-400 hover:text-white transition-colors"
@@ -251,7 +251,7 @@ export const TodayHub: React.FC<TodayHubProps> = ({
               <RefreshCcw className="w-3.5 h-3.5" />
               Revisión semanal
             </button>
-            <span className="text-neutral-700">·</span>
+            <span aria-hidden="true" className="text-neutral-500">·</span>
             <span>
               Sobrecarga progresiva: subís peso solo cuando cumplís el objetivo de reps con el RIR planificado.
             </span>
@@ -268,7 +268,7 @@ export const TodayHub: React.FC<TodayHubProps> = ({
         >
           <CalendarCheck className="w-4 h-4 text-cyan-400 mx-auto mb-1" />
           <div className="text-xl font-black text-white tabular-nums">{todayStats.workouts}</div>
-          <span className="text-[9px] font-bold text-neutral-500 uppercase">Sesiones hoy</span>
+          <span className="text-[11px] font-bold text-neutral-400 uppercase">Sesiones hoy</span>
         </button>
         <button
           onClick={onGoToWorkout}
@@ -277,7 +277,7 @@ export const TodayHub: React.FC<TodayHubProps> = ({
         >
           <Activity className="w-4 h-4 text-emerald-400 mx-auto mb-1" />
           <div className="text-xl font-black text-emerald-400 tabular-nums">{todayStats.sets}</div>
-          <span className="text-[9px] font-bold text-neutral-500 uppercase">Series hoy</span>
+          <span className="text-[11px] font-bold text-neutral-400 uppercase">Series hoy</span>
         </button>
         <button
           onClick={onGoToNutrition}
@@ -286,7 +286,7 @@ export const TodayHub: React.FC<TodayHubProps> = ({
         >
           <Utensils className="w-4 h-4 text-amber-400 mx-auto mb-1" />
           <div className="text-xl font-black text-amber-400 tabular-nums">{todayStats.meals}</div>
-          <span className="text-[9px] font-bold text-neutral-500 uppercase">Comidas</span>
+          <span className="text-[11px] font-bold text-neutral-400 uppercase">Comidas</span>
         </button>
       </div>
 
@@ -301,7 +301,7 @@ export const TodayHub: React.FC<TodayHubProps> = ({
           </div>
           <div className="min-w-0">
             <h4 className="text-sm font-bold text-white">Programas</h4>
-            <p className="text-[10px] text-neutral-500 line-clamp-1">Cambiar rutinas y splits</p>
+            <p className="text-[11px] text-neutral-400 line-clamp-1">Cambiar rutinas y splits</p>
           </div>
         </button>
         <button
@@ -313,7 +313,7 @@ export const TodayHub: React.FC<TodayHubProps> = ({
           </div>
           <div className="min-w-0">
             <h4 className="text-sm font-bold text-white">Ejercicios</h4>
-            <p className="text-[10px] text-neutral-500 line-clamp-1">Biblioteca y biomecánica</p>
+            <p className="text-[11px] text-neutral-400 line-clamp-1">Biblioteca y biomecánica</p>
           </div>
         </button>
       </div>

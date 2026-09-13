@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { FocusTrap } from "./FocusTrap";
 
 interface ConfirmDialogProps {
@@ -22,12 +22,25 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   onConfirm,
   onCancel,
 }) => {
+  // Escape cancela: FocusTrap solo atrapa Tab, no cierra el diálogo.
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        onCancel();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [open, onCancel]);
+
   if (!open) return null;
 
   return (
     <FocusTrap>
       <div
-        className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn"
+        className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn"
         onClick={onCancel}
       >
       <div

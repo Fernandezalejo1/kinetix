@@ -1101,7 +1101,7 @@ export const ExerciseAnimationPlayer: React.FC<ExerciseAnimationPlayerProps> = (
             <span className="hidden sm:inline text-[11px]">{themeMode === "white" ? "Fondo Blanco" : "Fondo Carbón"}</span>
           </button>
 
-          <span className="px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold bg-neutral-100 dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 border border-neutral-300 dark:border-neutral-700">
+          <span className="px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold bg-neutral-100 dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 border border-neutral-300 dark:border-neutral-700">
             {movementData.equipmentLabel}
           </span>
         </div>
@@ -1132,11 +1132,11 @@ export const ExerciseAnimationPlayer: React.FC<ExerciseAnimationPlayerProps> = (
           themeMode === "white" ? "bg-white/95 border-neutral-200 text-neutral-900 shadow-neutral-200/50" : "bg-[#18181c]/90 border-neutral-800 text-white"
         }`}>
           <div className="flex items-center justify-between gap-2">
-            <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-red-500">
+            <span className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-red-500">
               <Activity className="w-3.5 h-3.5" />
               Cinemática 3D Hevy
             </span>
-            <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-red-500/15 text-red-500 border border-red-500/20">
+            <span className="px-2 py-0.5 rounded-full text-[11px] font-mono font-bold bg-red-500/15 text-red-500 border border-red-500/20">
               Rep #{currentRep}
             </span>
           </div>
@@ -1146,13 +1146,13 @@ export const ExerciseAnimationPlayer: React.FC<ExerciseAnimationPlayerProps> = (
             {currentPhase.name}
           </div>
 
-          <p className="text-[10px] text-neutral-500 dark:text-neutral-400 leading-tight">
+          <p className="text-[11px] text-neutral-500 dark:text-neutral-400 leading-tight">
             {currentPhase.action}
           </p>
 
           {/* Muscle Tension Meter */}
           <div className="pt-1 space-y-1">
-            <div className="flex justify-between text-[10px] text-neutral-600 dark:text-neutral-300">
+            <div className="flex justify-between text-[11px] text-neutral-600 dark:text-neutral-300">
               <span>Tensión Muscular:</span>
               <span className="font-mono font-bold text-red-500">{currentPhase.muscleTension}%</span>
             </div>
@@ -1323,18 +1323,18 @@ export const ExerciseAnimationPlayer: React.FC<ExerciseAnimationPlayerProps> = (
               title="Voz de Cues Técnicos"
             >
               {isVoiceEnabled ? <Volume2 className="w-4 h-4 text-red-500" /> : <VolumeX className="w-4 h-4" />}
-              <span className="hidden sm:inline text-[10px]">Audio</span>
+              <span className="hidden sm:inline text-[11px]">Audio</span>
             </button>
           </div>
 
           {/* Speed Selector */}
           <div className="flex items-center gap-1 text-[11px]">
-            <span className="text-neutral-500 dark:text-neutral-400 text-[10px] mr-1">Velocidad:</span>
+            <span className="text-neutral-500 dark:text-neutral-400 text-[11px] mr-1">Velocidad:</span>
             {[0.5, 1.0, 1.25, 1.5, 2.0].map((spd) => (
               <button
                 key={spd}
                 onClick={() => setSpeed(spd)}
-                className={`px-2 py-0.5 rounded-lg font-bold transition-all text-[10px] ${
+                className={`px-2 py-0.5 rounded-lg font-bold transition-all text-[11px] ${
                   speed === spd
                     ? "bg-red-600 text-white shadow-xs"
                     : themeMode === "white"
@@ -1349,7 +1349,7 @@ export const ExerciseAnimationPlayer: React.FC<ExerciseAnimationPlayerProps> = (
 
           {/* Studio Badge */}
           <div className="flex items-center gap-2">
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold border ${
+            <span className={`px-2 py-0.5 rounded-full text-[11px] font-mono font-bold border ${
               themeMode === "white"
                 ? "bg-white text-red-600 border-neutral-300 shadow-xs"
                 : "bg-neutral-900 text-red-400 border-neutral-700"

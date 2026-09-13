@@ -132,7 +132,7 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
     accent = "text-white"
   ) => (
     <div className="p-3 rounded-2xl bg-neutral-950 border border-neutral-800 min-w-0">
-      <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-neutral-500 mb-1.5">
+      <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-neutral-400 mb-1.5">
         {icon}
         <span className="truncate">{label}</span>
       </div>
@@ -174,7 +174,7 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
           <div className="p-4 sm:p-6 space-y-5">
             {/* Veredicto */}
             <div className={`p-4 rounded-2xl ${verdictTone.bg} border ${verdictTone.border}`}>
-              <div className={`text-[10px] font-black uppercase tracking-wider ${verdictTone.text}`}>
+              <div className={`text-[11px] font-black uppercase tracking-wider ${verdictTone.text}`}>
                 Veredicto de la semana
               </div>
               <div className="text-lg font-black text-white mt-1">{review.verdict.label}</div>
@@ -187,18 +187,18 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
                 <CalendarCheck className="w-4 h-4 text-cyan-400 mx-auto mb-1" />
                 <div className="text-lg font-black text-white tabular-nums">
                   {review.workoutsDone}
-                  <span className="text-xs font-bold text-neutral-500">/{review.workoutsExpected}</span>
+                  <span className="text-xs font-bold text-neutral-400">/{review.workoutsExpected}</span>
                 </div>
-                <span className="text-[9px] font-bold text-neutral-500 uppercase">Sesiones (adherencia {review.adherencePercent}%)</span>
+                <span className="text-[11px] font-bold text-neutral-400 uppercase">Sesiones (adherencia {review.adherencePercent}%)</span>
               </div>
-              {metric(<Dumbbell className="w-3.5 h-3.5 text-neutral-500" />, `${review.setsThisWeek}`, "Series")}
-              {metric(<TrendingUp className="w-3.5 h-3.5 text-neutral-500" />, `${review.volumeDeltaPercent > 0 ? "+" : ""}${review.volumeDeltaPercent}%`, "Volumen vs anterior", review.volumeDeltaPercent >= 0 ? "text-emerald-400" : "text-amber-300")}
-              {metric(<Trophy className="w-3.5 h-3.5 text-neutral-500" />, `${review.prCount}`, "PRs")}
-              {metric(<ShieldCheck className="w-3.5 h-3.5 text-neutral-500" />, review.avgRir != null ? `${review.avgRir}` : "—", "RIR promedio")}
-              {metric(<Activity className="w-3.5 h-3.5 text-neutral-500" />, review.avgReadiness != null ? `${review.avgReadiness}/100` : "—", "Readiness")}
-              {metric(<Moon className="w-3.5 h-3.5 text-neutral-500" />, review.avgSleepHours != null ? `${review.avgSleepHours}h` : "—", "Sueño")}
-              {metric(<Flame className="w-3.5 h-3.5 text-neutral-500" />, `${review.cardioMinutes}${review.cardioTarget != null ? `/${review.cardioTarget}` : ""}`, "Cardio min")}
-              {metric(<Scale className="w-3.5 h-3.5 text-neutral-500" />, review.weightDeltaKg != null ? `${review.weightDeltaKg > 0 ? "+" : ""}${review.weightDeltaKg} kg` : "—", "Peso (Δ)", review.weightDeltaKg != null && review.weightDeltaKg <= 0 ? "text-emerald-400" : "text-white")}
+              {metric(<Dumbbell className="w-3.5 h-3.5 text-neutral-400" />, `${review.setsThisWeek}`, "Series")}
+              {metric(<TrendingUp className="w-3.5 h-3.5 text-neutral-400" />, `${review.volumeDeltaPercent > 0 ? "+" : ""}${review.volumeDeltaPercent}%`, "Volumen vs anterior", review.volumeDeltaPercent >= 0 ? "text-emerald-400" : "text-amber-300")}
+              {metric(<Trophy className="w-3.5 h-3.5 text-neutral-400" />, `${review.prCount}`, "PRs")}
+              {metric(<ShieldCheck className="w-3.5 h-3.5 text-neutral-400" />, review.avgRir != null ? `${review.avgRir}` : "—", "RIR promedio")}
+              {metric(<Activity className="w-3.5 h-3.5 text-neutral-400" />, review.avgReadiness != null ? `${review.avgReadiness}/100` : "—", "Readiness")}
+              {metric(<Moon className="w-3.5 h-3.5 text-neutral-400" />, review.avgSleepHours != null ? `${review.avgSleepHours}h` : "—", "Sueño")}
+              {metric(<Flame className="w-3.5 h-3.5 text-neutral-400" />, `${review.cardioMinutes}${review.cardioTarget != null ? `/${review.cardioTarget}` : ""}`, "Cardio min")}
+              {metric(<Scale className="w-3.5 h-3.5 text-neutral-400" />, review.weightDeltaKg != null ? `${review.weightDeltaKg > 0 ? "+" : ""}${review.weightDeltaKg} kg` : "—", "Peso (Δ)", review.weightDeltaKg != null && review.weightDeltaKg <= 0 ? "text-emerald-400" : "text-white")}
             </div>
 
             {/* Deuda deload */}
@@ -213,7 +213,7 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
             <div className="space-y-2">
               <h3 className="text-sm font-black text-white uppercase tracking-wider">Análisis</h3>
               {review.items.length === 0 ? (
-                <p className="text-xs text-neutral-500">Sin datos suficientes esta semana.</p>
+                <p className="text-xs text-neutral-400">Sin datos suficientes esta semana.</p>
               ) : (
                 review.items.map((item) => {
                   const tone = TONE_STYLE[item.tone] ?? TONE_STYLE.tip;
@@ -234,7 +234,7 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
             <div className="space-y-2">
               <h3 className="text-sm font-black text-white uppercase tracking-wider">Ajustes sugeridos</h3>
               {review.adjustments.length === 0 ? (
-                <p className="text-xs text-neutral-500">
+                <p className="text-xs text-neutral-400">
                   Sin ajustes necesarios. Mantené el plan y reevaluá el domingo.
                 </p>
               ) : (
@@ -262,7 +262,7 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
 
           {/* Footer */}
           <div className="px-4 sm:px-6 py-4 border-t border-neutral-800 flex items-center gap-3 shrink-0">
-            <p className="text-[10px] text-neutral-500">
+            <p className="text-[11px] text-neutral-400">
               La revisión es 100% local y determinista: analiza tus últimos 7 días de entrenamiento.
             </p>
             <div className="flex-1" />

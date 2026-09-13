@@ -37,7 +37,7 @@ export const StorageWarning: React.FC = () => {
         </p>
         <button
           onClick={() => setOpen(false)}
-          className="shrink-0 px-2 py-1 rounded-md bg-amber-800/70 hover:bg-amber-700 text-amber-50 text-[10px] font-bold min-h-[28px]"
+          className="shrink-0 px-2 py-1 rounded-md bg-amber-800/70 hover:bg-amber-700 text-amber-50 text-[11px] font-bold min-h-[28px]"
         >
           Cerrar
         </button>

@@ -75,7 +75,7 @@ export const CardioTimer: React.FC<{ exercise: WorkoutExercise }> = ({ exercise 
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-3xl font-black text-white font-mono">{String(mins).padStart(2, "0")}:{String(secs).padStart(2, "0")}</span>
-            <span className="text-[10px] text-neutral-400 font-bold">{done ? "¡COMPLETADO!" : isRunning ? "EN PROGRESO" : "20:00 min"}</span>
+            <span className="text-[11px] text-neutral-400 font-bold">{done ? "¡COMPLETADO!" : isRunning ? "EN PROGRESO" : "20:00 min"}</span>
           </div>
         </div>
         <div className="flex items-center justify-center gap-3">
@@ -201,7 +201,7 @@ export const IsometricTimer: React.FC<{ exercise: WorkoutExercise }> = ({ exerci
                 <span className="text-3xl font-black text-white font-mono">
                   {String(mins).padStart(2, "0")}:{String(secs).padStart(2, "0")}
                 </span>
-                <span className="text-[10px] text-neutral-400 font-bold">
+                <span className="text-[11px] text-neutral-400 font-bold">
                   {done ? "¡COMPLETADO!" : isRunning ? "MANTENÉ LA POSICIÓN" : `${dur}s`}
                 </span>
               </div>
@@ -247,10 +247,10 @@ export const IsometricTimer: React.FC<{ exercise: WorkoutExercise }> = ({ exerci
         {completedCount > 0 && (
           <div className="flex justify-center gap-2 pt-2">
             {exercise.sets.map((s, i) => (
-              <div key={s.id} className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold ${
+              <div key={s.id} className={`w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold ${
                 s.completed
                   ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                  : "bg-neutral-800 text-neutral-500 border border-neutral-700"
+                  : "bg-neutral-800 text-neutral-400 border border-neutral-700"
               }`}>
                 {s.completed ? "✓" : i + 1}
               </div>

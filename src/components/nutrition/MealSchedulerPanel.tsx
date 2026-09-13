@@ -240,7 +240,7 @@ export const MealSchedulerPanel: React.FC = () => {
               }`}
             >
               <span className="flex items-center gap-1.5">{s.icon} {s.short}</span>
-              <span className="text-[10px] font-normal opacity-80 leading-none">
+              <span className="text-[11px] font-normal opacity-80 leading-none">
                 {key === "nocturno" ? "🌙 Turno noche · 22:00–08:00" : "☀️ Turno día · 08:00–22:00"}
               </span>
             </button>
@@ -270,7 +270,7 @@ export const MealSchedulerPanel: React.FC = () => {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3">
                   <div className="flex flex-col items-center w-12 shrink-0">
-                    <span className={`text-[10px] font-black px-2 py-1 rounded-lg ${meal.preWorkout ? "bg-amber-500/20 text-amber-300" : "bg-neutral-800 text-neutral-300"}`}>
+                    <span className={`text-[11px] font-black px-2 py-1 rounded-lg ${meal.preWorkout ? "bg-amber-500/20 text-amber-300" : "bg-neutral-800 text-neutral-300"}`}>
                       {meal.time}
                     </span>
                   </div>
@@ -278,7 +278,7 @@ export const MealSchedulerPanel: React.FC = () => {
                     <div className="flex items-center gap-2 flex-wrap">
                       <h4 className="text-sm font-bold text-white">{meal.name}</h4>
                       {meal.preWorkout && (
-                        <span className="flex items-center gap-1 text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                        <span className="flex items-center gap-1 text-[11px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
                           <Zap className="w-3 h-3" />
                           Pre-entreno keto
                         </span>
@@ -290,14 +290,14 @@ export const MealSchedulerPanel: React.FC = () => {
                       <span className="text-cyan-400">{meal.protein}g P</span>
                       <span className="text-purple-400">{meal.carbs}g C</span>
                       <span className="text-emerald-400">{meal.fats}g G</span>
-                      <span className="text-neutral-600">({pct}% del día)</span>
+                      <span className="text-neutral-400">({pct}% del día)</span>
                     </div>
                   </div>
                 </div>
 
                 <button
                   onClick={() => addScheduledMeal(meal)}
-                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-neutral-800 hover:bg-cyan-600 text-neutral-300 hover:text-white text-[10px] font-bold border border-neutral-700 hover:border-cyan-500 transition-all shrink-0"
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-neutral-800 hover:bg-cyan-600 text-neutral-300 hover:text-white text-[11px] font-bold border border-neutral-700 hover:border-cyan-500 transition-all shrink-0"
                   title="Agregar a comidas de hoy"
                 >
                   <Plus className="w-3 h-3" />
@@ -321,7 +321,7 @@ export const MealSchedulerPanel: React.FC = () => {
           y mantenés la <strong className="text-cyan-300">proteína alta</strong> para preservar masa muscular. No dejes pasar más de 4–5h sin comer estando despierto,
           y la última comida hacela al menos 1h antes de dormir.
         </p>
-        <div className="flex items-center gap-2 text-[11px] text-neutral-500">
+        <div className="flex items-center gap-2 text-[11px] text-neutral-400">
           <Droplets className="w-3.5 h-3.5 text-cyan-400" />
           Hidratación: repartí 2.5–3 L durante tus horas despiertas (incluida la madrugada) y moderá el agua 30 min antes de ir a dormir.
         </div>

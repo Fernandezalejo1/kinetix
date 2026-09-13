@@ -105,7 +105,7 @@ export const ExerciseAnalyticsSection: React.FC<ExerciseAnalyticsSectionProps> =
           {analytics?.isEditorialEstimate ? (
             <>
               <div className="text-base font-black text-neutral-400 pt-1">Sin evidencia específica</div>
-              <p className="text-[11px] text-neutral-500">Estimación heurística por categoría de ejercicio (no es un dato medido ni de publicación).</p>
+              <p className="text-[11px] text-neutral-400">Estimación heurística por categoría de ejercicio (no es un dato medido ni de publicación).</p>
             </>
           ) : (
             <>
@@ -114,7 +114,7 @@ export const ExerciseAnalyticsSection: React.FC<ExerciseAnalyticsSectionProps> =
               </div>
               <p className="text-[11px] text-neutral-400">Máximo estímulo hipertrófico con fatiga periférica controlada</p>
               {analytics?.evidenceSource && (
-                <p className="text-[10px] text-cyan-300/70 break-words" title={analytics.evidenceSource}>Evidencia: {analytics.evidenceSource}</p>
+                <p className="text-[11px] text-cyan-300/70 break-words" title={analytics.evidenceSource}>Evidencia: {analytics.evidenceSource}</p>
               )}
             </>
           )}
@@ -221,11 +221,11 @@ export const ExerciseAnalyticsSection: React.FC<ExerciseAnalyticsSectionProps> =
 
             {/* e1RM Result Box */}
             <div className="p-4 rounded-2xl bg-neutral-900 border border-cyan-500/30 space-y-1">
-              <span className="text-[10px] uppercase font-bold text-neutral-400">1RM Científico Estimado</span>
+              <span className="text-[11px] uppercase font-bold text-neutral-400">1RM Científico Estimado</span>
               <div className="text-3xl font-black text-cyan-400">
                 {estimated1RM} <span className="text-sm font-normal text-neutral-300">{weightUnit}</span>
               </div>
-              <p className="text-[10px] text-neutral-400">
+              <p className="text-[11px] text-neutral-400">
                 Fórmula combinada Brzycki/Epley ajustada por proximidad real al fallo.
               </p>
             </div>
@@ -238,7 +238,7 @@ export const ExerciseAnalyticsSection: React.FC<ExerciseAnalyticsSectionProps> =
                 <TrendingUp className="w-3.5 h-3.5 text-cyan-400" />
                 Curva de Capacidad Carga vs Repeticiones
               </span>
-              <span className="text-[10px] text-neutral-400">Proyección teórica</span>
+              <span className="text-[11px] text-neutral-400">Proyección teórica</span>
             </div>
 
             <div className="h-52 w-full pt-2">
@@ -269,11 +269,11 @@ export const ExerciseAnalyticsSection: React.FC<ExerciseAnalyticsSectionProps> =
 
             <div className="grid grid-cols-2 gap-2 text-xs pt-1">
               <div className="p-2.5 rounded-xl bg-neutral-900 border border-neutral-800 text-[11px]">
-                <span className="text-neutral-400 block text-[10px]">Rango de Hipertrofia Óptimo:</span>
+                <span className="text-neutral-400 block text-[11px]">Rango de Hipertrofia Óptimo:</span>
                 <strong className="text-white">{analytics?.optimalRepRange || "8 - 12 reps"}</strong>
               </div>
               <div className="p-2.5 rounded-xl bg-neutral-900 border border-neutral-800 text-[11px]">
-                <span className="text-neutral-400 block text-[10px]">Volumen Semanal Sugerido:</span>
+                <span className="text-neutral-400 block text-[11px]">Volumen Semanal Sugerido:</span>
                 <strong className="text-purple-400">{analytics?.optimalWeeklySets || "6 - 10 series efectivas"}</strong>
               </div>
             </div>
@@ -330,11 +330,11 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({ exercise, histo
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="text-[10px] uppercase tracking-wider font-black text-violet-300 flex items-center gap-1">
+          <span className="text-[11px] uppercase tracking-wider font-black text-violet-300 flex items-center gap-1">
             <BrainCircuit className="w-3.5 h-3.5" />
             Próxima carga sugerida
           </span>
-          <span className="text-[10px] text-neutral-500 font-medium uppercase" title={targetReps ? `Objetivo: ${targetReps} reps` : "Ejercicio por tiempo"}>
+          <span className="text-[11px] text-neutral-400 font-medium uppercase" title={targetReps ? `Objetivo: ${targetReps} reps` : "Ejercicio por tiempo"}>
             {targetReps ? `Objetivo ${targetReps}` : "Tiempo"} · última sesión {current} {weightUnit}
           </span>
         </div>

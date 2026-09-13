@@ -42,7 +42,7 @@ export const ElectrolytesTracker: React.FC = () => {
             <div className="flex items-end justify-between text-sm">
               <span className="text-white font-bold text-xs">{cfg.label}</span>
               <span className="font-mono text-xs text-neutral-300">
-                {val.toLocaleString("es-AR")} <span className="text-neutral-500">/ {cfg.target.toLocaleString("es-AR")} {cfg.unit}</span>
+                {val.toLocaleString("es-AR")} <span className="text-neutral-400">/ {cfg.target.toLocaleString("es-AR")} {cfg.unit}</span>
               </span>
             </div>
             <div className="h-2.5 bg-neutral-950 rounded-full overflow-hidden border border-neutral-800">

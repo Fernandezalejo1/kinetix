@@ -170,7 +170,7 @@ export const ProgramsExplorer: React.FC = () => {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                      <span className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
                         {routine.targetSplit}
                       </span>
                       <h3 className="text-base font-black text-white mt-2 truncate">{routine.name}</h3>
@@ -250,7 +250,7 @@ export const ProgramsExplorer: React.FC = () => {
                 </div>
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shrink-0">
+                    <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shrink-0">
                       {prog.daysPerWeek} DÍAS / SEMANA
                     </span>
                     <span className="text-[11px] font-black px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/20 shrink-0">
@@ -332,7 +332,7 @@ export const ProgramsExplorer: React.FC = () => {
                 Secuencia de Ejercicios & Sobrecarga de Tensión:
               </span>
               {needsAdaptation && (
-                <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30">
+                <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30">
                   Adaptado a {EQUIPMENT_LEVEL_LABEL[equipmentLevel]} (hoy)
                 </span>
               )}
@@ -356,7 +356,7 @@ export const ProgramsExplorer: React.FC = () => {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                         <h4 className="text-[15px] font-bold text-white leading-tight">{ex.nameEs}</h4>
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-neutral-800 text-neutral-400 border border-neutral-700 capitalize">
+                        <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-neutral-800 text-neutral-400 border border-neutral-700 capitalize">
                           {ex.equipment}
                         </span>
                         <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shrink-0">

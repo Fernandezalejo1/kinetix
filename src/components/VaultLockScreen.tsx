@@ -61,7 +61,7 @@ export const VaultLockScreen: React.FC<VaultLockScreenProps> = ({ onUnlocked }) 
 
         <form onSubmit={submit} className="space-y-3">
           <div className="flex items-center gap-2 px-3 py-3 bg-neutral-900 border border-neutral-800 rounded-xl focus-within:border-violet-500">
-            <Lock className="w-4 h-4 text-neutral-500 shrink-0" />
+            <Lock className="w-4 h-4 text-neutral-400 shrink-0" />
             <input
               type="password"
               value={password}
@@ -69,7 +69,7 @@ export const VaultLockScreen: React.FC<VaultLockScreenProps> = ({ onUnlocked }) 
               placeholder="Contraseña del vault"
               autoComplete="off"
               aria-label="Contraseña del vault"
-              className="flex-1 min-w-0 bg-transparent text-white text-[16px] placeholder:text-neutral-600 focus:outline-none text-center"
+              className="flex-1 min-w-0 bg-transparent text-white text-[16px] placeholder:text-neutral-400 focus:outline-none text-center"
             />
           </div>
           <button
@@ -81,7 +81,7 @@ export const VaultLockScreen: React.FC<VaultLockScreenProps> = ({ onUnlocked }) 
           </button>
         </form>
 
-        <p className="text-center text-[11px] text-neutral-600 leading-relaxed">
+        <p className="text-center text-[11px] text-neutral-400 leading-relaxed">
           Sin la contraseña no hay recuperación posible. Cerrá la pestaña para mantener el bloqueo.
         </p>
       </div>

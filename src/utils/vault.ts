@@ -258,12 +258,17 @@ export async function changeVaultPassword(current: string, next: string): Promis
   // nueva; los datos permanecen idénticos.
   const secret = btoaUnicode(randomBytes(32));
   await activateVaultSession(current, secret);
-  setVaultSessionPassword(next);
+  await setVaultSessionPassword(next);
+  // CRÍTICO: hay que ESPERAR cada reescritura. writeEnvelopeDirect no pasa por
+  // la cola interna, así que flushVaultWrites() no la cubría: sin el await, el
+  // reload podía ocurrir con envelopes aún envueltos con la contraseña vieja
+  // mientras el verifier ya era el nuevo → datos inaccesibles para siempre.
   for (const key of VAULT_KEYS) {
     const value = getVaultMemory(key);
-    if (value !== undefined) writeEnvelopeDirect(key, value);
+    if (value !== undefined) await writeEnvelopeDirect(key, value);
   }
   await flushVaultWrites();
+  // El verifier se cambia SOLO cuando todos los envelopes ya usan la nueva.
   const verifier = await encryptJson(VAULT_VERIFIER, next);
   writeMeta({ ...meta, verifier });
   // Mantener la sesión desbloqueada con la contraseña nueva (los envelopes ya

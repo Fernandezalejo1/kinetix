@@ -154,7 +154,7 @@ export const PlateCalculatorModal: React.FC<PlateCalculatorModalProps> = ({
 
               {/* Plates on bar sleeve */}
               {result.plates.length === 0 ? (
-                <span className="text-xs text-neutral-500 italic px-4">Barra vacía</span>
+                <span className="text-xs text-neutral-400 italic px-4">Barra vacía</span>
               ) : (
                 <div className="flex items-center gap-1 px-2">
                   {result.plates.flatMap((p) =>
@@ -178,7 +178,7 @@ export const PlateCalculatorModal: React.FC<PlateCalculatorModalProps> = ({
                           className={`${heightClass} rounded-sm shadow-md flex items-center justify-center relative group border border-black/30`}
                           title={`${p.weight} kg`}
                         >
-                          <span className="text-[9px] font-black text-black rotate-90 select-none">
+                          <span className="text-[11px] font-black text-black rotate-90 select-none">
                             {p.weight}
                           </span>
                         </div>
@@ -207,7 +207,7 @@ export const PlateCalculatorModal: React.FC<PlateCalculatorModalProps> = ({
                     <span className="font-semibold text-neutral-200">{p.weight} {weightUnit}</span>
                   </div>
                   <span className="font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded">
-                    × {p.count * 2} <span className="text-[10px] text-neutral-400">({p.count}/lado)</span>
+                    × {p.count * 2} <span className="text-[11px] text-neutral-400">({p.count}/lado)</span>
                   </span>
                 </div>
               ))}

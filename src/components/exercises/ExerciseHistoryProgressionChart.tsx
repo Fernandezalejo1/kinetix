@@ -333,7 +333,7 @@ export const ExerciseHistoryProgressionChart: React.FC<ExerciseHistoryProgressio
               {data.formattedDateFull}
             </span>
             {data.isPR && (
-              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/30">
+              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/30">
                 <Trophy className="w-3 h-3 text-amber-400" />
                 Hito PR
               </span>
@@ -344,16 +344,16 @@ export const ExerciseHistoryProgressionChart: React.FC<ExerciseHistoryProgressio
 
           <div className="grid grid-cols-2 gap-2 pt-1">
             <div className="p-2 rounded-xl bg-neutral-900/80 border border-neutral-800">
-              <span className="text-[9px] uppercase font-bold text-neutral-400 block">1RM Estimado</span>
+              <span className="text-[11px] uppercase font-bold text-neutral-400 block">1RM Estimado</span>
               <span className="text-base font-black text-cyan-400">
-                {data.e1RM} <span className="text-[10px] font-normal text-neutral-400">{weightUnit}</span>
+                {data.e1RM} <span className="text-[11px] font-normal text-neutral-400">{weightUnit}</span>
               </span>
             </div>
 
             <div className="p-2 rounded-xl bg-neutral-900/80 border border-neutral-800">
-              <span className="text-[9px] uppercase font-bold text-neutral-400 block">Mejor Serie</span>
+              <span className="text-[11px] uppercase font-bold text-neutral-400 block">Mejor Serie</span>
               <span className="text-sm font-bold text-white">
-                {data.maxWeight} {weightUnit} <span className="text-[10px] text-neutral-400">× {data.repsAtMax}</span>
+                {data.maxWeight} {weightUnit} <span className="text-[11px] text-neutral-400">× {data.repsAtMax}</span>
               </span>
             </div>
           </div>
@@ -369,7 +369,7 @@ export const ExerciseHistoryProgressionChart: React.FC<ExerciseHistoryProgressio
           </div>
 
           {data.isPR && data.prDetail && (
-            <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[10px] text-amber-300 font-semibold flex items-center gap-1.5">
+            <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-300 font-semibold flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
               <span>{data.prDetail}</span>
             </div>
@@ -672,7 +672,7 @@ export const ExerciseHistoryProgressionChart: React.FC<ExerciseHistoryProgressio
                 Muro de Hitos & Récords Personales (PRs)
               </h4>
             </div>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+            <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
               {stats.prMilestones.length} Récords
             </span>
           </div>
@@ -704,14 +704,14 @@ export const ExerciseHistoryProgressionChart: React.FC<ExerciseHistoryProgressio
                     <span className="text-xs font-black text-amber-400 font-mono">
                       {pr.maxWeight} {weightUnit} × {pr.repsAtMax}
                     </span>
-                    <span className="block text-[10px] text-neutral-400">@ {pr.rirAtMax} RIR</span>
+                    <span className="block text-[11px] text-neutral-400">@ {pr.rirAtMax} RIR</span>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
             <div className="p-6 rounded-2xl bg-neutral-900/50 border border-neutral-800 text-center space-y-2">
-              <Trophy className="w-8 h-8 text-neutral-600 mx-auto" />
+              <Trophy className="w-8 h-8 text-neutral-400 mx-auto" />
               <p className="text-xs text-neutral-400">
                 Registra tus primeras series efectivas para desbloquear hitos automáticos de fuerza y volumen.
               </p>

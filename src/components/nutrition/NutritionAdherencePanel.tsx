@@ -73,7 +73,7 @@ export const NutritionAdherencePanel: React.FC = () => {
           </div>
         </div>
         <span
-          className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${
+          className={`px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wider border ${
             stats.adherence >= 80
               ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
               : stats.adherence >= 50
@@ -86,7 +86,7 @@ export const NutritionAdherencePanel: React.FC = () => {
       </div>
 
       {stats.loggedDays === 0 ? (
-        <p className="text-xs text-neutral-500 leading-relaxed">
+        <p className="text-xs text-neutral-400 leading-relaxed">
           Todavía no hay días registrados. Cuando registres comidas o agua, acá vas a ver tu adherencia semanal,
           promedios de calorías/proteína/agua y la tendencia.
         </p>
@@ -108,7 +108,7 @@ export const NutritionAdherencePanel: React.FC = () => {
                       style={{ height: `${Math.max(empty ? 4 : 12, pct)}%` }}
                     />
                   </div>
-                  <span className={`text-[10px] font-bold ${d.isToday ? "text-cyan-400" : "text-neutral-500"}`}>
+                  <span className={`text-[11px] font-bold ${d.isToday ? "text-cyan-400" : "text-neutral-400"}`}>
                     {d.label}
                   </span>
                 </div>
@@ -121,19 +121,19 @@ export const NutritionAdherencePanel: React.FC = () => {
             <div className="p-3 rounded-2xl bg-neutral-950 border border-neutral-800 text-center">
               <Flame className="w-4 h-4 text-amber-400 mx-auto" />
               <div className="text-lg font-black text-white mt-1">{stats.avgCalories.toLocaleString("es-AR")}</div>
-              <span className="text-[10px] text-neutral-500">kcal/día prom.</span>
+              <span className="text-[11px] text-neutral-400">kcal/día prom.</span>
             </div>
             <div className="p-3 rounded-2xl bg-neutral-950 border border-neutral-800 text-center">
               <Wheat className="w-4 h-4 text-cyan-400 mx-auto" />
               <div className="text-lg font-black text-white mt-1">{stats.avgProtein}g</div>
-              <span className="text-[10px] text-neutral-500">proteína prom.</span>
+              <span className="text-[11px] text-neutral-400">proteína prom.</span>
             </div>
             <div className="p-3 rounded-2xl bg-neutral-950 border border-neutral-800 text-center">
               <Droplets className="w-4 h-4 text-emerald-400 mx-auto" />
               <div className="text-lg font-black text-white mt-1">
                 {(stats.avgWater / 1000).toLocaleString("es-AR", { maximumFractionDigits: 1 })}L
               </div>
-              <span className="text-[10px] text-neutral-500">agua prom.</span>
+              <span className="text-[11px] text-neutral-400">agua prom.</span>
             </div>
           </div>
 

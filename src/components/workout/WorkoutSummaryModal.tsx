@@ -133,53 +133,53 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
           {/* Tarjeta de Métricas Clave */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             <div className="p-3.5 rounded-2xl bg-neutral-950 border border-neutral-800 text-center">
-              <div className="flex items-center justify-center gap-1 text-cyan-400 text-[10px] font-bold uppercase tracking-wider mb-1">
+              <div className="flex items-center justify-center gap-1 text-cyan-400 text-[11px] font-bold uppercase tracking-wider mb-1">
                 <Dumbbell className="w-3.5 h-3.5" />
                 Volumen
               </div>
               <div className="text-lg font-black text-white font-mono leading-tight">
                 {formattedVolume}
               </div>
-              <div className="text-[10px] text-neutral-500 font-medium uppercase mt-0.5">
+              <div className="text-[11px] text-neutral-400 font-medium uppercase mt-0.5">
                 {weightUnit}
               </div>
             </div>
 
             <div className="p-3.5 rounded-2xl bg-neutral-950 border border-neutral-800 text-center">
-              <div className="flex items-center justify-center gap-1 text-amber-400 text-[10px] font-bold uppercase tracking-wider mb-1">
+              <div className="flex items-center justify-center gap-1 text-amber-400 text-[11px] font-bold uppercase tracking-wider mb-1">
                 <Clock className="w-3.5 h-3.5" />
                 Tiempo
               </div>
               <div className="text-lg font-black text-white font-mono leading-tight">
                 {durationMin}
               </div>
-              <div className="text-[10px] text-neutral-500 font-medium uppercase mt-0.5">
+              <div className="text-[11px] text-neutral-400 font-medium uppercase mt-0.5">
                 minutos
               </div>
             </div>
 
             <div className="p-3.5 rounded-2xl bg-neutral-950 border border-neutral-800 text-center">
-              <div className="flex items-center justify-center gap-1 text-emerald-400 text-[10px] font-bold uppercase tracking-wider mb-1">
+              <div className="flex items-center justify-center gap-1 text-emerald-400 text-[11px] font-bold uppercase tracking-wider mb-1">
                 <Flame className="w-3.5 h-3.5" />
                 Series
               </div>
               <div className="text-lg font-black text-white font-mono leading-tight">
                 {workout.totalSets}
               </div>
-              <div className="text-[10px] text-neutral-500 font-medium uppercase mt-0.5">
+              <div className="text-[11px] text-neutral-400 font-medium uppercase mt-0.5">
                 efectivas
               </div>
             </div>
 
             <div className="p-3.5 rounded-2xl bg-neutral-950 border border-neutral-800 text-center">
-              <div className="flex items-center justify-center gap-1 text-purple-400 text-[10px] font-bold uppercase tracking-wider mb-1">
+              <div className="flex items-center justify-center gap-1 text-purple-400 text-[11px] font-bold uppercase tracking-wider mb-1">
                 <TrendingUp className="w-3.5 h-3.5" />
                 RIR Prom.
               </div>
               <div className="text-lg font-black text-white font-mono leading-tight">
                 {workout.averageRir !== null ? workout.averageRir : "—"}
               </div>
-              <div className="text-[10px] text-neutral-500 font-medium uppercase mt-0.5">
+              <div className="text-[11px] text-neutral-400 font-medium uppercase mt-0.5">
                 en reserva
               </div>
             </div>
@@ -231,7 +231,7 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
                         1RM {pr.value} {weightUnit}
                       </span>
                       {pr.previousValue && (
-                        <span className="text-[10px] font-mono text-neutral-500 block">
+                        <span className="text-[11px] font-mono text-neutral-400 block">
                           antes {pr.previousValue} {weightUnit} (+{pr.value - pr.previousValue})
                         </span>
                       )}
@@ -276,7 +276,7 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
                         </span>
                         <div className="flex items-center gap-1 shrink-0">
                           <span
-                            className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded ${
+                            className={`text-[11px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded ${
                               r.rec.confidence === "high"
                                 ? "bg-emerald-500/10 text-emerald-300 border border-emerald-500/20"
                                 : r.rec.confidence === "medium"
@@ -306,7 +306,7 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
           <div className="p-4 rounded-2xl bg-neutral-950 border border-neutral-800 space-y-2">
             <div className="flex items-center justify-between text-xs font-bold text-neutral-400">
               <span>Tarjeta de Progreso</span>
-              <span className="text-[10px] text-cyan-400 font-mono uppercase">#KINETIX</span>
+              <span className="text-[11px] text-cyan-400 font-mono uppercase">#KINETIX</span>
             </div>
             <p className="text-xs text-neutral-300 font-mono bg-neutral-900 p-3 rounded-xl border border-neutral-800 leading-relaxed">
               ⚡ Entrené {workout.routineName} en KINETIX.<br />

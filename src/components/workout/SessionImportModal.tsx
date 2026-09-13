@@ -120,14 +120,14 @@ export const SessionImportModal: React.FC<{ isOpen: boolean; onClose: () => void
           {/* Exercise picker */}
           {!selected ? (
             <div className="space-y-2">
-              <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Ejercicio</label>
+              <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Ejercicio</label>
               <div className="flex items-center gap-2 bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2.5">
-                <Search className="w-4 h-4 text-neutral-500 shrink-0" />
+                <Search className="w-4 h-4 text-neutral-400 shrink-0" />
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Buscar ejercicio (ej. press banca, sentadilla…)"
-                  className="w-full bg-transparent text-sm text-white placeholder:text-neutral-600 focus:outline-none"
+                  className="w-full bg-transparent text-sm text-white placeholder:text-neutral-400 focus:outline-none"
                 />
               </div>
               {results.length > 0 && (
@@ -146,7 +146,7 @@ export const SessionImportModal: React.FC<{ isOpen: boolean; onClose: () => void
                       </span>
                       <span className="min-w-0">
                         <span className="block text-sm font-bold text-white truncate">{ex.nameEs || ex.name}</span>
-                        <span className="block text-[10px] text-neutral-500">{ex.equipment} • {ex.category}</span>
+                        <span className="block text-[11px] text-neutral-400">{ex.equipment} • {ex.category}</span>
                       </span>
                     </button>
                   ))}
@@ -170,7 +170,7 @@ export const SessionImportModal: React.FC<{ isOpen: boolean; onClose: () => void
 
           {/* Date */}
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Fecha de la sesión</label>
+            <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Fecha de la sesión</label>
             <input
               type="date"
               value={date}
@@ -182,7 +182,7 @@ export const SessionImportModal: React.FC<{ isOpen: boolean; onClose: () => void
 
           {/* Sets */}
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
+            <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
               Series — una por línea o separadas por coma
             </label>
             <textarea
@@ -190,10 +190,10 @@ export const SessionImportModal: React.FC<{ isOpen: boolean; onClose: () => void
               onChange={(e) => setSetsText(e.target.value)}
               rows={5}
               placeholder={"85x8 rir2\n85x8 rir2\n85x6 rir4\n\nFormato: peso x reps rirN\n(rir = reps que te sobraron; si no sabés, omitilo)"}
-              className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-neutral-600 font-mono focus:outline-none focus:border-cyan-500/40 resize-none"
+              className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-neutral-400 font-mono focus:outline-none focus:border-cyan-500/40 resize-none"
             />
             <div className="flex items-center justify-between gap-2 text-[11px]">
-              <span className="text-neutral-500">
+              <span className="text-neutral-400">
                 {parsed.length === 0 ? "Sin series detectadas todavía" : `${parsed.length} serie(s) detectadas`}
               </span>
               {previewE1rm !== null && (
@@ -206,7 +206,7 @@ export const SessionImportModal: React.FC<{ isOpen: boolean; onClose: () => void
 
           {/* Difficulty */}
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">¿Cómo fue el esfuerzo? (opcional)</label>
+            <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">¿Cómo fue el esfuerzo? (opcional)</label>
             <select
               value={difficulty}
               onChange={(e) => setDifficulty(e.target.value as DifficultyLevel | "")}

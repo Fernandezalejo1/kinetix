@@ -160,7 +160,7 @@ export const Exercise3DVisualizer: React.FC<Exercise3DVisualizerProps> = ({
             <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
             Atlas Anatómico
           </div>
-          <span className="px-2 py-0.5 rounded-md bg-purple-950/80 border border-purple-500/30 text-[10px] font-mono text-purple-300">
+          <span className="px-2 py-0.5 rounded-md bg-purple-950/80 border border-purple-500/30 text-[11px] font-mono text-purple-300">
             {Math.round(rotationY)}° Azimut | {Math.round(rotationX)}° Tilt
           </span>
         </div>
@@ -491,7 +491,7 @@ export const Exercise3DVisualizer: React.FC<Exercise3DVisualizerProps> = ({
         {/* Live Tension Meter HUD Card Bottom-Right */}
         <div className="absolute bottom-3 right-3 p-2.5 rounded-xl bg-neutral-950/90 border border-neutral-800 backdrop-blur-md text-xs space-y-1.5 shadow-xl pointer-events-none">
           <div className="flex justify-between items-center gap-4">
-            <span className="text-[10px] uppercase font-bold text-neutral-400">Tensión Muscular</span>
+            <span className="text-[11px] uppercase font-bold text-neutral-400">Tensión Muscular</span>
             <span className="font-mono font-bold text-cyan-400">{currentTensionPct}%</span>
           </div>
           <div className="w-32 h-1.5 bg-neutral-800 rounded-full overflow-hidden">
@@ -500,14 +500,14 @@ export const Exercise3DVisualizer: React.FC<Exercise3DVisualizerProps> = ({
               style={{ width: `${currentTensionPct}%` }}
             />
           </div>
-          <div className="text-[9px] text-neutral-400 flex items-center justify-between">
+          <div className="text-[11px] text-neutral-400 flex items-center justify-between">
             <span>{phaseCycle > 0.6 ? "Excéntrico / Estiramiento" : phaseCycle < 0.2 ? "Bloqueo / Acortamiento" : "Concéntrico"}</span>
             <span className="font-bold text-purple-400">{exercise.resistanceProfile}</span>
           </div>
         </div>
 
         {/* Drag Guidance Prompt */}
-        <div className="absolute top-12 left-3 text-[10px] text-neutral-400/80 bg-black/40 px-2 py-0.5 rounded-md backdrop-blur-sm pointer-events-none">
+        <div className="absolute top-12 left-3 text-[11px] text-neutral-400/80 bg-black/40 px-2 py-0.5 rounded-md backdrop-blur-sm pointer-events-none">
           Arrastra para rotar 360° | Zoom con botones
         </div>
       </div>
@@ -545,15 +545,15 @@ export const Exercise3DVisualizer: React.FC<Exercise3DVisualizerProps> = ({
         {/* Action Buttons (Speed, Zoom, Reset Angle) */}
         <div className="flex items-center justify-between text-xs pt-1 border-t border-neutral-900">
           <div className="flex items-center gap-1.5">
-            <span className="text-[10px] text-neutral-400">Velocidad:</span>
+            <span className="text-[11px] text-neutral-400">Velocidad:</span>
             {[0.5, 1, 1.5].map((spd) => (
               <button
                 key={spd}
                 onClick={() => setPlaybackSpeed(spd)}
-                className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
+                className={`px-2 py-0.5 rounded text-[11px] font-bold transition-all ${
                   playbackSpeed === spd
                     ? "bg-neutral-800 text-cyan-400 border border-neutral-700"
-                    : "text-neutral-500 hover:text-neutral-300"
+                    : "text-neutral-400 hover:text-neutral-300"
                 }`}
               >
                 {spd}x

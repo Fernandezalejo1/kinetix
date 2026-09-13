@@ -155,7 +155,7 @@ export const RoutineEditorModal: React.FC<RoutineEditorModalProps> = ({
           {/* Basic Info */}
           <div className="space-y-3">
             <div>
-              <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">Nombre de la Rutina</label>
+              <label className="block text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-1.5">Nombre de la Rutina</label>
               <input
                 type="text"
                 value={name}
@@ -165,7 +165,7 @@ export const RoutineEditorModal: React.FC<RoutineEditorModalProps> = ({
               />
             </div>
             <div>
-              <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">Descripción</label>
+              <label className="block text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-1.5">Descripción</label>
               <input
                 type="text"
                 value={description}
@@ -176,7 +176,7 @@ export const RoutineEditorModal: React.FC<RoutineEditorModalProps> = ({
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">División</label>
+                <label className="block text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-1.5">División</label>
                 <select
                   value={targetSplit}
                   onChange={(e) => setTargetSplit(e.target.value)}
@@ -188,7 +188,7 @@ export const RoutineEditorModal: React.FC<RoutineEditorModalProps> = ({
                 </select>
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">Duración (min)</label>
+                <label className="block text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-1.5">Duración (min)</label>
                 <input
                   type="number"
                   value={duration}
@@ -229,7 +229,7 @@ export const RoutineEditorModal: React.FC<RoutineEditorModalProps> = ({
 
             {exercises.length === 0 && (
               <div className="p-8 text-center bg-neutral-950/50 rounded-2xl border border-dashed border-neutral-800 text-neutral-400 text-xs space-y-2">
-                <Dumbbell className="w-8 h-8 mx-auto text-neutral-600" />
+                <Dumbbell className="w-8 h-8 mx-auto text-neutral-400" />
                 <p>No hay ejercicios. Toca "+" para añadir.</p>
               </div>
             )}
@@ -275,12 +275,12 @@ export const RoutineEditorModal: React.FC<RoutineEditorModalProps> = ({
                       <div className="flex items-center gap-1.5">
                         <h4 className="text-sm font-bold text-white truncate">{exDef?.nameEs || ex.exerciseId}</h4>
                         {hasSuperset && (
-                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/20 shrink-0">
+                          <span className="text-[11px] font-bold px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/20 shrink-0">
                             SS
                           </span>
                         )}
                       </div>
-                      <p className="text-[10px] text-neutral-400 font-mono">
+                      <p className="text-[11px] text-neutral-400 font-mono">
                         {ex.targetSets} × {ex.targetReps} @ RIR {ex.targetRir} · {ex.restSeconds}s descanso
                       </p>
                     </div>
@@ -326,7 +326,7 @@ export const RoutineEditorModal: React.FC<RoutineEditorModalProps> = ({
                     <div className="px-3 pb-3 pt-1 border-t border-neutral-800/50 space-y-3 animate-slideUp">
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <label className="block text-[9px] font-bold text-neutral-500 uppercase mb-1">Series</label>
+                          <label className="block text-[11px] font-bold text-neutral-400 uppercase mb-1">Series</label>
                           <input
                             type="number"
                             value={ex.targetSets}
@@ -335,7 +335,7 @@ export const RoutineEditorModal: React.FC<RoutineEditorModalProps> = ({
                           />
                         </div>
                         <div>
-                          <label className="block text-[9px] font-bold text-neutral-500 uppercase mb-1">Reps</label>
+                          <label className="block text-[11px] font-bold text-neutral-400 uppercase mb-1">Reps</label>
                           <input
                             type="text"
                             value={ex.targetReps}
@@ -345,7 +345,7 @@ export const RoutineEditorModal: React.FC<RoutineEditorModalProps> = ({
                           />
                         </div>
                         <div>
-                          <label className="block text-[9px] font-bold text-neutral-500 uppercase mb-1">RIR</label>
+                          <label className="block text-[11px] font-bold text-neutral-400 uppercase mb-1">RIR</label>
                           <select
                             value={ex.targetRir}
                             onChange={(e) => updateExercise(idx, { targetRir: parseInt(e.target.value) })}
@@ -357,7 +357,7 @@ export const RoutineEditorModal: React.FC<RoutineEditorModalProps> = ({
                           </select>
                         </div>
                         <div>
-                          <label className="block text-[9px] font-bold text-neutral-500 uppercase mb-1">Tempo</label>
+                          <label className="block text-[11px] font-bold text-neutral-400 uppercase mb-1">Tempo</label>
                           <input
                             type="text"
                             value={ex.targetTempo}
@@ -368,7 +368,7 @@ export const RoutineEditorModal: React.FC<RoutineEditorModalProps> = ({
                         </div>
                       </div>
                       <div>
-                        <label className="block text-[9px] font-bold text-neutral-500 uppercase mb-1">Descanso (segundos)</label>
+                        <label className="block text-[11px] font-bold text-neutral-400 uppercase mb-1">Descanso (segundos)</label>
                         <input
                           type="number"
                           value={ex.restSeconds}
@@ -377,7 +377,7 @@ export const RoutineEditorModal: React.FC<RoutineEditorModalProps> = ({
                         />
                       </div>
                       <div>
-                        <label className="block text-[9px] font-bold text-neutral-500 uppercase mb-1">Notas</label>
+                        <label className="block text-[11px] font-bold text-neutral-400 uppercase mb-1">Notas</label>
                         <input
                           type="text"
                           value={ex.notes || ""}

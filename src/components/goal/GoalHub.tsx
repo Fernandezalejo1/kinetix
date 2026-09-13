@@ -75,7 +75,7 @@ const ReadinessGauge: React.FC<{ score: number; verdict: string; size?: number }
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="font-black font-mono text-white leading-none" style={{ fontSize: Math.max(14, size * 0.22) }}>{score}</span>
-        <span className="text-neutral-500 leading-none" style={{ fontSize: Math.max(8, size * 0.11) }}>/100</span>
+        <span className="text-neutral-400 leading-none" style={{ fontSize: Math.max(8, size * 0.11) }}>/100</span>
       </div>
     </div>
   );
@@ -189,7 +189,7 @@ export const GoalHub: React.FC<GoalHubProps> = ({ onGoToPrograms }) => {
               : "Registrá tu peso y % de grasa en Analytics para activar el plan de fases"}
           </p>
         </div>
-        <span className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${phase.id === "cut" ? "bg-amber-500/15 text-amber-300 border-amber-500/30" : phase.id === "maintenance" ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30" : "bg-cyan-500/15 text-cyan-300 border-cyan-500/30"}`}>
+        <span className={`px-3 py-1.5 rounded-full text-[11px] font-black uppercase tracking-wider border ${phase.id === "cut" ? "bg-amber-500/15 text-amber-300 border-amber-500/30" : phase.id === "maintenance" ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30" : "bg-cyan-500/15 text-cyan-300 border-cyan-500/30"}`}>
           Fase: {cfg.short}
         </span>
       </div>
@@ -228,12 +228,12 @@ export const GoalHub: React.FC<GoalHubProps> = ({ onGoToPrograms }) => {
                   ) : (
                     <span className={`w-4 h-4 rounded-full border-2 ${isActive ? "border-amber-400 bg-amber-400/20" : "border-neutral-600"}`} />
                   )}
-                  <span className={`text-[10px] font-black uppercase tracking-wider ${isActive ? "text-white" : "text-neutral-500"}`}>
+                  <span className={`text-[11px] font-black uppercase tracking-wider ${isActive ? "text-white" : "text-neutral-400"}`}>
                     {pcfg.short}
                   </span>
                 </div>
                 <div className={`text-[11px] font-bold mt-1 ${isActive ? "text-amber-300" : "text-neutral-400"}`}>{pcfg.label}</div>
-                <div className="text-[9px] text-neutral-500 mt-0.5 leading-snug">{pcfg.calorieLabel} · {pcfg.cardioMinPerWeek} min cardio/sem</div>
+                <div className="text-[11px] text-neutral-400 mt-0.5 leading-snug">{pcfg.calorieLabel} · {pcfg.cardioMinPerWeek} min cardio/sem</div>
               </button>
             );
           })}
@@ -249,7 +249,7 @@ export const GoalHub: React.FC<GoalHubProps> = ({ onGoToPrograms }) => {
             <div className="h-2.5 bg-neutral-800 rounded-full overflow-hidden">
               <div className="h-full bg-gradient-to-r from-amber-600 to-amber-400 rounded-full transition-all duration-700" style={{ width: `${progress}%` }} />
             </div>
-            <div className="flex justify-between text-[10px] text-neutral-500">
+            <div className="flex justify-between text-[11px] text-neutral-400">
               <span>{bf.pct}% actual</span>
               {abs.timeline && <span>{abs.timeline.kgToLose.toFixed(1)} kg de grasa por perder</span>}
               <span className="text-emerald-400">≈{targetBf}%</span>
@@ -271,26 +271,26 @@ export const GoalHub: React.FC<GoalHubProps> = ({ onGoToPrograms }) => {
 
         {/* Recommended config for active phase */}
         <div className="p-4 rounded-2xl bg-neutral-950 border border-neutral-800 space-y-2">
-          <div className="text-[10px] font-black uppercase tracking-wider text-neutral-400">Tu configuración recomendada</div>
+          <div className="text-[11px] font-black uppercase tracking-wider text-neutral-400">Tu configuración recomendada</div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
             <div className="p-2 rounded-xl bg-neutral-900 border border-neutral-800">
-              <span className="text-neutral-500 block">Programa</span>
+              <span className="text-neutral-400 block">Programa</span>
               <span className="font-bold text-white leading-snug">{cfg.programTitle}</span>
             </div>
             <div className="p-2 rounded-xl bg-neutral-900 border border-neutral-800">
-              <span className="text-neutral-500 block">Calorías</span>
+              <span className="text-neutral-400 block">Calorías</span>
               <span className="font-bold text-white">{cfg.calorieLabel}</span>
             </div>
             <div className="p-2 rounded-xl bg-neutral-900 border border-neutral-800">
-              <span className="text-neutral-500 block">Proteína</span>
+              <span className="text-neutral-400 block">Proteína</span>
               <span className="font-bold text-white">{cfg.proteinPerKg} g/kg</span>
             </div>
             <div className="p-2 rounded-xl bg-neutral-900 border border-neutral-800">
-              <span className="text-neutral-500 block">Cardio</span>
+              <span className="text-neutral-400 block">Cardio</span>
               <span className="font-bold text-white">{cfg.cardioMinPerWeek} min/sem{cfg.hiitSessionsPerWeek > 0 ? ` + ${cfg.hiitSessionsPerWeek} HIIT` : ""}</span>
             </div>
           </div>
-          <p className="text-[10px] text-neutral-500 leading-relaxed">{cfg.description}</p>
+          <p className="text-[11px] text-neutral-400 leading-relaxed">{cfg.description}</p>
           {onGoToPrograms && (
             <button
               onClick={onGoToPrograms}
@@ -339,14 +339,14 @@ export const GoalHub: React.FC<GoalHubProps> = ({ onGoToPrograms }) => {
             </div>
             <div className="text-right shrink-0">
               <div className="text-sm font-black text-white font-mono">{sleepWindow.start} → {sleepWindow.end}</div>
-              <div className="text-[9px] text-neutral-500">≈{sleepWindow.hours} h sugeridas</div>
+              <div className="text-[11px] text-neutral-400">≈{sleepWindow.hours} h sugeridas</div>
             </div>
           </div>
 
           <form onSubmit={saveSleep} className="space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <label className="block">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Hora de acostarse</span>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">Hora de acostarse</span>
                 <input
                   type="time"
                   value={sBed}
@@ -355,7 +355,7 @@ export const GoalHub: React.FC<GoalHubProps> = ({ onGoToPrograms }) => {
                 />
               </label>
               <label className="block">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Hora de despertarse</span>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">Hora de despertarse</span>
                 <input
                   type="time"
                   value={sWake}
@@ -364,7 +364,7 @@ export const GoalHub: React.FC<GoalHubProps> = ({ onGoToPrograms }) => {
                 />
               </label>
               <div className="block">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Calidad del sueño</span>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">Calidad del sueño</span>
                 <div className="flex gap-1 mt-1">
                   {[1, 2, 3, 4, 5].map((q) => (
                     <button
@@ -372,7 +372,7 @@ export const GoalHub: React.FC<GoalHubProps> = ({ onGoToPrograms }) => {
                       type="button"
                       onClick={() => setSQuality(q)}
                       className={`flex-1 h-[42px] rounded-xl text-[13px] font-black transition-all flex flex-col items-center justify-center leading-none gap-0.5 ${
-                        sQuality === q ? "bg-indigo-600 text-white shadow-md scale-[1.02]" : "bg-neutral-950 border border-neutral-800 text-neutral-500 hover:text-white hover:border-neutral-600"
+                        sQuality === q ? "bg-indigo-600 text-white shadow-md scale-[1.02]" : "bg-neutral-950 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-600"
                       }`}
                       title={`${QUALITY_EMOJIS[q]} ${QUALITY_LABELS[q]}`}
                     >
@@ -404,24 +404,24 @@ export const GoalHub: React.FC<GoalHubProps> = ({ onGoToPrograms }) => {
               <span className="text-indigo-300">{weeklySleepAvg != null ? `promedio ${weeklySleepAvg} h` : "sin datos"}</span>
             </div>
             {sleepLog.length === 0 ? (
-              <p className="text-[10px] text-neutral-500 p-2 rounded-xl bg-neutral-950 border border-neutral-800">Registrá tu primera noche para ver el historial.</p>
+              <p className="text-[11px] text-neutral-400 p-2 rounded-xl bg-neutral-950 border border-neutral-800">Registrá tu primera noche para ver el historial.</p>
             ) : (
               sleepLog.slice(0, 5).map((s) => (
                 <div key={s.id} className="flex items-center justify-between gap-2 p-2 rounded-xl bg-neutral-950 border border-neutral-800">
                   <div className="flex items-center gap-2 min-w-0">
                     {s.source === "healthconnect" && (
-                      <span className="px-1 py-0.5 rounded bg-indigo-500/15 text-indigo-300 border border-indigo-500/25 text-[8px] font-black" title="Sincronizado desde Health Connect">HC</span>
+                      <span className="px-1 py-0.5 rounded bg-indigo-500/15 text-indigo-300 border border-indigo-500/25 text-[11px] font-black" title="Sincronizado desde Health Connect">HC</span>
                     )}
-                    <span className={`text-[10px] font-black ${QUALITY_COLORS[s.quality] || "text-neutral-400"}`}>{"●".repeat(s.quality)}{"○".repeat(5 - s.quality)}</span>
+                    <span className={`text-[11px] font-black ${QUALITY_COLORS[s.quality] || "text-neutral-400"}`}>{"●".repeat(s.quality)}{"○".repeat(5 - s.quality)}</span>
                     <span className="text-[11px] text-neutral-300 truncate">{s.date} · {s.bed}→{s.wake} · <strong className="text-white">{sleepHoursOf(s.bed, s.wake)}h</strong></span>
                   </div>
-                  <button onClick={() => removeSleep(s.id)} className="p-1 rounded text-neutral-600 hover:text-red-400 transition-colors">
+                  <button onClick={() => removeSleep(s.id)} className="p-1 rounded text-neutral-400 hover:text-red-400 transition-colors">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
               ))
             )}
-            <p className="text-[9px] text-neutral-600">
+            <p className="text-[11px] text-neutral-400">
               Las noches registradas por tu reloj/balanza (Health Connect) se suman solas con el badge HC; no pisan tus registros manuales.
             </p>
           </div>
@@ -445,27 +445,27 @@ export const GoalHub: React.FC<GoalHubProps> = ({ onGoToPrograms }) => {
               <div className="min-w-0 space-y-1">
                 <span className="text-xs font-black uppercase tracking-wider">{READINESS_VERDICTS[todayReadiness.verdict].label}</span>
                 <p className="text-[11px] text-neutral-400 leading-relaxed">{READINESS_VERDICTS[todayReadiness.verdict].tip}</p>
-                <p className="text-[9px] text-neutral-500">registrado hoy · fatiga {todayReadiness.fatigue}/5 · agujetas {todayReadiness.soreness}/5 · sueño {todayReadiness.sleepHours} h</p>
+                <p className="text-[11px] text-neutral-400">registrado hoy · fatiga {todayReadiness.fatigue}/5 · agujetas {todayReadiness.soreness}/5 · sueño {todayReadiness.sleepHours} h</p>
               </div>
             </div>
           ) : (
             <form onSubmit={saveReadiness} className="space-y-3">
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Fatiga percibida</span>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">Fatiga percibida</span>
                   <div className="flex gap-1 mt-1">
                     {[1, 2, 3, 4, 5].map((v) => (
-                      <button key={v} type="button" onClick={() => setRFatigue(v)} className={`flex-1 h-[42px] rounded-xl text-xs font-black transition-all ${rFatigue === v ? "bg-rose-600 text-white" : "bg-neutral-950 border border-neutral-800 text-neutral-500 hover:text-white"}`}>
+                      <button key={v} type="button" onClick={() => setRFatigue(v)} className={`flex-1 h-[42px] rounded-xl text-xs font-black transition-all ${rFatigue === v ? "bg-rose-600 text-white" : "bg-neutral-950 border border-neutral-800 text-neutral-400 hover:text-white"}`}>
                         {v}
                       </button>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Agujetas (DOMS)</span>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">Agujetas (DOMS)</span>
                   <div className="flex gap-1 mt-1">
                     {[1, 2, 3, 4, 5].map((v) => (
-                      <button key={v} type="button" onClick={() => setRSoreness(v)} className={`flex-1 h-[42px] rounded-xl text-xs font-black transition-all ${rSoreness === v ? "bg-orange-600 text-white" : "bg-neutral-950 border border-neutral-800 text-neutral-500 hover:text-white"}`}>
+                      <button key={v} type="button" onClick={() => setRSoreness(v)} className={`flex-1 h-[42px] rounded-xl text-xs font-black transition-all ${rSoreness === v ? "bg-orange-600 text-white" : "bg-neutral-950 border border-neutral-800 text-neutral-400 hover:text-white"}`}>
                         {v}
                       </button>
                     ))}
@@ -473,7 +473,7 @@ export const GoalHub: React.FC<GoalHubProps> = ({ onGoToPrograms }) => {
                 </div>
               </div>
               <label className="block">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Horas de sueño anoche {lastSleep && "(de tu registro)"}</span>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">Horas de sueño anoche {lastSleep && "(de tu registro)"}</span>
                 <input
                   type="number"
                   inputMode="decimal"
@@ -490,7 +490,7 @@ export const GoalHub: React.FC<GoalHubProps> = ({ onGoToPrograms }) => {
                   <ReadinessGauge score={readinessPreview.score} verdict={readinessPreview.verdict} size={56} />
                   <div className="min-w-0">
                     <span className="text-xs font-black uppercase tracking-wider">{READINESS_VERDICTS[readinessPreview.verdict].label}</span>
-                    <p className="text-[9px] text-neutral-500 mt-0.5 leading-snug">{READINESS_VERDICTS[readinessPreview.verdict].tip}</p>
+                    <p className="text-[11px] text-neutral-400 mt-0.5 leading-snug">{READINESS_VERDICTS[readinessPreview.verdict].tip}</p>
                   </div>
                 </div>
 
@@ -502,11 +502,11 @@ export const GoalHub: React.FC<GoalHubProps> = ({ onGoToPrograms }) => {
 
           {readinessLog.length > 0 && (
             <div className="space-y-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Últimos 7 días</span>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">Últimos 7 días</span>
               <div className="flex gap-1.5">
                 {readinessLog.slice(0, 7).map((r) => (
                   <div key={r.id} className="flex-1 p-1.5 rounded-lg bg-neutral-950 border border-neutral-800 text-center" title={`${r.date} · ${READINESS_VERDICTS[r.verdict].label}`}>
-                    <div className="text-[9px] font-bold text-neutral-500">{new Date(r.date + "T12:00:00").toLocaleDateString("es-ES", { weekday: "narrow" })}</div>
+                    <div className="text-[11px] font-bold text-neutral-400">{new Date(r.date + "T12:00:00").toLocaleDateString("es-ES", { weekday: "narrow" })}</div>
                     <div className={`text-xs font-black ${READINESS_VERDICTS[r.verdict].color}`}>{r.score}</div>
                   </div>
                 ))}
@@ -541,34 +541,34 @@ export const GoalHub: React.FC<GoalHubProps> = ({ onGoToPrograms }) => {
           <button onClick={() => quickCardio("liss", 20, "LISS 20 min")} className="p-3 rounded-2xl bg-neutral-950 border border-neutral-800 hover:border-emerald-500/40 transition-all text-left">
             <Activity className="w-4 h-4 text-emerald-400" />
             <div className="text-sm font-black text-white mt-1">LISS 20'</div>
-            <div className="text-[9px] text-neutral-500">65–70% FC · caminata rápida</div>
+            <div className="text-[11px] text-neutral-400">65–70% FC · caminata rápida</div>
           </button>
           <button onClick={() => quickCardio("liss", 30, "LISS 30 min")} className="p-3 rounded-2xl bg-neutral-950 border border-neutral-800 hover:border-emerald-500/40 transition-all text-left">
             <Activity className="w-4 h-4 text-emerald-400" />
             <div className="text-sm font-black text-white mt-1">LISS 30'</div>
-            <div className="text-[9px] text-neutral-500">elite de la quema de grasa</div>
+            <div className="text-[11px] text-neutral-400">elite de la quema de grasa</div>
           </button>
           <button onClick={() => quickCardio("hiit", 10, "HIIT 10 min")} className="p-3 rounded-2xl bg-neutral-950 border border-neutral-800 hover:border-rose-500/40 transition-all text-left">
             <Timer className="w-4 h-4 text-rose-400" />
             <div className="text-sm font-black text-white mt-1">HIIT 10'</div>
-            <div className="text-[9px] text-neutral-500">30s sprint / 45s descanso</div>
+            <div className="text-[11px] text-neutral-400">30s sprint / 45s descanso</div>
           </button>
           <button onClick={() => quickCardio("hiit", 15, "HIIT 15 min")} className="p-3 rounded-2xl bg-neutral-950 border border-neutral-800 hover:border-rose-500/40 transition-all text-left">
             <Timer className="w-4 h-4 text-rose-400" />
             <div className="text-sm font-black text-white mt-1">HIIT 15'</div>
-            <div className="text-[9px] text-neutral-500">máx. 1–2×/semana</div>
+            <div className="text-[11px] text-neutral-400">máx. 1–2×/semana</div>
           </button>
         </div>
 
         {cardioLog.length > 0 && (
           <div className="space-y-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Historial reciente</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">Historial reciente</span>
             {cardioLog.slice(0, 6).map((c) => (
               <div key={c.id} className="flex items-center justify-between gap-2 p-2 rounded-xl bg-neutral-950 border border-neutral-800">
                 <span className="text-[11px] text-neutral-300">
                   {c.date} · <strong className={c.type === "liss" ? "text-emerald-300" : "text-rose-300"}>{c.type.toUpperCase()}</strong> · {c.minutes} min
                 </span>
-                <button onClick={() => removeCardio(c.id)} className="p-1 rounded text-neutral-600 hover:text-red-400 transition-colors">
+                <button onClick={() => removeCardio(c.id)} className="p-1 rounded text-neutral-400 hover:text-red-400 transition-colors">
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -576,7 +576,7 @@ export const GoalHub: React.FC<GoalHubProps> = ({ onGoToPrograms }) => {
           </div>
         )}
 
-        <p className="text-[10px] text-neutral-500 leading-relaxed flex items-start gap-1.5">
+        <p className="text-[11px] text-neutral-400 leading-relaxed flex items-start gap-1.5">
           <Sun className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
           <span>
             Meta de la fase: {cardioTarget} min/semana{cfg.hiitSessionsPerWeek > 0 ? ` + ${cfg.hiitSessionsPerWeek} sesión HIIT` : ""}. Sumá tus pasos diarios (Reto 21 Días) como NEAT: cada 10.000 pasos ≈ 350–450 kcal extra por día.

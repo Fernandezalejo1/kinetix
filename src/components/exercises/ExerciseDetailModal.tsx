@@ -177,7 +177,7 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
         {/* Modal Footer — safe-area, no fixed covering button */}
         <div className="p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] bg-neutral-950 border-t border-neutral-800 flex items-center justify-center gap-2 shrink-0">
           <Shield className="w-3.5 h-3.5 text-cyan-400" />
-          <span className="text-[11px] text-neutral-500">Ficha Biomecánica KINETIX · usa la X arriba para cerrar</span>
+          <span className="text-[11px] text-neutral-400">Ficha Biomecánica KINETIX · usa la X arriba para cerrar</span>
         </div>
       </div>
     </div>

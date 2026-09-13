@@ -60,6 +60,42 @@ export async function deriveKey(password: string, salt: Uint8Array, params: { it
   );
 }
 
+/**
+ * Igual que deriveKey pero devuelve los 256 bits CRUDOS de PBKDF2 en vez de un
+ * CryptoKey no extraíble. WebCrypto define deriveKey(AES-GCM,256) como los
+ * primeros 256 bits de la salida del KDF, así que estos bytes reimportados con
+ * aesKeyFromBytes producen exactamente la misma llave.
+ *
+ * Se usa para que el Vault pueda conservar la CAPACIDAD de re-envolver
+ * DataKeys tras un reload sin guardar la contraseña en ningún lado: los bytes
+ * derivados se cifran bajo la llave de sesión (ver storage.ts). Recuperar la
+ * contraseña desde estos bytes exigiría invertir PBKDF2, que es inviable.
+ */
+export async function deriveKeyBytes(
+  password: string,
+  salt: Uint8Array,
+  params: { iterations: number; hash: string }
+): Promise<Uint8Array> {
+  const baseKey = await crypto.subtle.importKey(
+    "raw",
+    textEncoder().encode(password),
+    "PBKDF2",
+    false,
+    ["deriveBits"]
+  );
+  const bits = await crypto.subtle.deriveBits(
+    {
+      name: "PBKDF2",
+      salt: salt as BufferSource,
+      iterations: params.iterations,
+      hash: params.hash as "SHA-256" | "SHA-384" | "SHA-512",
+    },
+    baseKey,
+    256
+  );
+  return new Uint8Array(bits);
+}
+
 export function randomBytes(n: number): Uint8Array {
   const out = new Uint8Array(n);
   crypto.getRandomValues(out);

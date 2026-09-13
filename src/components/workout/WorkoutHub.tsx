@@ -257,10 +257,10 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2 max-w-xl min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
                 SISTEMA KINETIX
               </span>
-              <span className="text-[10px] sm:text-xs text-neutral-400 font-medium">
+              <span className="text-[11px] sm:text-xs text-neutral-400 font-medium">
                 Mesociclo · semana {mesocycle.weekInCycle}/5 · {mesocycle.phaseLabel}
                 {mesocycle.isDeloadWeek && (
                   <span
@@ -276,7 +276,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
               </span>
               {/* P4 DUP: día de rotación aplicado a la rutina de hoy. */}
               {nextRoutine.dupDay && (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-violet-500/20 text-violet-300 border border-violet-500/30">
+                <span className="px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-violet-500/20 text-violet-300 border border-violet-500/30">
                   DUP {nextRoutine.dupDay}
                 </span>
               )}
@@ -353,7 +353,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
                   <Play className="w-4 h-4 fill-white shrink-0" />
                   <span className="truncate">
                     Iniciar sesión de hoy
-                    <span className="block text-[10px] font-bold text-cyan-100/80 normal-case">{nextRoutine.name.split("(")[0]}</span>
+                    <span className="block text-[11px] font-bold text-cyan-100/80 normal-case">{nextRoutine.name.split("(")[0]}</span>
                   </span>
                 </button>
                 <button
@@ -394,7 +394,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
                     role="radio"
                     aria-checked={currentEquipment === opt.value}
                     onClick={() => changeTodayEquipment(opt.value)}
-                    className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-[10px] sm:text-[11px] font-bold transition-all touch-target ${
+                    className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-[11px] font-bold transition-all touch-target ${
                       currentEquipment === opt.value
                         ? "bg-cyan-600 text-white shadow-lg shadow-cyan-600/25"
                         : "bg-neutral-900 text-neutral-400 hover:text-white border border-neutral-800"
@@ -423,7 +423,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
                   ? `Readiness de hoy: ${verdictMeta?.label ?? ""}. Se aplicará: ${adjLabel}.`
                   : "Todavía no registraste tu readiness de hoy. Sin él, la sesión arranca con el ajuste de peso por historial."}
               </p>
-              <p className="text-[10px] text-neutral-500">
+              <p className="text-[11px] text-neutral-400">
                 {deloadRoutine
                   ? `Detectamos acumulación: la descarga baja −10-15% la carga y sube el RIR.`
                   : "Las alternativas están edificadas sobre el mismo motor de autoregulación (NUNCA pesos random)."}
@@ -465,10 +465,10 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
               </div>
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30">
                     NO COMPLETO
                   </span>
-                  <span className="text-[10px] text-neutral-400 font-bold">
+                  <span className="text-[11px] text-neutral-400 font-bold">
                     {new Date(pendingCarryover.session.date).toLocaleDateString("es-ES", { day: "numeric", month: "short" })}
                   </span>
                 </div>
@@ -528,7 +528,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
               </div>
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-teal-500/20 text-teal-300 border border-teal-500/30">
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-teal-500/20 text-teal-300 border border-teal-500/30">
                     SEMANA DE DESCARGA ACTIVA
                   </span>
                 </div>
@@ -567,7 +567,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/30">
                   DELOAD RECOMENDADO
                 </span>
               </div>
@@ -614,7 +614,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
             <Sparkles className="w-4 h-4 text-cyan-400" />
             <h3 className="text-sm font-black text-white tracking-tight">Resumen de hoy</h3>
           </div>
-          <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
+          <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
             {new Date().toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "short" })}
           </span>
         </div>
@@ -637,13 +637,13 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
             {/* Sesiones */}
             <div className="rounded-2xl bg-neutral-950/60 border border-neutral-800 p-2.5 sm:p-3 min-w-0">
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[10px] font-bold text-neutral-400 uppercase">Sesiones</span>
-                <span className="text-[10px] font-black text-white tabular-nums">{todayStats.workouts}/1</span>
+                <span className="text-[11px] font-bold text-neutral-400 uppercase">Sesiones</span>
+                <span className="text-[11px] font-black text-white tabular-nums">{todayStats.workouts}/1</span>
               </div>
               <div className="h-1.5 bg-neutral-800 rounded-full overflow-hidden">
                 <div className="h-full bg-cyan-400 rounded-full transition-all duration-500" style={{ width: `${Math.min(100, todayStats.workouts * 100)}%` }} />
               </div>
-              <p className="text-[9px] sm:text-[10px] text-neutral-500 mt-1.5 line-clamp-2 truncate">
+              <p className="text-[11px] sm:text-[11px] text-neutral-400 mt-1.5 line-clamp-2 truncate">
                 ¡Meta cumplida!
               </p>
             </div>
@@ -651,23 +651,23 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
             {/* Series */}
             <div className="rounded-2xl bg-neutral-950/60 border border-neutral-800 p-2.5 sm:p-3 min-w-0">
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[10px] font-bold text-neutral-400 uppercase">Series</span>
-                <span className="text-[10px] font-black text-purple-400 tabular-nums">{todayStats.sets}</span>
+                <span className="text-[11px] font-bold text-neutral-400 uppercase">Series</span>
+                <span className="text-[11px] font-black text-purple-400 tabular-nums">{todayStats.sets}</span>
               </div>
               <div className="text-base sm:text-lg font-black text-white whitespace-nowrap tabular-nums truncate">{todayStats.sets > 0 ? `${todayStats.sets} hoy` : "Sin registrar"}</div>
-              <p className="text-[9px] sm:text-[10px] text-neutral-500 mt-1.5 line-clamp-2 truncate">Volumen de calidad en las sesiones de hoy</p>
+              <p className="text-[11px] sm:text-[11px] text-neutral-400 mt-1.5 line-clamp-2 truncate">Volumen de calidad en las sesiones de hoy</p>
             </div>
 
             {/* Comidas */}
             <div className="rounded-2xl bg-neutral-950/60 border border-neutral-800 p-2.5 sm:p-3 min-w-0">
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[10px] font-bold text-neutral-400 uppercase">Comidas</span>
-                <span className="text-[10px] font-black text-white tabular-nums">{todayStats.meals}/4</span>
+                <span className="text-[11px] font-bold text-neutral-400 uppercase">Comidas</span>
+                <span className="text-[11px] font-black text-white tabular-nums">{todayStats.meals}/4</span>
               </div>
               <div className="h-1.5 bg-neutral-800 rounded-full overflow-hidden">
                 <div className="h-full bg-emerald-400 rounded-full transition-all duration-500" style={{ width: `${Math.min(100, (todayStats.meals / 4) * 100)}%` }} />
               </div>
-              <p className="text-[9px] sm:text-[10px] text-neutral-500 mt-1.5 line-clamp-2 truncate">Registrá tus comidas en Nutrición</p>
+              <p className="text-[11px] sm:text-[11px] text-neutral-400 mt-1.5 line-clamp-2 truncate">Registrá tus comidas en Nutrición</p>
             </div>
           </div>
         )}
@@ -678,22 +678,22 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
         <div className="p-2 sm:p-3 rounded-2xl bg-neutral-900 border border-neutral-800 text-center min-w-0">
           <Target className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-cyan-400 mx-auto mb-0.5 sm:mb-1" />
           <div className="text-lg sm:text-xl font-black text-white tabular-nums truncate">{weekStats.workouts}</div>
-          <span className="text-[8px] sm:text-[10px] font-bold text-neutral-400 uppercase">Sesiones</span>
+          <span className="text-[11px] sm:text-[11px] font-bold text-neutral-400 uppercase">Sesiones</span>
         </div>
         <div className="p-2 sm:p-3 rounded-2xl bg-neutral-900 border border-neutral-800 text-center min-w-0">
           <Layers className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-purple-400 mx-auto mb-0.5 sm:mb-1" />
           <div className="text-lg sm:text-xl font-black text-purple-400 tabular-nums truncate min-w-0">{weekStats.volume.toLocaleString()}</div>
-          <span className="text-[8px] sm:text-[10px] font-bold text-neutral-400 uppercase">Tonelaje</span>
+          <span className="text-[11px] sm:text-[11px] font-bold text-neutral-400 uppercase">Tonelaje</span>
         </div>
         <div className="p-2 sm:p-3 rounded-2xl bg-neutral-900 border border-neutral-800 text-center min-w-0">
           <Activity className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-emerald-400 mx-auto mb-0.5 sm:mb-1" />
           <div className="text-lg sm:text-xl font-black text-emerald-400 tabular-nums truncate">{weekStats.sets}</div>
-          <span className="text-[8px] sm:text-[10px] font-bold text-neutral-400 uppercase">Series</span>
+          <span className="text-[11px] sm:text-[11px] font-bold text-neutral-400 uppercase">Series</span>
         </div>
         <div className="p-2 sm:p-3 rounded-2xl bg-neutral-900 border border-neutral-800 text-center min-w-0">
           <Trophy className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-amber-400 mx-auto mb-0.5 sm:mb-1" />
           <div className="text-lg sm:text-xl font-black text-amber-400 tabular-nums truncate">{weekStats.prs}</div>
-          <span className="text-[8px] sm:text-[10px] font-bold text-neutral-400 uppercase">PRs</span>
+          <span className="text-[11px] sm:text-[11px] font-bold text-neutral-400 uppercase">PRs</span>
         </div>
       </div>
 
@@ -710,7 +710,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
             <h4 className="text-[13px] sm:text-sm font-bold text-white group-hover:text-blue-300 transition-colors line-clamp-2">
               Calculadora de Discos
             </h4>
-            <p className="text-[10px] sm:text-[11px] text-neutral-400 line-clamp-2">Distribución exacta por lado en barra</p>
+            <p className="text-[11px] sm:text-[11px] text-neutral-400 line-clamp-2">Distribución exacta por lado en barra</p>
           </div>
         </button>
 
@@ -725,7 +725,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
             <h4 className="text-[13px] sm:text-sm font-bold text-white group-hover:text-amber-300 transition-colors line-clamp-2">
               Pirámide de Calentamiento
             </h4>
-            <p className="text-[10px] sm:text-[11px] text-neutral-400 line-clamp-2">Potenciación SNC sin fatiga metabólica</p>
+            <p className="text-[11px] sm:text-[11px] text-neutral-400 line-clamp-2">Potenciación SNC sin fatiga metabólica</p>
           </div>
         </button>
 
@@ -740,7 +740,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
             <h4 className="text-[13px] sm:text-sm font-bold text-white group-hover:text-purple-300 transition-colors line-clamp-2">
               Metrónomo de Tempo
             </h4>
-            <p className="text-[10px] sm:text-[11px] text-neutral-400 line-clamp-2">Control excéntrico de tensión mecánica</p>
+            <p className="text-[11px] sm:text-[11px] text-neutral-400 line-clamp-2">Control excéntrico de tensión mecánica</p>
           </div>
         </button>
 
@@ -748,7 +748,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
           onClick={() => setIsImportOpen(true)}
           className="p-3 sm:p-4 rounded-2xl bg-gradient-to-br from-emerald-500/10 via-neutral-900 to-neutral-900 border border-emerald-500/30 hover:border-emerald-400/60 shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/20 transition-all flex items-center gap-2.5 sm:gap-3 text-left group press-scale relative overflow-hidden"
         >
-          <span className="absolute top-2 right-2 px-1.5 py-0.5 rounded-full text-[8px] font-black bg-emerald-500 text-white">DESTACADO</span>
+          <span className="absolute top-2 right-2 px-1.5 py-0.5 rounded-full text-[11px] font-black bg-emerald-500 text-white">DESTACADO</span>
           <div className="p-2.5 sm:p-3 rounded-xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 group-hover:scale-105 transition-transform shrink-0">
             <Trophy className="w-5 h-5" />
           </div>
@@ -756,7 +756,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
             <h4 className="text-[13px] sm:text-sm font-bold text-white group-hover:text-emerald-300 transition-colors line-clamp-2">
               Importar Sesión
             </h4>
-            <p className="text-[10px] sm:text-[11px] text-neutral-400 line-clamp-2">Carga sesiones reales previas (SBS v28)</p>
+            <p className="text-[11px] sm:text-[11px] text-neutral-400 line-clamp-2">Carga sesiones reales previas (SBS v28)</p>
           </div>
         </button>
       </div>
@@ -784,7 +784,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
             >
               <div>
                 <div className="flex items-center justify-between gap-2 mb-2">
-                  <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-neutral-800 text-neutral-300 border border-neutral-700 whitespace-nowrap">
+                  <span className="text-[11px] sm:text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-neutral-800 text-neutral-300 border border-neutral-700 whitespace-nowrap">
                     DÍA {idx + 1} • {routine.targetSplit}
                   </span>
                   <span className="text-[11px] sm:text-xs font-mono text-cyan-400 font-bold whitespace-nowrap">
@@ -796,7 +796,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
               </div>
 
               <div className="flex items-center justify-between pt-3 border-t border-neutral-800 gap-2">
-                <span className="text-[10px] sm:text-[11px] text-neutral-500 font-medium truncate min-w-0">
+                <span className="text-[11px] sm:text-[11px] text-neutral-400 font-medium truncate min-w-0">
                   {routine.exercises.slice(0, 3).map((e) => {
                     const ex = EXERCISES_DATABASE.find((dbEx) => dbEx.id === e.exerciseId);
                     return ex?.nameEs || e.exerciseId;
@@ -827,7 +827,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
             {activeSession && (
               <button
                 onClick={() => setConfirmAction({ type: "ghost" })}
-                className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-amber-950/40 hover:bg-amber-900/60 text-amber-300 text-[10px] sm:text-[11px] font-bold border border-amber-500/30 transition-all touch-target press-scale"
+                className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-amber-950/40 hover:bg-amber-900/60 text-amber-300 text-[11px] sm:text-[11px] font-bold border border-amber-500/30 transition-all touch-target press-scale"
               >
                 Limpiar activa
               </button>
@@ -835,7 +835,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
             {workoutHistory.length > 0 && (
               <button
                 onClick={() => setConfirmAction({ type: "clearAll" })}
-                className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-red-950/40 hover:bg-red-900/60 text-red-300 text-[10px] sm:text-[11px] font-bold border border-red-500/30 transition-all touch-target press-scale"
+                className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-red-950/40 hover:bg-red-900/60 text-red-300 text-[11px] sm:text-[11px] font-bold border border-red-500/30 transition-all touch-target press-scale"
               >
                 Borrar todo
               </button>
@@ -905,7 +905,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
                   )}
                   <button
                     onClick={() => setConfirmAction({ type: "deleteOne", id: log.id, name: log.routineName })}
-                    className="p-2.5 rounded-lg text-neutral-500 hover:text-red-400 hover:bg-red-950/40 transition-all touch-target press-scale"
+                    className="p-2.5 rounded-lg text-neutral-400 hover:text-red-400 hover:bg-red-950/40 transition-all touch-target press-scale"
                     title="Eliminar sesión"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -970,15 +970,15 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
               {/* Stats */}
               <div className="grid grid-cols-3 gap-3 mt-4">
                 <div className="p-3 rounded-xl bg-neutral-950 border border-neutral-800 text-center">
-                  <span className="text-[10px] text-neutral-400 font-bold uppercase">Duración</span>
+                  <span className="text-[11px] text-neutral-400 font-bold uppercase">Duración</span>
                   <p className="text-sm font-black text-cyan-400 mt-1">{Math.floor(selectedSession.durationSeconds / 60)} min</p>
                 </div>
                 <div className="p-3 rounded-xl bg-neutral-950 border border-neutral-800 text-center">
-                  <span className="text-[10px] text-neutral-400 font-bold uppercase">Volumen</span>
+                  <span className="text-[11px] text-neutral-400 font-bold uppercase">Volumen</span>
                   <p className="text-sm font-black text-purple-400 mt-1">{selectedSession.totalVolumeKg.toLocaleString()} {weightUnit}</p>
                 </div>
                 <div className="p-3 rounded-xl bg-neutral-950 border border-neutral-800 text-center">
-                  <span className="text-[10px] text-neutral-400 font-bold uppercase">Series</span>
+                  <span className="text-[11px] text-neutral-400 font-bold uppercase">Series</span>
                   <p className="text-sm font-black text-emerald-400 mt-1">{selectedSession.totalSets}</p>
                 </div>
               </div>
@@ -1014,12 +1014,12 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
                         {idx + 1}
                       </span>
                       <div>
-                        <h4 className="text-sm font-bold text-white flex items-center gap-1.5">{wEx.exercise?.nameEs || wEx.exerciseId} <span className="text-[9px] text-cyan-400 font-normal">ver historial →</span></h4>
-                        <p className="text-[10px] text-neutral-500">{wEx.exercise?.equipment || ''} • {wEx.exercise?.category || ''}</p>
+                        <h4 className="text-sm font-bold text-white flex items-center gap-1.5">{wEx.exercise?.nameEs || wEx.exerciseId} <span className="text-[11px] text-cyan-400 font-normal">ver historial →</span></h4>
+                        <p className="text-[11px] text-neutral-400">{wEx.exercise?.equipment || ''} • {wEx.exercise?.category || ''}</p>
                       </div>
                     </div>
                     {incompleteSets > 0 && (
-                      <span className="ml-3 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-300 border border-amber-500/30 whitespace-nowrap">
+                      <span className="ml-3 px-2 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-300 border border-amber-500/30 whitespace-nowrap">
                         NO COMPLETO · {incompleteSets} serie{incompleteSets > 1 ? "s" : ""}
                       </span>
                     )}
@@ -1029,7 +1029,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
                     <div className="overflow-x-auto scrollbar-thin">
                       <table className="w-full min-w-[360px] text-[13px]">
                         <thead>
-                          <tr className="text-[11px] text-neutral-500 uppercase tracking-wider">
+                          <tr className="text-[11px] text-neutral-400 uppercase tracking-wider">
                             <th className="text-center py-2 w-10 shrink-0">#</th>
                             <th className="text-center py-2 shrink-0">Tipo</th>
                             {!isTime && <th className="text-center py-2 shrink-0">{weightUnit.toUpperCase()}</th>}
@@ -1042,15 +1042,15 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
                             <tr key={set.id} className="border-t border-neutral-800/50">
                               <td className="text-center py-2 text-neutral-400 font-mono tabular-nums">{set.setNumber}</td>
                               <td className="text-center py-2">
-                                <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase truncate inline-block max-w-[60px] ${
+                                <span className={`px-1.5 py-0.5 rounded text-[11px] font-bold uppercase truncate inline-block max-w-[60px] ${
                                   set.type === 'dropset' ? 'bg-purple-500/20 text-purple-300' :
                                   set.type === 'myorep' ? 'bg-blue-500/20 text-blue-300' :
                                   set.type === 'warmup' ? 'bg-amber-500/20 text-amber-300' :
                                   'bg-neutral-800 text-neutral-400'
                                 }`}>{set.type === 'normal' ? 'W' : set.type.slice(0, 4)}</span>
                               </td>
-                              {!isTime && <td className={`text-center py-2 font-bold tabular-nums truncate ${set.completed ? 'text-cyan-400' : 'text-neutral-500'}`}>{set.weight || 0}</td>}
-                              <td className={`text-center py-2 font-bold tabular-nums truncate ${set.completed ? 'text-white' : 'text-neutral-500'}`}>
+                              {!isTime && <td className={`text-center py-2 font-bold tabular-nums truncate ${set.completed ? 'text-cyan-400' : 'text-neutral-400'}`}>{set.weight || 0}</td>}
+                              <td className={`text-center py-2 font-bold tabular-nums truncate ${set.completed ? 'text-white' : 'text-neutral-400'}`}>
                                 {isTime ? `${set.durationSeconds ?? set.reps}s` : set.reps}
                               </td>
                               <td className="text-center py-2 text-neutral-400 tabular-nums">{set.rir ?? '-'}</td>
@@ -1060,7 +1060,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
                       </table>
                     </div>
                     <div className="flex justify-center sm:hidden pt-1">
-                      <span className="text-[9px] text-neutral-600">← desliza para ver más →</span>
+                      <span className="text-[11px] text-neutral-400">← desliza para ver más →</span>
                     </div>
                   </div>
                 </div>
@@ -1092,7 +1092,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
               </div>
               <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-3 overscroll-contain scrollbar-thin">
                 {history.length === 0 ? (
-                  <p className="text-xs text-neutral-500 text-center py-8">Sin historial para este ejercicio</p>
+                  <p className="text-xs text-neutral-400 text-center py-8">Sin historial para este ejercicio</p>
                 ) : (
                   history.map((entry) => (
                     <div key={entry.id} className="p-4 rounded-2xl bg-neutral-950 border border-neutral-800">
@@ -1107,7 +1107,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
                           <span key={i} className="px-2 py-1 rounded-lg bg-neutral-900 border border-neutral-800 text-xs">
                             <span className="font-bold text-white">{entry.weight}</span>
                             <span className="text-neutral-400"> × {r}</span>
-                            {entry.rpe && <span className="text-neutral-500"> @{entry.rpe}</span>}
+                            {entry.rpe && <span className="text-neutral-400"> @{entry.rpe}</span>}
                           </span>
                         ))}
                       </div>

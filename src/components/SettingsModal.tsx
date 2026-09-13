@@ -55,6 +55,7 @@ import {
   lockVault,
 } from "../utils/vault";
 import { FocusTrap } from "./FocusTrap";
+import { useConfirm } from "../hooks/useConfirm";
 
 interface SettingsModalProps {
   open: boolean;
@@ -75,6 +76,7 @@ const DAYS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) => {
   const { showToast } = useToast();
+  const [confirm, confirmDialog] = useConfirm();
   const [reminder, setReminder] = useState<ReminderConfig>(() => {
     try {
       const raw = localStorage.getItem(REMINDER_KEY);
@@ -205,12 +207,22 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
       showToast("No se pudo leer la copia", "error");
       return;
     }
-    if (!window.confirm("Se reemplazarán TODOS tus datos actuales con los de la copia automática seleccionada. ¿Continuar?")) return;
+    if (!(await confirm({
+      title: "Restaurar copia automática",
+      message: "Se reemplazarán TODOS tus datos actuales con los de la copia automática seleccionada. ¿Continuar?",
+      confirmLabel: "Restaurar",
+      danger: true,
+    }))) return;
     applyBackup({ data });
   };
 
   const handleDeleteAutoBackup = async (id: number) => {
-    if (!window.confirm("¿Eliminar esta copia automática? Se borra de este dispositivo de forma permanente.")) return;
+    if (!(await confirm({
+      title: "Eliminar copia",
+      message: "¿Eliminar esta copia automática? Se borra de este dispositivo de forma permanente.",
+      confirmLabel: "Eliminar",
+      danger: true,
+    }))) return;
     await idbBackupDelete(id);
     const list = await listAutoBackups();
     if (isMounted.current) setAutoBackups(list);
@@ -219,7 +231,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
 
   const handleClearAutoBackups = async () => {
     if (autoBackups.length === 0) return;
-    if (!window.confirm(`¿Eliminar las ${autoBackups.length} copias automáticas guardadas? No se puede deshacer.`)) return;
+    if (!(await confirm({
+      title: "Eliminar copias",
+      message: `¿Eliminar las ${autoBackups.length} copias automáticas guardadas? No se puede deshacer.`,
+      confirmLabel: "Eliminar todas",
+      danger: true,
+    }))) return;
     setAutoBackupBusy(true);
     for (const b of autoBackups) await idbBackupDelete(b.id);
     setAutoBackupBusy(false);
@@ -292,7 +309,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
 
   const confirmVaultDisable = async () => {
     if (!checkVaultInputs(true, false)) return;
-    if (!window.confirm("¿Desactivar el cifrado en reposo? Tus datos quedarán en claro en este dispositivo.")) return;
+    if (!(await confirm({
+      title: "Desactivar cifrado",
+      message: "¿Desactivar el cifrado en reposo? Tus datos quedarán en claro en este dispositivo.",
+      confirmLabel: "Desactivar",
+      danger: true,
+    }))) return;
     setVaultBusy(true);
     try {
       await disableVault(vaultCurrent);
@@ -445,19 +467,29 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
     }
   };
 
-  const confirmImport = (parsed: { data: Record<string, unknown> }) => {
-    if (!window.confirm("Se reemplazarán TODOS tus datos actuales con los del backup. ¿Continuar?")) return;
+  const confirmImport = async (parsed: { data: Record<string, unknown> }) => {
+    if (!(await confirm({
+      title: "Restaurar backup",
+      message: "Se reemplazarán TODOS tus datos actuales con los del backup. ¿Continuar?",
+      confirmLabel: "Restaurar",
+      danger: true,
+    }))) return;
     applyBackup(parsed);
   };
 
   const handleEncryptedPassphrase = (pass: string) => {
     if (!encryptedPending) return;
     decryptBackup<{ app: string; version: number; data: unknown }>(encryptedPending, pass)
-      .then((pdf) => {
+      .then(async (pdf) => {
         setEncryptedPending(null);
         const parsed = parseBackupPayload(pdf);
         if (!parsed) return;
-        if (!window.confirm("Se reemplazarán TODOS tus datos actuales con los del backup. ¿Continuar?")) return;
+        if (!(await confirm({
+          title: "Restaurar backup",
+          message: "Se reemplazarán TODOS tus datos actuales con los del backup. ¿Continuar?",
+          confirmLabel: "Restaurar",
+          danger: true,
+        }))) return;
         applyBackup(parsed as { data: Record<string, unknown> });
       })
       .catch(() => {
@@ -600,7 +632,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
               telemetría, y nada sale de este dispositivo.
             </p>
             <div className="rounded-2xl bg-neutral-950 border border-neutral-800 p-3.5 space-y-2 text-[11px] text-neutral-400">
-              <p className="text-[10px] font-black text-neutral-300 uppercase tracking-wider">En este dispositivo guardamos</p>
+              <p className="text-[11px] font-black text-neutral-300 uppercase tracking-wider">En este dispositivo guardamos</p>
               <ul className="space-y-1.5">
                 <li className="flex items-start gap-1.5"><Check className="w-3.5 h-3.5 mt-0.5 text-emerald-400 shrink-0" /> Historial de entrenamientos, series, RIR/RPE y volumen</li>
                 <li className="flex items-start gap-1.5"><Check className="w-3.5 h-3.5 mt-0.5 text-emerald-400 shrink-0" /> Marcas personales (PR) y progresión de pesos</li>
@@ -609,12 +641,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
                 <li className="flex items-start gap-1.5"><Check className="w-3.5 h-3.5 mt-0.5 text-emerald-400 shrink-0" /> Sueño, readiness y cardio</li>
                 <li className="flex items-start gap-1.5"><Check className="w-3.5 h-3.5 mt-0.5 text-emerald-400 shrink-0" /> Tu perfil y preferencias (unidad, sonido, plan, recordatorio)</li>
               </ul>
-              <p className="text-[10px] text-neutral-500 leading-relaxed pt-1">
+              <p className="text-[11px] text-neutral-400 leading-relaxed pt-1">
                 Los permisos de Health Connect (pasos/sueño/peso) se piden por separado y solo se leen cuando vos los
                 otorgás; podés revocarlos en cualquier momento desde los ajustes del sistema.
               </p>
             </div>
-            <p className="text-[10px] text-amber-400/90 leading-relaxed flex items-start gap-1.5">
+            <p className="text-[11px] text-amber-400/90 leading-relaxed flex items-start gap-1.5">
               <ShieldAlert className="w-3.5 h-3.5 mt-0.5 shrink-0" />
               Si borrás los datos del navegador, desinstalás la app o se daña el dispositivo, estos datos se pierden.
               Exportá un backup periódicamente (sección siguiente) y guardalo en un lugar seguro.
@@ -631,11 +663,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
               Tu historial de entrenamiento, PRs, nutrición y métricas se guardan en este dispositivo.
               Exportalos para respaldarlos o transferirlos a otro dispositivo.
             </p>
-            <p className="text-[10px] text-amber-400/90 leading-relaxed flex items-start gap-1.5">
+            <p className="text-[11px] text-amber-400/90 leading-relaxed flex items-start gap-1.5">
               <ShieldAlert className="w-3.5 h-3.5 mt-0.5 shrink-0" />
               El backup contiene datos personales (peso, medidas, historial). Guardalo en un lugar seguro y no lo compartas.
             </p>
-            <p className="text-[10px] text-neutral-500 leading-relaxed">
+            <p className="text-[11px] text-neutral-400 leading-relaxed">
               El historial completo se conserva en un archivo local y se incluye en tus backups.
               La app mantiene una copia reciente para abrir más rápido; los registros antiguos siguen guardados.
             </p>
@@ -674,31 +706,31 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
               {autoBackupBusy ? "Creando copia…" : "Crear copia de seguridad ahora"}
             </button>
             <div className="rounded-2xl bg-neutral-950 border border-neutral-800 p-3 space-y-2">
-              <p className="text-[10px] font-black text-neutral-300 uppercase tracking-wider">Copias automáticas (en este dispositivo)</p>
-              <p className="text-[10px] text-neutral-500 leading-relaxed">
+              <p className="text-[11px] font-black text-neutral-300 uppercase tracking-wider">Copias automáticas (en este dispositivo)</p>
+              <p className="text-[11px] text-neutral-400 leading-relaxed">
                 Cada 6 horas con datos se guarda una copia completa en este dispositivo (hasta {autoBackups.length || 24} copias, se conservan las más recientes). No usan nube.
               </p>
               {autoBackups.length === 0 ? (
-                <p className="text-[10px] text-neutral-600">Todavía no hay copias automáticas.</p>
+                <p className="text-[11px] text-neutral-400">Todavía no hay copias automáticas.</p>
               ) : (
                 <ul className="space-y-1.5 max-h-40 overflow-y-auto scrollbar-thin">
                   {autoBackups.map((b) => (
                     <li key={b.id} className="flex items-center justify-between gap-2 p-2 rounded-lg bg-neutral-900 border border-neutral-800">
-                      <span className="text-[10px] text-neutral-300 font-medium">
+                      <span className="text-[11px] text-neutral-300 font-medium">
                         {formatBackupDate(b.createdAt)}
-                        <span className="block text-neutral-500 font-normal">{b.entries} claves · copia Nº {b.id}</span>
+                        <span className="block text-neutral-400 font-normal">{b.entries} claves · copia Nº {b.id}</span>
                       </span>
                       <div className="flex items-center gap-1.5 shrink-0">
                         <button
                           onClick={() => handleRestoreAutoBackup(b.id)}
-                          className="px-2.5 py-1.5 rounded-lg bg-cyan-600/20 hover:bg-cyan-600/40 text-cyan-300 text-[10px] font-bold border border-cyan-500/30 transition-colors"
+                          className="px-2.5 py-1.5 rounded-lg bg-cyan-600/20 hover:bg-cyan-600/40 text-cyan-300 text-[11px] font-bold border border-cyan-500/30 transition-colors"
                         >
                           Restaurar
                         </button>
                         <button
                           onClick={() => handleDeleteAutoBackup(b.id)}
                           aria-label={`Eliminar copia ${b.id}`}
-                          className="p-1.5 rounded-lg bg-red-950/30 hover:bg-red-900/40 text-red-300 text-[10px] border border-red-500/30 transition-colors"
+                          className="p-1.5 rounded-lg bg-red-950/30 hover:bg-red-900/40 text-red-300 text-[11px] border border-red-500/30 transition-colors"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -711,7 +743,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
                 <button
                   onClick={handleClearAutoBackups}
                   disabled={autoBackupBusy}
-                  className="w-full py-2 rounded-lg bg-red-950/30 hover:bg-red-900/40 text-red-300 text-[10px] font-bold border border-red-500/30 transition-colors disabled:opacity-40"
+                  className="w-full py-2 rounded-lg bg-red-950/30 hover:bg-red-900/40 text-red-300 text-[11px] font-bold border border-red-500/30 transition-colors disabled:opacity-40"
                 >
                   Vaciar todas las copias
                 </button>
@@ -765,21 +797,21 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
               <div className="p-4 rounded-2xl bg-neutral-950 border border-purple-500/30 space-y-3 animate-fadeIn">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black text-white">Vista previa de importación</span>
-                  <span className="text-[10px] text-purple-400 font-bold uppercase bg-purple-500/10 px-2 py-0.5 rounded-md border border-purple-500/20">
+                  <span className="text-[11px] text-purple-400 font-bold uppercase bg-purple-500/10 px-2 py-0.5 rounded-md border border-purple-500/20">
                     Formato Válido
                   </span>
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-center text-xs">
                   <div className="p-2.5 rounded-xl bg-neutral-900 border border-neutral-800">
-                    <span className="text-[10px] text-neutral-500 block uppercase">Sesiones</span>
+                    <span className="text-[11px] text-neutral-400 block uppercase">Sesiones</span>
                     <span className="font-mono font-black text-white text-base">{csvPreview.importedSessionsCount}</span>
                   </div>
                   <div className="p-2.5 rounded-xl bg-neutral-900 border border-neutral-800">
-                    <span className="text-[10px] text-neutral-500 block uppercase">Series</span>
+                    <span className="text-[11px] text-neutral-400 block uppercase">Series</span>
                     <span className="font-mono font-black text-cyan-400 text-base">{csvPreview.importedSetsCount}</span>
                   </div>
                   <div className="p-2.5 rounded-xl bg-neutral-900 border border-neutral-800">
-                    <span className="text-[10px] text-neutral-500 block uppercase">Ejercicios</span>
+                    <span className="text-[11px] text-neutral-400 block uppercase">Ejercicios</span>
                     <span className="font-mono font-black text-emerald-400 text-base">{csvPreview.recognizedExercises.length}</span>
                   </div>
                 </div>
@@ -812,7 +844,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
           <section className="space-y-3 pt-4 border-t border-neutral-800">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                {reminder.enabled ? <Bell className="w-4 h-4 text-emerald-400" /> : <BellOff className="w-4 h-4 text-neutral-500" />}
+                {reminder.enabled ? <Bell className="w-4 h-4 text-emerald-400" /> : <BellOff className="w-4 h-4 text-neutral-400" />}
                 <h4 className="text-sm font-black text-white uppercase tracking-wider">Recordatorio de entrenamiento</h4>
               </div>
               <button
@@ -828,7 +860,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
 
             <div className={`grid grid-cols-2 gap-2 ${reminder.enabled ? "opacity-100" : "opacity-40 pointer-events-none"}`}>
               <label className="block">
-                <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Hora</span>
+                <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Hora</span>
                 <div className="flex gap-2 mt-1">
                   <input
                     type="number"
@@ -849,7 +881,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
                 </div>
               </label>
               <label className="block">
-                <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Día</span>
+                <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Día</span>
                 <select
                   value={reminder.dayIndex}
                   onChange={(e) => setReminder((r) => ({ ...r, dayIndex: parseInt(e.target.value, 10) }))}
@@ -862,7 +894,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
               </label>
             </div>
             {reminder.enabled && (
-              <p className="text-[11px] text-neutral-500 flex items-center gap-1.5">
+              <p className="text-[11px] text-neutral-400 flex items-center gap-1.5">
                 <ShieldAlert className="w-3.5 h-3.5" />
                 {nativeRemindersAvailable()
                   ? "Notificación programada en el sistema: se muestra aunque la app esté cerrada."
@@ -908,7 +940,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
               <div className="space-y-3">
                 <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-950/30 border border-emerald-500/30">
                   <span className="text-[11px] font-black text-emerald-300 uppercase">PIN activo</span>
-                  <span className="text-[10px] text-neutral-500">La app está protegida</span>
+                  <span className="text-[11px] text-neutral-400">La app está protegida</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <button
@@ -956,7 +988,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
                     onChange={(e) => setPinCurrent(e.target.value.replace(/\D/g, ""))}
                     placeholder={`PIN actual (${PIN_LENGTH} dígitos)`}
                     autoComplete="off"
-                    className="w-full px-3 py-2.5 bg-neutral-900 border border-neutral-800 rounded-xl text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-amber-500 text-center"
+                    className="w-full px-3 py-2.5 bg-neutral-900 border border-neutral-800 rounded-xl text-sm text-white placeholder:text-neutral-400 focus:outline-none focus:border-amber-500 text-center"
                   />
                 )}
                 <input
@@ -969,7 +1001,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
                   placeholder="PIN nuevo (4 dígitos)"
                   autoComplete="off"
                   disabled={pinMode === "remove"}
-                  className="w-full px-3 py-2.5 bg-neutral-900 border border-neutral-800 rounded-xl text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-amber-500 text-center disabled:opacity-40"
+                  className="w-full px-3 py-2.5 bg-neutral-900 border border-neutral-800 rounded-xl text-sm text-white placeholder:text-neutral-400 focus:outline-none focus:border-amber-500 text-center disabled:opacity-40"
                 />
                 {pinMode !== "remove" && (
                   <input
@@ -981,7 +1013,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
                     onChange={(e) => setPinInput2(e.target.value.replace(/\D/g, ""))}
                     placeholder="Confirmar PIN nuevo"
                     autoComplete="off"
-                    className="w-full px-3 py-2.5 bg-neutral-900 border border-neutral-800 rounded-xl text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-amber-500 text-center"
+                    className="w-full px-3 py-2.5 bg-neutral-900 border border-neutral-800 rounded-xl text-sm text-white placeholder:text-neutral-400 focus:outline-none focus:border-amber-500 text-center"
                   />
                 )}
                 <div className="flex gap-2">
@@ -1034,7 +1066,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
               <div className="space-y-3">
                 <div className="flex items-center justify-between p-3 rounded-xl bg-violet-950/30 border border-violet-500/30">
                   <span className="text-[11px] font-black text-violet-300 uppercase">Vault activo</span>
-                  <span className="text-[10px] text-neutral-500">
+                  <span className="text-[11px] text-neutral-400">
                     {isVaultUnlocked() ? "Desbloqueado en esta pestaña" : "Bloqueado"}
                   </span>
                 </div>
@@ -1073,7 +1105,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
                     onChange={(e) => setVaultCurrent(e.target.value)}
                     placeholder="Contraseña actual del vault"
                     autoComplete="off"
-                    className="w-full px-3 py-2.5 bg-neutral-900 border border-neutral-800 rounded-xl text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-violet-500 text-center"
+                    className="w-full px-3 py-2.5 bg-neutral-900 border border-neutral-800 rounded-xl text-sm text-white placeholder:text-neutral-400 focus:outline-none focus:border-violet-500 text-center"
                   />
                 )}
                 {(vaultMode === "setup" || vaultMode === "change") && (
@@ -1084,7 +1116,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
                       onChange={(e) => setVaultInput(e.target.value)}
                       placeholder={`Nueva contraseña (mín ${VAULT_MIN_PASSWORD} caracteres)`}
                       autoComplete="off"
-                      className="w-full px-3 py-2.5 bg-neutral-900 border border-neutral-800 rounded-xl text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-violet-500 text-center"
+                      className="w-full px-3 py-2.5 bg-neutral-900 border border-neutral-800 rounded-xl text-sm text-white placeholder:text-neutral-400 focus:outline-none focus:border-violet-500 text-center"
                     />
                     <input
                       type="password"
@@ -1092,7 +1124,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
                       onChange={(e) => setVaultInput2(e.target.value)}
                       placeholder="Confirmar contraseña"
                       autoComplete="off"
-                      className="w-full px-3 py-2.5 bg-neutral-900 border border-neutral-800 rounded-xl text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-violet-500 text-center"
+                      className="w-full px-3 py-2.5 bg-neutral-900 border border-neutral-800 rounded-xl text-sm text-white placeholder:text-neutral-400 focus:outline-none focus:border-violet-500 text-center"
                     />
                   </>
                 )}
@@ -1178,6 +1210,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
           </section>
         </div>
       </div>
+
+      {confirmDialog}
 
       {/* Diálogo de contraseña para exportar/importar cifrado */}
       {passDialog && (

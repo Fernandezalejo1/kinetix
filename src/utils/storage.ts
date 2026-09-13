@@ -20,6 +20,7 @@ export const VAULT_KEYS = [
 
 export const VAULT_META_KEY = "kinetix_vault";
 const VAULT_SESSION_KEY = "kinetix_vault_session_v2";
+const VAULT_SESSION_PW_KEY = "kinetix_vault_session_pw_v2";
 
 // ---------------------------------------------------------------------------
 // Vault v2 — cifrado en reposo SIEMPRE.
@@ -36,7 +37,7 @@ const VAULT_SESSION_KEY = "kinetix_vault_session_v2";
 //   - El secreto de sesión (aleatorio, en sessionStorage) permite re-derivar
 //     sin contraseña tras un reload de la MISMA pestaña; muere al cerrarla.
 // ---------------------------------------------------------------------------
-import { deriveKey, aesKeyFromBytes, aeadEncrypt, aeadDecrypt, randomBytes, isEncryptedBackup, decryptBackup } from "./encryption";
+import { deriveKey, deriveKeyBytes, aesKeyFromBytes, aeadEncrypt, aeadDecrypt, randomBytes, isEncryptedBackup, decryptBackup } from "./encryption";
 
 const ENVELOPE_FORMAT = "kinetix-vault-v2";
 const SESSION_ITERS = 150_000;
@@ -78,6 +79,38 @@ const memoryStore = new Map<string, unknown>();
 let sessionMemoryReady = false;
 let writeQueue: Promise<void> = Promise.resolve();
 
+// ---------------------------------------------------------------------------
+// Capacidad de password-wrap que SOBREVIVE al reload (arregla pérdida de datos)
+//
+// Problema: tras un reload, initVaultSessionFromStorage() recuperaba el secreto
+// de sesión pero NO la contraseña, así que buildEnvelope() lanzaba "Vault sin
+// sesión de contraseña". safeSet() ya había devuelto true (el valor estaba en
+// memoryStore), de modo que la UI mostraba los datos y el envelope nunca se
+// escribía: al cerrar la pestaña se perdía TODO lo registrado tras el reload.
+//
+// Solución: al desbloquear se deriva UNA llave de envoltura por contraseña
+// (PBKDF2 con un salt fijo de sesión) y se guardan sus BYTES DERIVADOS cifrados
+// bajo la llave de sesión. Tras el reload se recuperan y se pueden emitir
+// envelopes nuevos con un password-wrap válido sin conocer la contraseña.
+//
+// Seguridad: no se guarda la contraseña en ninguna parte. Los bytes derivados
+// solo son legibles con el secreto de sesión, que ya vive en el mismo
+// sessionStorage y ya permitía descifrar los datos vía wrappedSes: quien lo
+// tenga no gana acceso nuevo. La contraseña en sí sigue siendo irrecuperable
+// (exigiría invertir PBKDF2 de 150k iteraciones).
+//
+// Bonus de rendimiento: antes CADA escritura derivaba un PBKDF2 de 150k
+// iteraciones con un salt nuevo (la caché por salt nunca acertaba). Ahora se
+// deriva una sola vez por sesión.
+// ---------------------------------------------------------------------------
+interface PwWrap {
+  key: CryptoKey;
+  salt: string;
+  iterations: number;
+  hash: string;
+}
+let pwWrap: PwWrap | null = null;
+
 function lsGet(key: string): string | null {
   try { return localStorage.getItem(key); } catch { return null; }
 }
@@ -94,6 +127,65 @@ async function deriveSessionKey(secret: string): Promise<CryptoKey> {
   return sesKey;
 }
 
+/** Deriva la llave de envoltura de la sesión y, si hay secreto de sesión,
+ *  persiste sus bytes cifrados para poder seguir escribiendo tras un reload. */
+async function establishPwWrap(password: string): Promise<void> {
+  const salt = randomBytes(16);
+  const saltB64 = _b64.e(salt);
+  const raw = await deriveKeyBytes(password, salt, { iterations: SESSION_ITERS, hash: SESSION_HASH });
+  const key = await aesKeyFromBytes(raw);
+  pwWrap = { key, salt: saltB64, iterations: SESSION_ITERS, hash: SESSION_HASH };
+  sessionPwKeyBySalt.set(saltB64, key);
+  if (!sessionSecret) return; // enable(): todavía no hay sesión que persistir.
+  try {
+    if (typeof sessionStorage === "undefined") return;
+    const sk = await deriveSessionKey(sessionSecret);
+    const iv = randomBytes(12);
+    sessionStorage.setItem(VAULT_SESSION_PW_KEY, JSON.stringify({
+      salt: saltB64,
+      iterations: SESSION_ITERS,
+      hash: SESSION_HASH,
+      iv: _b64.e(iv),
+      wrapped: await aeadEncrypt(sk, iv, raw),
+    }));
+  } catch { /* sin sessionStorage: la sesión no sobrevivirá al reload */ }
+}
+
+/** Post-reload: recupera la llave de envoltura desde sessionStorage. */
+async function restorePwWrap(): Promise<boolean> {
+  try {
+    if (typeof sessionStorage === "undefined" || !sessionSecret) return false;
+    const raw = sessionStorage.getItem(VAULT_SESSION_PW_KEY);
+    if (!raw) return false;
+    const blob = JSON.parse(raw) as Record<string, unknown>;
+    const { salt, iterations, hash, iv, wrapped } = blob;
+    if (typeof salt !== "string" || typeof iv !== "string" || typeof wrapped !== "string") return false;
+    if (typeof iterations !== "number" || !Number.isInteger(iterations) || iterations <= 0) return false;
+    if (hash !== "SHA-256" && hash !== "SHA-384" && hash !== "SHA-512") return false;
+    const sk = await deriveSessionKey(sessionSecret);
+    const keyRaw = await aeadDecrypt(sk, _b64.d(iv), wrapped);
+    const key = await aesKeyFromBytes(keyRaw);
+    pwWrap = { key, salt, iterations, hash };
+    sessionPwKeyBySalt.set(salt, key);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function clearPwWrap(): void {
+  pwWrap = null;
+  try {
+    if (typeof sessionStorage !== "undefined") sessionStorage.removeItem(VAULT_SESSION_PW_KEY);
+  } catch { /* ignore */ }
+}
+
+/** Vacía la caché de llaves por salt sin perder la envoltura de la sesión. */
+function resetPwSaltCache(): void {
+  sessionPwKeyBySalt.clear();
+  if (pwWrap) sessionPwKeyBySalt.set(pwWrap.salt, pwWrap.key);
+}
+
 async function derivePwKey(saltB64: string, iterations: number, hash: string): Promise<CryptoKey> {
   const cached = sessionPwKeyBySalt.get(saltB64);
   if (cached) return cached;
@@ -103,21 +195,21 @@ async function derivePwKey(saltB64: string, iterations: number, hash: string): P
   return key;
 }
 
-const kdfPwParams = () => ({ name: "PBKDF2" as const, iterations: SESSION_ITERS, hash: SESSION_HASH });
-
 async function buildEnvelope(value: unknown): Promise<VaultEnvelope> {
-  if (!sessionPassword) throw new Error("Vault sin sesión de contraseña");
+  // No hace falta la contraseña en claro: basta la llave de envoltura de la
+  // sesión, que sobrevive al reload (ver bloque PwWrap). Sin ella, escribir
+  // produciría un envelope irrecuperable, así que se falla en voz alta.
+  if (!pwWrap) throw new Error("Vault sin sesión de contraseña");
   const dataKeyRaw = randomBytes(32);
   const dataKey = await aesKeyFromBytes(dataKeyRaw);
   const iv = randomBytes(12);
   const ciphertext = await aeadEncrypt(dataKey, iv, new TextEncoder().encode(JSON.stringify(value)));
-  const saltPw = randomBytes(16);
-  const pwKey = await derivePwKey(_b64.e(saltPw), SESSION_ITERS, SESSION_HASH);
   const ivPw = randomBytes(12);
-  const wrappedPw = await aeadEncrypt(pwKey, ivPw, dataKeyRaw);
+  const wrappedPw = await aeadEncrypt(pwWrap.key, ivPw, dataKeyRaw);
   const env: VaultEnvelope = {
     app: "KINETIX", encrypted: true, format: ENVELOPE_FORMAT,
-    kdfPw: { ...kdfPwParams(), salt: _b64.e(saltPw) }, ivPw: _b64.e(ivPw), wrappedPw,
+    kdfPw: { name: "PBKDF2", iterations: pwWrap.iterations, hash: pwWrap.hash, salt: pwWrap.salt },
+    ivPw: _b64.e(ivPw), wrappedPw,
     iv: _b64.e(iv), ciphertext,
   };
   if (sessionSecret) {
@@ -267,6 +359,7 @@ export async function flushVaultWrites(): Promise<void> {
 export async function encryptVaultForEnable(password: string): Promise<number> {
   let count = 0;
   sessionPassword = password;
+  await establishPwWrap(password);
   for (const key of VAULT_KEYS) {
     const raw = lsGet(key);
     if (!raw || isVaultCiphertext(raw)) continue;
@@ -275,11 +368,11 @@ export async function encryptVaultForEnable(password: string): Promise<number> {
       value = JSON.parse(raw);
     } catch { continue; }
     const env = await buildEnvelope(value);
-    sessionPwKeyBySalt.clear();
     lsSet(key, JSON.stringify(env));
     count++;
   }
   sessionPassword = null;
+  clearPwWrap();
   sessionPwKeyBySalt.clear();
   return count;
 }
@@ -291,6 +384,9 @@ export async function encryptVaultForEnable(password: string): Promise<number> {
 export async function decryptVaultValueForKey(key: string, password: string): Promise<unknown | null> {
   const raw = lsGet(key);
   if (!raw || !isVaultCiphertext(raw)) return null;
+  // Preserva la sesión activa: este flujo (disable/migrate) usa la contraseña
+  // de forma temporal y antes la dejaba en null al salir, clobbeando la sesión.
+  const prevPassword = sessionPassword;
   if (sessionPassword == null) sessionPassword = password;
   try {
     const parsed: unknown = JSON.parse(raw);
@@ -300,8 +396,8 @@ export async function decryptVaultValueForKey(key: string, password: string): Pr
     return await readEnvelopeValue(parsed as VaultEnvelope, false);
   } catch { return null; }
   finally {
-    sessionPassword = null;
-    sessionPwKeyBySalt.clear();
+    sessionPassword = prevPassword;
+    resetPwSaltCache();
   }
 }
 
@@ -316,10 +412,13 @@ export async function activateVaultSession(password: string, secret: string): Pr
   sessionSecret = secret;
   sesKey = null;
   sessionPwKeyBySalt.clear();
+  pwWrap = null;
   sessionMemoryReady = false;
   try {
     if (typeof sessionStorage !== "undefined") sessionStorage.setItem(VAULT_SESSION_KEY, secret);
   } catch { /* ignore */ }
+  // Habilita escrituras que sobreviven al reload de esta pestaña.
+  await establishPwWrap(password);
 
   let count = 0;
   for (const key of VAULT_KEYS) {
@@ -357,11 +456,27 @@ export async function initVaultSessionFromStorage(): Promise<boolean> {
 
   sessionSecret = secret;
   sesKey = null;
+  pwWrap = null;
+  sessionPwKeyBySalt.clear();
+  // Sin la llave de envoltura no se puede ESCRIBIR (solo leer). Antes se
+  // continuaba igual: la app parecía desbloqueada, safeSet devolvía true y las
+  // escrituras morían al construir el envelope, perdiendo todo al cerrar la
+  // pestaña. Ahora se falla cerrado y se pide la contraseña.
+  if (!(await restorePwWrap())) {
+    sessionSecret = null;
+    sessionMemoryReady = false;
+    memoryStore.clear();
+    try { sessionStorage.removeItem(VAULT_SESSION_KEY); } catch { /* ignore */ }
+    clearPwWrap();
+    return false;
+  }
   let ok = false;
+  let envelopes = 0;
   try {
     for (const key of VAULT_KEYS) {
       const raw = lsGet(key);
       if (!raw || !isVaultCiphertext(raw)) continue;
+      envelopes++;
       try {
         const parsed: unknown = JSON.parse(raw);
         if (isLegacyEnvelope(raw)) { sessionSecret = null; return false; } // necesita contraseña
@@ -375,10 +490,13 @@ export async function initVaultSessionFromStorage(): Promise<boolean> {
     sessionSecret = null;
     return false;
   }
-  if (!ok) {
+  // Vault recién habilitado y aún sin datos: no hay nada que descifrar, pero la
+  // sesión ES válida (con la envoltura recuperada ya se puede escribir).
+  if (!ok && envelopes > 0) {
     sessionSecret = null;
     sessionMemoryReady = false;
     try { sessionStorage.removeItem(VAULT_SESSION_KEY); } catch { /* ignore */ }
+    clearPwWrap();
     return false;
   }
   sessionMemoryReady = true;
@@ -393,14 +511,17 @@ export function deactivateVaultSession(): void {
   sessionPwKeyBySalt.clear();
   memoryStore.clear();
   sessionMemoryReady = false;
+  clearPwWrap();
   try { sessionStorage.removeItem(VAULT_SESSION_KEY); } catch { /* ignore */ }
 }
 
 /** Cambia la contraseña usada para los envelopes de la sesión activa
- *  (al cambiar la contraseña del vault) sin descartar la sesión. */
-export function setVaultSessionPassword(password: string): void {
+ *  (al cambiar la contraseña del vault) sin descartar la sesión. Re-deriva la
+ *  envoltura para que las escrituras posteriores al reload usen la nueva. */
+export async function setVaultSessionPassword(password: string): Promise<void> {
   sessionPassword = password;
   sessionPwKeyBySalt.clear();
+  await establishPwWrap(password);
 }
 
 /** Acceso directo al valor en memoria de una clave del vault (modo lectura). */
@@ -444,6 +565,7 @@ export function writeVaultAwareRaw(key: string, value: string): boolean {
   try {
     if (isVaultKey(key) && isVaultEnabled()) {
       if (!isVaultMemoryReady()) return false;
+      if (!canPersistVault()) return false;
       let parsed: unknown;
       try {
         parsed = JSON.parse(value);
@@ -459,6 +581,11 @@ export function writeVaultAwareRaw(key: string, value: string): boolean {
   } catch {
     return false;
   }
+}
+
+/** ¿El vault puede PERSISTIR (no solo mostrar) lo que se escriba ahora? */
+function canPersistVault(): boolean {
+  return sessionMemoryReady && pwWrap !== null;
 }
 
 export function safeParse<T>(key: string, fallback: T, isValid?: (value: unknown) => boolean, sanitize?: (value: unknown) => unknown | undefined): T {
@@ -517,6 +644,14 @@ export function safeSet(key: string, value: unknown): boolean {
     // reapunteo diferido del envelope (session secret + password wrap).
     if (isVaultKey(key) && isVaultEnabled()) {
       if (!isVaultMemoryReady()) return false; // no-op seguro: aún sin memoria.
+      // Sin capacidad de envoltura el envelope no se podría emitir: avisar en
+      // vez de devolver true y perder el dato al cerrar la pestaña.
+      if (!canPersistVault()) {
+        try {
+          window.dispatchEvent(new CustomEvent("kinetix-storage-error", { detail: { key } }));
+        } catch { /* ignore */ }
+        return false;
+      }
       memoryStore.set(key, value);
       queueVaultWrite(key);
       return true;

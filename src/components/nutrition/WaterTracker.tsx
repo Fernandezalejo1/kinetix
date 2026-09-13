@@ -43,7 +43,7 @@ export const WaterTracker: React.FC = () => {
           </div>
         </div>
         <span
-          className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${
+          className={`px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wider border ${
             isDone
               ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
               : "bg-cyan-500/10 text-cyan-300 border-cyan-500/30"
@@ -64,7 +64,7 @@ export const WaterTracker: React.FC = () => {
           <span className="text-white font-black">
             {consumed.toLocaleString("es-ES")} <span className="text-neutral-400 text-xs font-normal">ml</span>
           </span>
-          <span className="text-neutral-500 text-xs">/ {goal.toLocaleString("es-ES")} ml</span>
+          <span className="text-neutral-400 text-xs">/ {goal.toLocaleString("es-ES")} ml</span>
         </div>
         <div className="h-3 bg-neutral-950 rounded-full overflow-hidden border border-neutral-800">
           <div
@@ -74,7 +74,7 @@ export const WaterTracker: React.FC = () => {
             style={{ width: `${pct}%` }}
           />
         </div>
-        <div className="flex justify-between mt-1 text-[10px] text-neutral-500 font-mono">
+        <div className="flex justify-between mt-1 text-[11px] text-neutral-400 font-mono">
           <span>0</span>
           <span className={consumed >= goal / 2 ? "text-cyan-400 font-bold" : ""}>50%</span>
           <span className={isDone ? "text-emerald-400 font-bold" : ""}>100%</span>

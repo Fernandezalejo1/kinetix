@@ -78,7 +78,7 @@ export const WarmupGeneratorModal: React.FC<WarmupGeneratorModalProps> = ({
           <div className="p-4 rounded-xl bg-neutral-950 border border-neutral-800 flex flex-wrap items-center justify-between gap-4">
             <div className="min-w-0 flex-1">
               <label className="text-xs font-semibold uppercase tracking-wider text-neutral-300">Peso de la 1ª Serie Efectiva</label>
-              <div className="text-xs text-neutral-500 mt-0.5 leading-relaxed">Calcula la potenciación post-activación (PAP)</div>
+              <div className="text-xs text-neutral-400 mt-0.5 leading-relaxed">Calcula la potenciación post-activación (PAP)</div>
             </div>
             <div className="flex items-center gap-1.5 ml-auto w-full sm:w-auto justify-end">
               <button
@@ -147,7 +147,7 @@ export const WarmupGeneratorModal: React.FC<WarmupGeneratorModalProps> = ({
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-sm font-bold">{step.stepName}</span>
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-neutral-800 text-neutral-300">
+                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-neutral-800 text-neutral-300">
                           {step.percentage}% de carga
                         </span>
                       </div>

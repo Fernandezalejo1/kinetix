@@ -120,7 +120,7 @@ export const ExerciseMediaVisualizer: React.FC<ExerciseMediaVisualizerProps> = (
             <div>
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 ¿Qué es y Qué hace?
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
                   Anatomía aplicada
                 </span>
               </h3>

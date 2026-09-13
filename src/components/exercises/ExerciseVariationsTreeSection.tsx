@@ -29,7 +29,7 @@ export const ExerciseVariationsTreeSection: React.FC<ExerciseVariationsTreeSecti
             >
               <div className="flex justify-between items-start">
                 <span className="font-bold text-white text-sm">{v.name}</span>
-                <span className="px-2 py-0.5 rounded-full bg-neutral-900 text-neutral-300 text-[10px] border border-neutral-800">
+                <span className="px-2 py-0.5 rounded-full bg-neutral-900 text-neutral-300 text-[11px] border border-neutral-800">
                   {v.equipment}
                 </span>
               </div>
@@ -62,7 +62,7 @@ export const ExerciseVariationsTreeSection: React.FC<ExerciseVariationsTreeSecti
             >
               <div className="flex justify-between items-center">
                 <span className="font-bold text-amber-300">{r.name}</span>
-                <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 font-mono text-[10px]">
+                <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 font-mono text-[11px]">
                   {r.targetLoadReduction}
                 </span>
               </div>

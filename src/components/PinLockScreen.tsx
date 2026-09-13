@@ -98,7 +98,7 @@ export const PinLockScreen: React.FC<PinLockScreenProps> = ({ onUnlocked }) => {
         <ShieldCheck className="w-6 h-6 text-emerald-400" />
       </div>
       <h1 className="text-xl font-black text-white tracking-widest">KINETIX</h1>
-      <p className="text-xs text-neutral-500 mt-1 mb-6">App bloqueada — ingresá tu PIN</p>
+      <p className="text-xs text-neutral-400 mt-1 mb-6">App bloqueada — ingresá tu PIN</p>
 
       <div className={`flex gap-3 mb-6 ${shake ? "animate-shake" : ""}`}>
         {Array.from({ length: PIN_LENGTH }).map((_, i) => (
@@ -107,7 +107,7 @@ export const PinLockScreen: React.FC<PinLockScreenProps> = ({ onUnlocked }) => {
             className={`w-12 h-14 rounded-2xl border-2 flex items-center justify-center text-2xl font-black transition-all ${
               i < digits.length
                 ? "bg-cyan-600/20 border-cyan-400 text-cyan-300"
-                : "bg-neutral-900 border-neutral-800 text-neutral-700"
+                : "bg-neutral-900 border-neutral-800 text-neutral-500"
             }`}
           >
             {digits[i] ?? "•"}
@@ -152,7 +152,7 @@ export const PinLockScreen: React.FC<PinLockScreenProps> = ({ onUnlocked }) => {
 
       <button
         onClick={onSkip}
-        className="mt-8 text-[11px] font-bold text-neutral-600 hover:text-neutral-400 transition-colors"
+        className="mt-8 min-h-[44px] px-4 text-[11px] font-bold text-neutral-400 hover:text-white transition-colors"
       >
         Omitir por ahora
       </button>

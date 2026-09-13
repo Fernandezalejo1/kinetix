@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Trophy, RotateCcw, Zap, Target, Flame } from "lucide-react";
+import { useConfirm } from "../../hooks/useConfirm";
 import { RANK_EMBLEM_SRC } from "../../utils/challengeStorage";
 import {
   readChallenge,
@@ -69,8 +70,8 @@ const DayCell: React.FC<{ day: number; completed: boolean; isToday: boolean; isF
       : isToday
         ? "bg-cyan-500/20 text-cyan-300 border-2 border-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.3)] ring-2 ring-cyan-400/20"
         : isFuture
-          ? "bg-neutral-900/50 text-neutral-600 border border-neutral-800/50"
-          : "bg-neutral-900 text-neutral-500 border border-neutral-800"
+          ? "bg-neutral-900/50 text-neutral-400 border border-neutral-800/50"
+          : "bg-neutral-900 text-neutral-400 border border-neutral-800"
   }`} style={{ minHeight: 36, minWidth: 36 }}>
     {completed ? (
       <svg className="w-4 h-4 text-emerald-400" viewBox="0 0 20 20" fill="currentColor">
@@ -90,6 +91,7 @@ export const ChallengeHub: React.FC = () => {
   const [todaySteps, setTodaySteps] = useState(0);
   const [_loading, setLoading] = useState(true);
   const [prevRank, setPrevRank] = useState<Rank | null>(null);
+  const [confirm, confirmDialog] = useConfirm();
   const [animatingRank, setAnimatingRank] = useState(false);
   const [hcAuthorized, setHcAuthorized] = useState(false);
   // P1: meta elegida + entrada manual (web/PWA sin Health Connect).
@@ -198,13 +200,17 @@ export const ChallengeHub: React.FC = () => {
     refreshSteps();
   };
 
-  const handleReset = () => {
-    if (window.confirm("¿Reiniciar el reto? Se perderá todo el progreso.")) {
-      const newState = resetChallenge();
-      setChallenge(newState);
-      setTodaySteps(0);
-      setLoading(true);
-    }
+  const handleReset = async () => {
+    if (!(await confirm({
+      title: "Reiniciar reto",
+      message: "¿Reiniciar el reto? Se perderá todo el progreso.",
+      confirmLabel: "Reiniciar",
+      danger: true,
+    }))) return;
+    const newState = resetChallenge();
+    setChallenge(newState);
+    setTodaySteps(0);
+    setLoading(true);
   };
 
   // ─── Calendar days ──────────────────────────────────────────
@@ -321,7 +327,7 @@ export const ChallengeHub: React.FC = () => {
             </div>
             <div className="flex items-center justify-center gap-2">
               <span className="text-3xl font-black text-white font-mono">{todaySteps.toLocaleString("es-AR")}</span>
-              <span className="text-xs text-neutral-500 font-bold">pasos</span>
+              <span className="text-xs text-neutral-400 font-bold">pasos</span>
             </div>
             {/* Step bar (P1: contra la meta elegida) */}
             <div className="w-full h-3 rounded-full bg-neutral-800 overflow-hidden">
@@ -368,14 +374,14 @@ export const ChallengeHub: React.FC = () => {
               <ProgressRing progress={progress} size={96} strokeWidth={6} />
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <span className="text-xl font-black text-white tabular-nums">{challenge.completedDates.length}</span>
-                <span className="text-[9px] text-neutral-500 font-bold">/ {CHALLENGE_DAYS}</span>
+                <span className="text-[11px] text-neutral-400 font-bold">/ {CHALLENGE_DAYS}</span>
               </div>
             </div>
             <div className="flex-1 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-bold text-white">Día {completed ? CHALLENGE_DAYS : currentDay}</span>
                 {completed && (
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold border border-emerald-500/30">
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[11px] font-bold border border-emerald-500/30">
                     COMPLETADO
                   </span>
                 )}
@@ -387,12 +393,12 @@ export const ChallengeHub: React.FC = () => {
                 <div className="flex items-center gap-1">
                   <Flame className="w-3.5 h-3.5 text-orange-400" />
                   <span className="text-xs font-bold text-orange-400">{challenge.currentStreak}</span>
-                  <span className="text-[10px] text-neutral-500">racha</span>
+                  <span className="text-[11px] text-neutral-400">racha</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Trophy className="w-3.5 h-3.5 text-amber-400" />
                   <span className="text-xs font-bold text-amber-400">{challenge.bestStreak}</span>
-                  <span className="text-[10px] text-neutral-500">mejor</span>
+                  <span className="text-[11px] text-neutral-400">mejor</span>
                 </div>
               </div>
             </div>
@@ -426,18 +432,18 @@ export const ChallengeHub: React.FC = () => {
                   <RankEmblem rank={r} size={40} className={isCurrent ? "drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]" : ""} />
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-bold text-white">{RANK_LABELS[r]}</p>
-                    <p className="text-[10px] text-neutral-500">{threshold.toLocaleString("es-AR")}+ pasos</p>
+                    <p className="text-[11px] text-neutral-400">{threshold.toLocaleString("es-AR")}+ pasos</p>
                     {showProgress && (
                       <div className="mt-1.5 h-1.5 bg-neutral-800 rounded-full overflow-hidden">
                         <div className="h-full rounded-full transition-all duration-700" style={{ width: `${progressToNext}%`, background: `linear-gradient(90deg, ${rankColors.from}, ${rankColors.to})` }} />
                       </div>
                     )}
                     {showProgress && next && (
-                      <p className="text-[9px] text-neutral-500 mt-1">{Math.max(0, nextThreshold! - todaySteps).toLocaleString("es-AR")} pasos para {RANK_LABELS[next]}</p>
+                      <p className="text-[11px] text-neutral-400 mt-1">{Math.max(0, nextThreshold! - todaySteps).toLocaleString("es-AR")} pasos para {RANK_LABELS[next]}</p>
                     )}
                   </div>
                   {isCurrent && (
-                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0"
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0"
                       style={{ background: `${rankColors.from}20`, color: rankColors.from, border: `1px solid ${rankColors.from}40` }}>
                       ACTUAL
                     </span>
@@ -457,6 +463,7 @@ export const ChallengeHub: React.FC = () => {
               className="py-3 px-4 rounded-xl bg-red-950 hover:bg-red-900 text-red-400 font-bold text-sm border border-red-900/50 transition-all">
               Reiniciar
             </button>
+            {confirmDialog}
           </div>
         </div>
       )}

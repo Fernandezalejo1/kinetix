@@ -1,5 +1,47 @@
 apply plugin: 'com.android.application'
 
+import groovy.json.JsonSlurper
+
+// ─── Versión: única fuente de verdad = package.json ─────────────────────────
+// Antes versionCode/versionName estaban hardcodeados ("1" / "1.0") y
+// desincronizados de package.json, así que era imposible publicar una
+// actualización en Play (versionCode debe crecer en cada release).
+def pkgVersion = "0.0.0"
+try {
+    pkgVersion = new JsonSlurper().parse(rootProject.file("../package.json")).version
+} catch (Exception e) {
+    logger.warn("No se pudo leer la versión de package.json, usando ${pkgVersion}")
+}
+def semver = (pkgVersion =~ /^(\d+)\.(\d+)\.(\d+)/)
+def vMajor = 0
+def vMinor = 0
+def vPatch = 0
+if (semver.find()) {
+    vMajor = semver.group(1).toInteger()
+    vMinor = semver.group(2).toInteger()
+    vPatch = semver.group(3).toInteger()
+}
+// major*10000 + minor*100 + patch → monótono creciente (1.0.0 = 10000).
+// CI puede forzarlo con KINETIX_VERSION_CODE para hotfixes sin bump de semver.
+def computedVersionCode = (System.getenv("KINETIX_VERSION_CODE") ?: "").isEmpty()
+    ? vMajor * 10000 + vMinor * 100 + vPatch
+    : System.getenv("KINETIX_VERSION_CODE").toInteger()
+
+// ─── Firma de release ───────────────────────────────────────────────────────
+// Sin esto, assembleRelease producía un APK SIN FIRMAR: no instalable ni
+// subible a Play. Las credenciales se leen de android/keystore.properties
+// (ignorado por git) o de variables de entorno para CI.
+def keystorePropsFile = rootProject.file("keystore.properties")
+def keystoreProps = new Properties()
+if (keystorePropsFile.exists()) {
+    keystorePropsFile.withInputStream { keystoreProps.load(it) }
+}
+def ksPath = keystoreProps['storeFile'] ?: System.getenv("KINETIX_KEYSTORE_FILE")
+def ksPassword = keystoreProps['storePassword'] ?: System.getenv("KINETIX_KEYSTORE_PASSWORD")
+def ksAlias = keystoreProps['keyAlias'] ?: System.getenv("KINETIX_KEY_ALIAS")
+def ksAliasPassword = keystoreProps['keyPassword'] ?: System.getenv("KINETIX_KEY_PASSWORD")
+def hasSigningConfig = ksPath && ksPassword && ksAlias && ksAliasPassword && rootProject.file(ksPath).exists()
+
 android {
     namespace = "com.kinetix.hypertrophy"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -7,13 +49,26 @@ android {
         applicationId "com.kinetix.hypertrophy"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode computedVersionCode
+        versionName pkgVersion
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    signingConfigs {
+        if (hasSigningConfig) {
+            release {
+                storeFile rootProject.file(ksPath)
+                storePassword ksPassword
+                keyAlias ksAlias
+                keyPassword ksAliasPassword
+                enableV1Signing false
+                enableV2Signing true
+                enableV3Signing true
+            }
         }
     }
     buildTypes {
@@ -23,6 +78,11 @@ android {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            if (hasSigningConfig) {
+                signingConfig signingConfigs.release
+            } else {
+                logger.warn("KINETIX: sin keystore.properties -> el APK/AAB de release NO irá firmado. Ver android/keystore.properties.example")
+            }
         }
     }
 }

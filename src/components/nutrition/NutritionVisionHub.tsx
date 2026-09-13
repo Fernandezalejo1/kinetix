@@ -321,22 +321,22 @@ const goalDirectionMain =
           <div className="p-3 rounded-2xl bg-neutral-950 border border-neutral-800">
             <div className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-1">BMR <span title="Tasa Metabólica Basal · Mifflin-St Jeor · calorías en reposo absoluto" className="cursor-help text-cyan-400">ⓘ</span></div>
             <div className="text-xl font-black text-amber-300 font-mono mt-0.5 tabular-nums break-words">{currentWeight ? `${bmr} kcal` : "—"}</div>
-            <div className="text-[11px] text-neutral-500">{currentWeight ? "basal / día" : "agregá tu peso"}</div>
+            <div className="text-[11px] text-neutral-400">{currentWeight ? "basal / día" : "agregá tu peso"}</div>
           </div>
           <div className="p-3 rounded-2xl bg-neutral-950 border border-neutral-800">
             <div className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Gasto (TDEE)</div>
             <div className="text-xl font-black text-emerald-300 font-mono mt-0.5 tabular-nums break-words">{currentWeight ? `${tdee} kcal` : "—"}</div>
-            <div className="text-[11px] text-neutral-500">{currentWeight ? ACTIVITY_FACTORS[nutritionProfile.activityLevel].short : "≈ con 75 kg (estimado)"}</div>
+            <div className="text-[11px] text-neutral-400">{currentWeight ? ACTIVITY_FACTORS[nutritionProfile.activityLevel].short : "≈ con 75 kg (estimado)"}</div>
           </div>
           <div className="p-3 rounded-2xl bg-neutral-950 border border-neutral-800">
             <div className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Objetivo hoy</div>
             <div className="text-xl font-black text-cyan-300 font-mono mt-0.5 tabular-nums break-words">{targetCalories} kcal</div>
-            <div className={`text-[11px] ${goalInDeficit ? "text-amber-400" : nutritionGoal === "maintenance" ? "text-neutral-500" : "text-emerald-400"}`}>{goalDirection}</div>
+            <div className={`text-[11px] ${goalInDeficit ? "text-amber-400" : nutritionGoal === "maintenance" ? "text-neutral-400" : "text-emerald-400"}`}>{goalDirection}</div>
           </div>
           <div className="p-3 rounded-2xl bg-neutral-950 border border-neutral-800">
             <div className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Turno de trabajo</div>
             <div className="text-xl font-black text-white font-mono mt-0.5 whitespace-nowrap break-words">{nutritionProfile.workStart}–{nutritionProfile.workEnd}</div>
-            <div className="text-[11px] text-neutral-500">sentado en PC</div>
+            <div className="text-[11px] text-neutral-400">sentado en PC</div>
           </div>
         </div>
 
@@ -377,7 +377,7 @@ const goalDirectionMain =
                 }`}
               >
                 <div className="text-xs font-black uppercase tracking-wider">{cfg.short}</div>
-                <div className={`text-[10px] mt-0.5 ${isActive ? cfg.accent : "text-neutral-500"}`}>
+                <div className={`text-[11px] mt-0.5 ${isActive ? cfg.accent : "text-neutral-400"}`}>
                   {goalCalories[g].toLocaleString("es-ES")} kcal
                 </div>
               </button>
@@ -506,7 +506,7 @@ const goalDirectionMain =
             <span className="text-white font-bold">
               Fibra <span className="text-emerald-400">{currentFiber}g</span>
             </span>
-            <span className="text-neutral-500">meta ~{fiberTarget}g</span>
+            <span className="text-neutral-400">meta ~{fiberTarget}g</span>
           </div>
           <div className="h-2.5 bg-neutral-950 rounded-full overflow-hidden border border-neutral-800">
             <div
@@ -514,7 +514,7 @@ const goalDirectionMain =
               style={{ width: `${Math.min(100, (currentFiber / fiberTarget) * 100)}%` }}
             />
           </div>
-          <p className="text-[10px] text-neutral-500 mt-1.5 leading-relaxed">
+          <p className="text-[11px] text-neutral-400 mt-1.5 leading-relaxed">
             La fibra ralentiza la absorción, mejora la saciedad y alimenta el microbioma. Frutas, verduras, avena y legumbres son tus aliados.
           </p>
         </div>
@@ -523,14 +523,14 @@ const goalDirectionMain =
           <div className="pt-3 border-t border-neutral-800 space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Distribución calórica</span>
-              <span className="text-[11px] font-mono text-neutral-500">{totalKcal.toLocaleString("es-ES")} kcal registradas</span>
+              <span className="text-[11px] font-mono text-neutral-400">{totalKcal.toLocaleString("es-ES")} kcal registradas</span>
             </div>
             <div className="flex h-2.5 rounded-full overflow-hidden bg-neutral-950 border border-neutral-800">
               {split.map((s) => (
                 <div key={s.label} className={s.color} style={{ width: `${s.value}%` }} />
               ))}
             </div>
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] font-bold">
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] font-bold">
               {split.map((s) => (
                 <span key={s.label} className={s.text}>
                   {s.label} {s.value}%
@@ -663,9 +663,9 @@ const goalDirectionMain =
                     }`}
                   >
                     <div className={`text-xs font-bold ${pActivity === lvl ? "text-cyan-200" : "text-white"}`}>
-                      {ACTIVITY_FACTORS[lvl].label} <span className="text-neutral-500 font-mono">×{ACTIVITY_FACTORS[lvl].factor}</span>
+                      {ACTIVITY_FACTORS[lvl].label} <span className="text-neutral-400 font-mono">×{ACTIVITY_FACTORS[lvl].factor}</span>
                     </div>
-                    <div className="text-[10px] text-neutral-500 mt-0.5">{ACTIVITY_FACTORS[lvl].hint}</div>
+                    <div className="text-[11px] text-neutral-400 mt-0.5">{ACTIVITY_FACTORS[lvl].hint}</div>
                   </button>
                 ))}
               </div>
@@ -675,7 +675,7 @@ const goalDirectionMain =
               <span className="text-[11px] font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1"><Clock className="w-3 h-3" /> Horario laboral (trabajás sentado)</span>
               <div className="grid grid-cols-2 gap-2 mt-1">
                 <label className="block">
-                  <span className="text-[10px] text-neutral-500">Entrada</span>
+                  <span className="text-[11px] text-neutral-400">Entrada</span>
                   <input
                     type="time"
                     value={pWorkStart}
@@ -684,7 +684,7 @@ const goalDirectionMain =
                   />
                 </label>
                 <label className="block">
-                  <span className="text-[10px] text-neutral-500">Salida</span>
+                  <span className="text-[11px] text-neutral-400">Salida</span>
                   <input
                     type="time"
                     value={pWorkEnd}
@@ -713,7 +713,7 @@ const goalDirectionMain =
                   </button>
                 ))}
               </div>
-              <p className="text-[10px] text-neutral-500 mt-1.5">
+              <p className="text-[11px] text-neutral-400 mt-1.5">
                 Moderado (−15%) suele ser lo ideal en un trabajo sedentario: suficiente para perder grasa sin caerte de energía durante el día.
               </p>
             </div>
@@ -888,7 +888,7 @@ const goalDirectionMain =
         {/* P3: comidas recientes — log de un toque (las últimas distintas) */}
         {recentMeals.length > 0 && (
           <div className="space-y-2">
-            <div className="flex items-center gap-1.5 text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
+            <div className="flex items-center gap-1.5 text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
               <History className="w-3.5 h-3.5" />
               Recientes — tocá para volver a registrar
             </div>
@@ -910,7 +910,7 @@ const goalDirectionMain =
                     <Plus className="w-3 h-3 text-cyan-400 shrink-0" />
                     <span className="max-w-[180px] truncate">{m.dishName}</span>
                   </div>
-                  <div className="font-mono text-[10px] text-neutral-500">
+                  <div className="font-mono text-[11px] text-neutral-400">
                     {m.calories} kcal · P{m.protein} G{m.carbs} F{m.fats}
                   </div>
                 </button>
@@ -968,10 +968,10 @@ const goalDirectionMain =
                   </div>
 
                   <div className="flex items-center justify-between md:justify-end gap-3 pt-2 md:pt-0 border-t md:border-t-0 border-neutral-800">
-                    <span className="text-[11px] text-neutral-500 font-mono">{meal.time}</span>
+                    <span className="text-[11px] text-neutral-400 font-mono">{meal.time}</span>
                     <button
                       onClick={() => { removeMeal(meal.id); showToast("Comida eliminada", "info"); }}
-                      className="p-2 rounded-lg text-neutral-500 hover:text-red-400 hover:bg-neutral-800 transition-colors touch-target"
+                      className="p-2 rounded-lg text-neutral-400 hover:text-red-400 hover:bg-neutral-800 transition-colors touch-target"
                       title="Eliminar comida"
                     >
                       <Trash2 className="w-4 h-4" />

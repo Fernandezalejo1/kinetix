@@ -35,7 +35,7 @@ export const ExerciseMistakesAndTipsSection: React.FC<ExerciseMistakesAndTipsSec
                   <span>Error #{idx + 1}: {item.mistake}</span>
                 </div>
                 <span
-                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase border ${
+                  className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase border ${
                     item.riskLevel === "Alto"
                       ? "bg-red-500/20 text-red-400 border-red-500/30"
                       : "bg-amber-500/20 text-amber-400 border-amber-500/30"
@@ -73,7 +73,7 @@ export const ExerciseMistakesAndTipsSection: React.FC<ExerciseMistakesAndTipsSec
               key={idx}
               className="p-4 rounded-2xl bg-neutral-950 border border-amber-500/20 hover:border-amber-500/40 transition-colors flex items-start gap-3 text-xs"
             >
-              <span className="w-5 h-5 rounded-full bg-amber-500/10 text-amber-400 font-bold flex items-center justify-center shrink-0 border border-amber-500/20 text-[10px]">
+              <span className="w-5 h-5 rounded-full bg-amber-500/10 text-amber-400 font-bold flex items-center justify-center shrink-0 border border-amber-500/20 text-[11px]">
                 {idx + 1}
               </span>
               <p className="text-neutral-200 leading-relaxed">{tip}</p>

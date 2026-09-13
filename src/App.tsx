@@ -57,7 +57,7 @@ const TabLoader: React.FC = () => (
   <div className="flex items-center justify-center py-24 animate-fadeIn" role="status" aria-live="polite">
     <div className="flex flex-col items-center gap-3">
       <div className="w-10 h-10 border-3 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin" />
-      <span className="text-xs font-bold text-neutral-500 uppercase tracking-wider">Cargando…</span>
+      <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Cargando…</span>
     </div>
   </div>
 );

@@ -146,7 +146,7 @@ export const ExerciseLibraryModal: React.FC<ExerciseLibraryModalProps> = ({
         <div className="p-4 sm:p-6 overflow-y-auto scrollbar-thin flex-1 min-h-0 overscroll-contain grid grid-cols-1 md:grid-cols-2 gap-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
           {filteredExercises.length === 0 ? (
             <div className="col-span-2 text-center py-12 text-neutral-400">
-              <Dumbbell className="w-10 h-10 mx-auto text-neutral-600 mb-2" />
+              <Dumbbell className="w-10 h-10 mx-auto text-neutral-400 mb-2" />
               <p className="text-sm font-semibold">No se encontraron ejercicios con estos filtros.</p>
             </div>
           ) : (
@@ -164,10 +164,10 @@ export const ExerciseLibraryModal: React.FC<ExerciseLibraryModalProps> = ({
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <div className="flex items-center gap-1.5 mb-1">
-                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                          <span className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
                             {ex.category}
                           </span>
-                          <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-neutral-900 text-neutral-400 border border-neutral-800">
+                          <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-neutral-900 text-neutral-400 border border-neutral-800">
                             {ex.equipment}
                           </span>
                         </div>

@@ -287,12 +287,12 @@ export const StepsPanel: React.FC<StepsPanelProps> = ({ compact: _compact }) => 
         <div className="px-4 pb-4 space-y-2.5">
           <div className="flex items-end justify-between bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-3">
             <div>
-              <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">Pasos de hoy</p>
+              <p className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Pasos de hoy</p>
               <p className="text-2xl font-black text-white">
                 {(today?.steps ?? 0).toLocaleString("es-AR")}
-                <span className="text-xs text-neutral-500 font-bold ml-1">/ {config.stepGoal.toLocaleString("es-AR")}</span>
+                <span className="text-xs text-neutral-400 font-bold ml-1">/ {config.stepGoal.toLocaleString("es-AR")}</span>
               </p>
-              <p className="text-[10px] text-neutral-500 break-words">
+              <p className="text-[11px] text-neutral-400 break-words">
                 {today?.source === "healthconnect"
                   ? `vía Health Connect${today.asOf ? ` · actualizado ${timeAgo(today.asOf)}` : ""}`
                   : today?.source === "manual"
@@ -304,7 +304,7 @@ export const StepsPanel: React.FC<StepsPanelProps> = ({ compact: _compact }) => 
                   {today.sources.map((s) => {
                     const counted = today.countedSource === s.name;
                     return (
-                      <p key={s.name} className="text-[10px] text-neutral-500 font-mono truncate">
+                      <p key={s.name} className="text-[11px] text-neutral-400 font-mono truncate">
                         {counted ? "✓ " : ""}{s.name}:{" "}
                         <span className={counted ? "text-emerald-300 font-bold" : "text-neutral-300"}>
                           {s.steps.toLocaleString("es-AR")}
@@ -313,7 +313,7 @@ export const StepsPanel: React.FC<StepsPanelProps> = ({ compact: _compact }) => 
                     );
                   })}
                   {today.sources.length > 1 && (
-                    <p className="text-[9px] text-neutral-600">Se cuenta la fuente más alta (sin duplicar).</p>
+                    <p className="text-[11px] text-neutral-400">Se cuenta la fuente más alta (sin duplicar).</p>
                   )}
                 </div>
               )}
@@ -324,10 +324,10 @@ export const StepsPanel: React.FC<StepsPanelProps> = ({ compact: _compact }) => 
                   <p className={`text-lg font-black ${adjustment.caloriesDelta < 0 ? "text-orange-400" : adjustment.caloriesDelta > 0 ? "text-emerald-400" : "text-neutral-400"}`}>
                     {adjustment.caloriesDelta > 0 ? "+" : ""}{adjustment.caloriesDelta} kcal
                   </p>
-                  <p className="text-[10px] text-neutral-500">{stepBadge(adjustment)}</p>
+                  <p className="text-[11px] text-neutral-400">{stepBadge(adjustment)}</p>
                 </>
               ) : (
-                <p className="text-xs text-neutral-500">Sin ajuste</p>
+                <p className="text-xs text-neutral-400">Sin ajuste</p>
               )}
             </div>
           </div>
@@ -346,7 +346,7 @@ export const StepsPanel: React.FC<StepsPanelProps> = ({ compact: _compact }) => 
           {/* Meta de pasos */}
           <div className="flex items-end justify-between gap-3">
             <div>
-              <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Meta de pasos</label>
+              <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Meta de pasos</label>
               <div className="flex items-center gap-2 mt-1">
                 <input
                   type="number"
@@ -361,7 +361,7 @@ export const StepsPanel: React.FC<StepsPanelProps> = ({ compact: _compact }) => 
                   }}
                   className="w-28 px-2.5 py-2 bg-neutral-950 border border-neutral-800 rounded-xl text-sm text-white focus:outline-none focus:border-cyan-500"
                 />
-                <span className="text-[11px] text-neutral-500">pasos/día</span>
+                <span className="text-[11px] text-neutral-400">pasos/día</span>
               </div>
             </div>
             <button
@@ -454,7 +454,7 @@ export const StepsPanel: React.FC<StepsPanelProps> = ({ compact: _compact }) => 
 
           {/* Reglas explicadas */}
           <div className="bg-neutral-900/60 border border-neutral-800/70 rounded-xl p-3 space-y-1.5">
-            <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">Reglas aplicadas (sin IA, 100% deterministas)</p>
+            <p className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Reglas aplicadas (sin IA, 100% deterministas)</p>
             <ul className="text-[11px] text-neutral-300 space-y-1">
               <li>• 0–5.000 pasos: –250 kcal</li>
               <li>• 5.001–8.000 pasos: –150 kcal</li>
@@ -481,7 +481,7 @@ export const StepsPanel: React.FC<StepsPanelProps> = ({ compact: _compact }) => 
               />
               Aplicar ajuste automáticamente
             </label>
-            <button onClick={() => setConfirmReset(true)} className="flex items-center gap-1.5 text-[11px] text-neutral-500 hover:text-orange-400 transition-colors">
+            <button onClick={() => setConfirmReset(true)} className="flex items-center gap-1.5 text-[11px] text-neutral-400 hover:text-orange-400 transition-colors">
               <Unlink className="w-3.5 h-3.5" />
               Resetear día
             </button>

@@ -155,7 +155,7 @@ input[type="number"] {
 
 @media (max-width: 380px) {
   .text-responsive-xs {
-    font-size: 0.625rem;
+    font-size: 0.6875rem; /* 11px: suelo legible, antes 10px */
     line-height: 0.875rem;
   }
 }
@@ -251,21 +251,9 @@ input[type="number"] {
   }
 }
 
-/* Legibilidad: las fuentes de 9-10px eran demasiado pequeñas para lectura
-   en movimiento (diagnóstico). Salto conservador: 9→10 y 10→11 px, dejando
-   el resto (11px en adelante) como está para no romper layouts densos. */
-.text-\[9px\] {
-  font-size: 10px !important;
-}
-.text-\[10px\] {
-  font-size: 11px !important;
-}
-
-/* P0 contraste AA en gym: neutral-500/600 sobre negro no llega a 4.5:1.
-   Se aclaran solo sobre fondo oscuro (la app es dark-only intencional). */
-.text-neutral-500 {
-  color: rgb(163 163 163) !important; /* neutral-400 */
-}
-.text-neutral-600 {
-  color: rgb(163 163 163) !important;
-}
+/* NOTA: el contraste AA y el suelo tipográfico de 11px se resuelven en las
+   clases de cada componente, NO con overrides !important aquí.
+   Un `.text-neutral-500 { color: ... !important }` global anulaba también los
+   `hover:text-white` / `group-hover:` (¡!important gana sobre el estado hover
+   sin importar la especificidad!) y además arruinaba el contraste del
+   reproductor de ejercicios, que dibuja esos grises sobre fondo BLANCO. */

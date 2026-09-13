@@ -111,7 +111,7 @@ const OptionCard: React.FC<{
         className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${
           selected
             ? "bg-cyan-500/15 text-cyan-300 border-cyan-500/30"
-            : "bg-neutral-900 text-neutral-500 border-neutral-800"
+            : "bg-neutral-900 text-neutral-400 border-neutral-800"
         }`}
       >
         <Icon className="w-5 h-5" />
@@ -119,7 +119,7 @@ const OptionCard: React.FC<{
     )}
     <div className="min-w-0">
       <span className={`block text-sm font-black ${selected ? "text-cyan-300" : "text-white"}`}>{label}</span>
-      {desc && <span className="block text-[11px] text-neutral-500 mt-0.5">{desc}</span>}
+      {desc && <span className="block text-[11px] text-neutral-400 mt-0.5">{desc}</span>}
     </div>
     {selected && <span className="ml-auto w-2 h-2 rounded-full bg-cyan-400 shrink-0" />}
   </button>
@@ -226,7 +226,7 @@ export const OnboardingIntro: React.FC = () => {
                   }`}
                 >
                   <span className="block text-xl font-black">{d}</span>
-                  <span className="text-[9px] font-bold uppercase tracking-wider opacity-70">días</span>
+                  <span className="text-[11px] font-bold uppercase tracking-wider opacity-70">días</span>
                 </button>
               ))}
             </div>
@@ -266,7 +266,7 @@ export const OnboardingIntro: React.FC = () => {
                   }`}
                 >
                   <span className="block text-lg font-black">{m}</span>
-                  <span className="text-[9px] font-bold uppercase tracking-wider opacity-70">min</span>
+                  <span className="text-[11px] font-bold uppercase tracking-wider opacity-70">min</span>
                 </button>
               ))}
             </div>
@@ -309,7 +309,7 @@ export const OnboardingIntro: React.FC = () => {
         <div className="p-6 sm:p-8 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
           {isProfileStep && (
             <div className="flex items-center gap-2 mb-4">
-              <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+              <span className="px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
                 Tu plan
               </span>
             </div>
@@ -322,7 +322,7 @@ export const OnboardingIntro: React.FC = () => {
                 <currentTip.icon className="w-7 h-7" />
               </div>
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-[10px] font-black uppercase tracking-wider text-neutral-500">
+                <span className="text-[11px] font-black uppercase tracking-wider text-neutral-400">
                   Paso {step + 1} de {totalSteps}
                 </span>
               </div>
@@ -335,7 +335,7 @@ export const OnboardingIntro: React.FC = () => {
             {step > 0 ? (
               <button
                 onClick={() => setStep((s) => s - 1)}
-                className="shrink-0 p-2 rounded-xl text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800 transition-colors"
+                className="shrink-0 p-2 rounded-xl text-neutral-400 hover:text-neutral-300 hover:bg-neutral-800 transition-colors"
                 title="Volver"
                 aria-label="Paso anterior"
               >
@@ -344,7 +344,7 @@ export const OnboardingIntro: React.FC = () => {
             ) : (
               <button
                 onClick={dismiss}
-                className="shrink-0 p-2 rounded-xl text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800 transition-colors"
+                className="shrink-0 p-2 rounded-xl text-neutral-400 hover:text-neutral-300 hover:bg-neutral-800 transition-colors"
                 title="Omitir"
                 aria-label="Omitir onboarding"
               >

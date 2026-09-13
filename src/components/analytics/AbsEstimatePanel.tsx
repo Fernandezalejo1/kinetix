@@ -132,7 +132,7 @@ export const AbsEstimatePanel: React.FC = () => {
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="text-lg font-black text-white tracking-tight">Ruta a los Abdominales Visibles</h3>
-              <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-300 border border-amber-500/25">
+              <span className="px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-300 border border-amber-500/25">
                 OBJETIVO: SIX-PACK
               </span>
             </div>
@@ -156,7 +156,7 @@ export const AbsEstimatePanel: React.FC = () => {
         <form onSubmit={save} className="p-4 rounded-2xl bg-neutral-950 border border-neutral-800 space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <label className="block">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Peso (kg) *</span>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">Peso (kg) *</span>
               <input
                 type="number"
                 inputMode="decimal"
@@ -171,7 +171,7 @@ export const AbsEstimatePanel: React.FC = () => {
               />
             </label>
             <label className="block">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Cintura (cm, opcional)</span>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">Cintura (cm, opcional)</span>
               <input
                 type="number"
                 inputMode="decimal"
@@ -185,7 +185,7 @@ export const AbsEstimatePanel: React.FC = () => {
               />
             </label>
             <label className="block">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">% Grasa (opcional)</span>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">% Grasa (opcional)</span>
               <input
                 type="number"
                 inputMode="decimal"
@@ -223,7 +223,7 @@ export const AbsEstimatePanel: React.FC = () => {
                 </button>
               </div>
             )}
-            <span className="text-[10px] text-neutral-500">Misma pose y luz para comparar bien el progreso.</span>
+            <span className="text-[11px] text-neutral-400">Misma pose y luz para comparar bien el progreso.</span>
           </div>
           <button
             type="submit"
@@ -231,7 +231,7 @@ export const AbsEstimatePanel: React.FC = () => {
           >
             Guardar medición
           </button>
-          <p className="text-[10px] text-neutral-500">
+          <p className="text-[11px] text-neutral-400">
             💡 Si no registrás % de grasa, se estima por IMC (fórmula de Deurenberg) y se marca como "estimado".
           </p>
         </form>
@@ -252,46 +252,46 @@ export const AbsEstimatePanel: React.FC = () => {
           {/* Stat tiles */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
             <div className="p-3 rounded-2xl bg-neutral-950 border border-neutral-800">
-              <div className="flex items-center gap-1.5 text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
+              <div className="flex items-center gap-1.5 text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
                 <Percent className="w-3.5 h-3.5 text-amber-400" /> Grasa actual
               </div>
               <div className="text-xl font-black text-white mt-1">
                 {result.bodyFatPct != null ? `${result.bodyFatPct}%` : "—"}
               </div>
-              <span className={`text-[10px] font-bold mt-0.5 block ${
-                result.bodyFatSource === "medido" ? "text-emerald-400" : "text-neutral-500"
+              <span className={`text-[11px] font-bold mt-0.5 block ${
+                result.bodyFatSource === "medido" ? "text-emerald-400" : "text-neutral-400"
               }`}>
                 {result.bodyFatSource === "medido" ? "medido" : result.bodyFatSource === "estimado_imc" ? "estimado por IMC" : ""}
               </span>
             </div>
             <div className="p-3 rounded-2xl bg-neutral-950 border border-neutral-800">
-              <div className="flex items-center gap-1.5 text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
+              <div className="flex items-center gap-1.5 text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
                 <Target className="w-3.5 h-3.5 text-amber-400" /> Objetivo
               </div>
               <div className="text-xl font-black text-amber-300 mt-1">≈{targetBf}%</div>
-              <span className="text-[10px] text-neutral-500 block mt-0.5">
+              <span className="text-[11px] text-neutral-400 block mt-0.5">
                 {nutritionProfile.sex === "masculino" ? "hombres" : "mujeres"}
               </span>
             </div>
             <div className="p-3 rounded-2xl bg-neutral-950 border border-neutral-800">
-              <div className="flex items-center gap-1.5 text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
+              <div className="flex items-center gap-1.5 text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
                 <Scale className="w-3.5 h-3.5 text-amber-400" /> Kg a perder
               </div>
               <div className="text-xl font-black text-white mt-1">
                 {timeline ? `${timeline.kgToLose.toFixed(1)} kg` : "—"}
               </div>
-              <span className="text-[10px] text-neutral-500 block mt-0.5">
+              <span className="text-[11px] text-neutral-400 block mt-0.5">
                 {timeline ? `peso objetivo ≈ ${timeline.targetWeightKg} kg` : ""}
               </span>
             </div>
             <div className="p-3 rounded-2xl bg-neutral-950 border border-neutral-800">
-              <div className="flex items-center gap-1.5 text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
+              <div className="flex items-center gap-1.5 text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
                 <CalendarClock className="w-3.5 h-3.5 text-amber-400" /> Ritmo
               </div>
               <div className="text-xl font-black text-white mt-1">
                 {result.weeklyLossKg != null ? `${result.weeklyLossKg.toFixed(2)}` : "0.50"}
               </div>
-              <span className="text-[10px] text-neutral-500 block mt-0.5">
+              <span className="text-[11px] text-neutral-400 block mt-0.5">
                 kg/semana {result.weeklyLossKg != null ? "(observado)" : "(estimado)"}
               </span>
             </div>
@@ -324,7 +324,7 @@ export const AbsEstimatePanel: React.FC = () => {
                 </div>
               </div>
               {!timeline.reached && (
-                <span className="text-[10px] font-bold text-neutral-400 shrink-0">
+                <span className="text-[11px] font-bold text-neutral-400 shrink-0">
                   masa magra ≈ {timeline.leanMassKg} kg (se conserva)
                 </span>
               )}
@@ -357,8 +357,8 @@ export const AbsEstimatePanel: React.FC = () => {
       {photos.length > 0 && (
         <div className="p-4 rounded-2xl bg-neutral-950 border border-neutral-800 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Fotos de progreso · Antes / Ahora</span>
-            <span className="text-[9px] text-neutral-500">{photos.length} medición{photos.length > 1 ? "es" : ""} con foto</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">Fotos de progreso · Antes / Ahora</span>
+            <span className="text-[11px] text-neutral-400">{photos.length} medición{photos.length > 1 ? "es" : ""} con foto</span>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -367,8 +367,8 @@ export const AbsEstimatePanel: React.FC = () => {
                 alt={`Antes · ${photos[0].date}`}
                 className="w-full aspect-[3/4] object-cover rounded-xl border border-neutral-700"
               />
-              <div className="text-[10px] text-neutral-400 font-bold mt-1.5">Antes · {new Date(photos[0].date + "T12:00:00").toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" })}</div>
-              <div className="text-[10px] text-neutral-500">{photos[0].weightKg} kg{photos[0].estimatedBodyFat != null ? ` · ${photos[0].estimatedBodyFat}% grasa` : ""}</div>
+              <div className="text-[11px] text-neutral-400 font-bold mt-1.5">Antes · {new Date(photos[0].date + "T12:00:00").toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" })}</div>
+              <div className="text-[11px] text-neutral-400">{photos[0].weightKg} kg{photos[0].estimatedBodyFat != null ? ` · ${photos[0].estimatedBodyFat}% grasa` : ""}</div>
             </div>
             <div>
               <img
@@ -376,12 +376,12 @@ export const AbsEstimatePanel: React.FC = () => {
                 alt={`Ahora · ${photos[photos.length - 1].date}`}
                 className="w-full aspect-[3/4] object-cover rounded-xl border border-emerald-500/30"
               />
-              <div className="text-[10px] text-emerald-300 font-bold mt-1.5">Ahora · {new Date(photos[photos.length - 1].date + "T12:00:00").toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" })}</div>
-              <div className="text-[10px] text-neutral-500">{photos[photos.length - 1].weightKg} kg{photos[photos.length - 1].estimatedBodyFat != null ? ` · ${photos[photos.length - 1].estimatedBodyFat}% grasa` : ""}</div>
+              <div className="text-[11px] text-emerald-300 font-bold mt-1.5">Ahora · {new Date(photos[photos.length - 1].date + "T12:00:00").toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" })}</div>
+              <div className="text-[11px] text-neutral-400">{photos[photos.length - 1].weightKg} kg{photos[photos.length - 1].estimatedBodyFat != null ? ` · ${photos[photos.length - 1].estimatedBodyFat}% grasa` : ""}</div>
             </div>
           </div>
           {photos.length === 1 && (
-            <p className="text-[10px] text-neutral-500">💡 Sumá otra foto en 3–4 semanas para la comparación lado a lado.</p>
+            <p className="text-[11px] text-neutral-400">💡 Sumá otra foto en 3–4 semanas para la comparación lado a lado.</p>
           )}
         </div>
       )}
@@ -392,8 +392,8 @@ export const AbsEstimatePanel: React.FC = () => {
           {hasWeightData && (
             <div className="p-3 rounded-2xl bg-neutral-950 border border-neutral-800">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Peso corporal (kg)</span>
-                <span className="text-[9px] text-neutral-500">línea = media 7 días</span>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">Peso corporal (kg)</span>
+                <span className="text-[11px] text-neutral-400">línea = media 7 días</span>
               </div>
               <div className="h-32 w-full mt-2">
                 <ResponsiveContainer width="100%" height="100%">
@@ -422,7 +422,7 @@ export const AbsEstimatePanel: React.FC = () => {
           )}
           {hasBfData && (
             <div className="p-3 rounded-2xl bg-neutral-950 border border-neutral-800">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">% Grasa corporal</span>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">% Grasa corporal</span>
               <div className="h-32 w-full mt-2">
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
@@ -446,7 +446,7 @@ export const AbsEstimatePanel: React.FC = () => {
           )}
           {hasWaistData && !hasBfData && (
             <div className="p-3 rounded-2xl bg-neutral-950 border border-neutral-800">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Cintura (cm)</span>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">Cintura (cm)</span>
               <div className="h-32 w-full mt-2">
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>

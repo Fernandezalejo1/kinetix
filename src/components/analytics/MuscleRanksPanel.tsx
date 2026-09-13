@@ -52,13 +52,13 @@ export const MuscleRanksPanel: React.FC = () => {
             </p>
           </div>
         </div>
-        <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-violet-500/10 text-violet-300 border border-violet-500/30">
+        <span className="px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-violet-500/10 text-violet-300 border border-violet-500/30">
           {best}/10 en Master+
         </span>
       </div>
 
       {ranks.length === 0 || ranks.every((r) => r.bestKg === 0) ? (
-        <p className="text-xs text-neutral-500 leading-relaxed">
+        <p className="text-xs text-neutral-400 leading-relaxed">
           Todavía no hay registros de fuerza. Completá entrenamientos con peso y reps para calcular tu e1RM por
           músculo y subir de Bronce a Challenger.
         </p>
@@ -81,7 +81,7 @@ export const MuscleRanksPanel: React.FC = () => {
                   </div>
                 </div>
                 <div className="text-lg font-black text-white font-mono">
-                  {r.ratio.toFixed(2)}x <span className="text-[10px] font-bold text-neutral-500">BW</span>
+                  {r.ratio.toFixed(2)}x <span className="text-[11px] font-bold text-neutral-400">BW</span>
                 </div>
                 <p className="text-[11px] text-neutral-400 truncate" title={r.exerciseName}>
                   {r.bestKg > 0 ? `${r.bestKg} kg · ${r.exerciseName}` : "Sin registros"}
@@ -95,14 +95,14 @@ export const MuscleRanksPanel: React.FC = () => {
                     }}
                   />
                 </div>
-                <p className="text-[10px] text-neutral-500">
+                <p className="text-[11px] text-neutral-400">
                   {r.nextLabel && r.nextRatio ? (
                     <>Faltan {(r.nextRatio - r.ratio).toFixed(2)}x para {r.nextLabel}</>
                   ) : (
                     <>Rango máximo alcanzado</>
                   )}
                 </p>
-                <p className="text-[10px] text-neutral-600">{r.group.hint}</p>
+                <p className="text-[11px] text-neutral-400">{r.group.hint}</p>
               </div>
             );
           })}

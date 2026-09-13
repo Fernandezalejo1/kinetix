@@ -25,3 +25,6 @@ android/capacitor-cordova-android-plugins/build/
 android/local.properties
 *.keystore
 *.jks
+
+# Credenciales de firma del release (usar keystore.properties.example)
+android/keystore.properties

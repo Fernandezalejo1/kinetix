@@ -61,7 +61,7 @@ export const ExerciseTechniqueSection: React.FC<ExerciseTechniqueSectionProps> =
                   <h4 className="text-sm font-bold text-white">{phase.phase}</h4>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded-md bg-neutral-900 border border-neutral-800 text-[10px] font-mono text-cyan-400">
+                  <span className="px-2 py-0.5 rounded-md bg-neutral-900 border border-neutral-800 text-[11px] font-mono text-cyan-400">
                     Tempo: {phase.tempoCode}
                   </span>
                 </div>

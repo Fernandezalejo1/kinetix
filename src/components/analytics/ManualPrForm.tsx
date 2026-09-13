@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { Plus, X } from "lucide-react";
 import { useWorkout } from "../../context/WorkoutContext";
 import { useToast } from "../../context/ToastContext";
+import { useConfirm } from "../../hooks/useConfirm";
 import { EXERCISES_DATABASE } from "../../data/exercisesData";
 import { calculate1RM, MAX_VALID_1RM_REPS } from "../../utils/scienceCalculators";
 import { localDateKey } from "../../utils/dateUtils";
@@ -61,7 +62,7 @@ export const ManualPrForm: React.FC<{ onDone?: () => void }> = ({ onDone }) => {
     <div className="p-4 rounded-2xl bg-neutral-950 border border-neutral-800 space-y-3">
       <p className="text-[11px] font-black text-white uppercase tracking-wider">Cargar 1RM manual</p>
       <label className="block min-w-0">
-        <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Ejercicio</span>
+        <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Ejercicio</span>
         <select
           value={exerciseId}
           onChange={(e) => setExerciseId(e.target.value)}
@@ -76,7 +77,7 @@ export const ManualPrForm: React.FC<{ onDone?: () => void }> = ({ onDone }) => {
       </label>
       <div className="grid grid-cols-2 gap-2">
         <label className="block min-w-0">
-          <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Peso ({weightUnit})</span>
+          <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Peso ({weightUnit})</span>
           <input
             type="number"
             min={0}
@@ -88,7 +89,7 @@ export const ManualPrForm: React.FC<{ onDone?: () => void }> = ({ onDone }) => {
           />
         </label>
         <label className="block min-w-0">
-          <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Reps</span>
+          <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Reps</span>
           <input
             type="number"
             min={1}
@@ -124,23 +125,32 @@ export const ManualPrForm: React.FC<{ onDone?: () => void }> = ({ onDone }) => {
   );
 };
 
-/** Botón chico para borrar un PR (con confirmación). */
+/** Botón chico para borrar un PR (con confirmación accesible). */
 export const DeletePrButton: React.FC<{ prId: string; prName: string }> = ({ prId, prName }) => {
   const { deletePersonalRecord } = useWorkout();
   const { showToast } = useToast();
+  const [confirm, confirmDialog] = useConfirm();
+  const handleClick = async () => {
+    if (!(await confirm({
+      title: "Borrar récord",
+      message: `¿Borrar el récord "${prName}"?`,
+      confirmLabel: "Borrar",
+      danger: true,
+    }))) return;
+    deletePersonalRecord(prId);
+    showToast("Récord borrado.", "info");
+  };
   return (
-    <button
-      onClick={() => {
-        if (window.confirm(`¿Borrar el récord "${prName}"?`)) {
-          deletePersonalRecord(prId);
-          showToast("Récord borrado.", "info");
-        }
-      }}
-      className="p-1.5 rounded-lg text-neutral-600 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-      aria-label={`Borrar récord ${prName}`}
-      title="Borrar récord"
-    >
-      <X className="w-3.5 h-3.5" />
-    </button>
+    <>
+      <button
+        onClick={handleClick}
+        className="p-1.5 rounded-lg text-neutral-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+        aria-label={`Borrar récord ${prName}`}
+        title="Borrar récord"
+      >
+        <X className="w-3.5 h-3.5" />
+      </button>
+      {confirmDialog}
+    </>
   );
 };

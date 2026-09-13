@@ -40,7 +40,7 @@ export const SupplementGuide: React.FC = () => {
             <div key={sup.name} className="p-4 rounded-2xl bg-neutral-900 border border-neutral-800 space-y-2">
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <h4 className="text-sm font-black text-white">{sup.name}</h4>
-                <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-purple-500/15 text-purple-300 border border-purple-500/30">
+                <span className="px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-purple-500/15 text-purple-300 border border-purple-500/30">
                   Evidencia: {sup.level}
                 </span>
               </div>

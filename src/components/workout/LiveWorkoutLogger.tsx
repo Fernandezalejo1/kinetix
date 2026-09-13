@@ -83,7 +83,7 @@ const VelocityChip: React.FC<{ wEx: WorkoutExercise; set: WorkoutSet }> = ({ wEx
   return (
     <span className="group relative inline-flex items-center gap-1">
       <span className={`font-mono font-bold ${info.color}`}>≈ {info.label}</span>
-      <span className="hidden group-hover:inline text-[9px] text-neutral-400 cursor-help" title="Estimación sin encoder (proxy carga-velocidad, ±0.05 m/s) — no es una medición real de velocidad">ⓘ</span>
+      <span className="hidden group-hover:inline text-[11px] text-neutral-400 cursor-help" title="Estimación sin encoder (proxy carga-velocidad, ±0.05 m/s) — no es una medición real de velocidad">ⓘ</span>
     </span>
   );
 };
@@ -133,8 +133,8 @@ const DoubleProgressionBanner: React.FC<{ wEx: WorkoutExercise }> = ({ wEx }) =>
         <Target className="w-4 h-4 text-cyan-400 shrink-0" />
         <span className="min-w-0 flex-1">
           <strong className="text-white">{a.targetSets ? `${a.targetSets}×` : ""}{a.range.min}–{a.range.max} reps</strong>
-          <span className="text-neutral-500"> · RIR {a.targetRir ?? "—"} · hoy {a.maxReps}/{a.range.max}</span>
-          <span className="block text-neutral-500 mt-0.5">{a.message}</span>
+          <span className="text-neutral-400"> · RIR {a.targetRir ?? "—"} · hoy {a.maxReps}/{a.range.max}</span>
+          <span className="block text-neutral-400 mt-0.5">{a.message}</span>
         </span>
       </div>
     </div>
@@ -434,7 +434,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
             title={autoStartTimer ? "Auto-iniciar temporizador tras cada serie (activo)" : "Auto-iniciar temporizador tras cada serie (desactivado)"}
             aria-pressed={autoStartTimer}
           >
-            <Repeat className={`w-4 h-4 ${autoStartTimer ? "text-cyan-400" : "text-neutral-500"}`} />
+            <Repeat className={`w-4 h-4 ${autoStartTimer ? "text-cyan-400" : "text-neutral-400"}`} />
           </button>
 
           <button
@@ -559,7 +559,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                       <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
                       <span>SUPERSERIE — GRUPO {wEx.supersetGroupId}</span>
                     </div>
-                    <span className="text-[10px] text-neutral-400 font-medium hidden sm:inline">
+                    <span className="text-[11px] text-neutral-400 font-medium hidden sm:inline">
                       Alternar series sin descanso
                     </span>
                   </div>
@@ -693,7 +693,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                                   onChange={(e) =>
                                     updateSet(wEx.id, set.id, { type: e.target.value as SetType })
                                   }
-                                  className="text-[9px] uppercase font-bold bg-transparent text-neutral-400 hover:text-cyan-400 focus:outline-none cursor-pointer"
+                                  className="text-[11px] uppercase font-bold bg-transparent text-neutral-400 hover:text-cyan-400 focus:outline-none cursor-pointer"
                                 >
                                   <option value="normal" className="bg-neutral-900 text-white">Normal</option>
                                   <option value="warmup" className="bg-neutral-900 text-amber-400">Calent.</option>
@@ -719,7 +719,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                                   )}
                                 </span>
                               ) : (
-                                <span className="text-neutral-600">—</span>
+                                <span className="text-neutral-400">—</span>
                               )}
                             </td>
 
@@ -818,7 +818,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                                 <option value={4} className="bg-neutral-900 text-neutral-400">4+ RIR</option>
                               </select>
                               {set.completed && (
-                                <span className="block mt-1 text-[9px]">
+                                <span className="block mt-1 text-[11px]">
                                   <VelocityChip wEx={wEx} set={set} />
                                 </span>
                               )}
@@ -844,7 +844,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                               <button
                                 type="button"
                                 onClick={() => removeSet(wEx.id, set.id)}
-                                className="text-neutral-500 hover:text-red-400 transition-colors p-1"
+                                className="text-neutral-400 hover:text-red-400 transition-colors p-1"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
@@ -889,11 +889,11 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                               <option value="failure" className="bg-neutral-900 text-red-400">Fallo</option>
                             </select>
                             {set.previousIsEstimate ? (
-                              <span className="text-[10px] font-mono text-cyan-400/90 truncate">
+                              <span className="text-[11px] font-mono text-cyan-400/90 truncate">
                                 carga inicial sugerida · {fmtW(set.weight)}
                               </span>
                             ) : set.previousWeight ? (
-                              <span className="text-[10px] font-mono text-neutral-500 truncate">
+                              <span className="text-[11px] font-mono text-neutral-400 truncate">
                                 antes {fmtW(set.previousWeight)} × {set.previousReps} @RIR{set.previousRir ?? 1}
                                 {set.weight !== set.previousWeight && !set.completed && (
                                   <span className={`ml-1 font-bold ${set.weight > set.previousWeight ? "text-emerald-400" : "text-amber-400"}`}>
@@ -906,7 +906,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                           <button
                             type="button"
                             onClick={() => removeSet(wEx.id, set.id)}
-                            className="text-neutral-600 hover:text-red-400 transition-colors p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg shrink-0"
+                            className="text-neutral-400 hover:text-red-400 transition-colors p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg shrink-0"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -914,7 +914,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
 
                         <div className="grid grid-cols-2 gap-2">
                           <div className="min-w-0">
-                            <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1">Peso ({weightUnit})</label>
+                            <label className="block text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-1">Peso ({weightUnit})</label>
                             <div className="flex items-center justify-between bg-neutral-950 rounded-xl border border-neutral-800 p-1 min-w-0">
                               <button
                                 type="button"
@@ -974,7 +974,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                                       weight: Math.max(0, weightKgFromDisplay(weightDisplay(set.weight) + delta)),
                                     })
                                   }
-                                  className={`px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold shrink-0 transition-colors ${
+                                  className={`px-1.5 py-0.5 rounded-md text-[11px] font-mono font-bold shrink-0 transition-colors ${
                                     delta > 0
                                       ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/25 active:bg-cyan-500/30"
                                       : "bg-neutral-900 text-neutral-400 border border-neutral-800 active:bg-neutral-800"
@@ -986,7 +986,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                             </div>
                           </div>
                           <div className="min-w-0">
-                            <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1">Reps</label>
+                            <label className="block text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-1">Reps</label>
                             <div className="flex items-center justify-between bg-neutral-950 rounded-xl border border-neutral-800 p-1 min-w-0">
                               <button
                                 type="button"
@@ -1037,7 +1037,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                                       reps: Math.max(1, set.reps + delta),
                                     })
                                   }
-                                  className={`px-2 py-0.5 rounded-md text-[10px] font-mono font-bold shrink-0 transition-colors ${
+                                  className={`px-2 py-0.5 rounded-md text-[11px] font-mono font-bold shrink-0 transition-colors ${
                                     delta > 0
                                       ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/25 active:bg-cyan-500/30"
                                       : "bg-neutral-900 text-neutral-400 border border-neutral-800 active:bg-neutral-800"
@@ -1049,7 +1049,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                             </div>
                           </div>
                           <div className="col-span-2">
-                            <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1">RIR (Reps en Reserva)</label>
+                            <label className="block text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-1">RIR (Reps en Reserva)</label>
                             <div className="grid grid-cols-5 gap-1 sm:gap-1.5">
                               {[0, 1, 2, 3, 4].map((r) => (
                                 <button
@@ -1061,7 +1061,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                                       ? r === 0
                                         ? "bg-red-500/20 border border-red-500/40 text-red-400"
                                         : "bg-cyan-500/20 border border-cyan-500/40 text-cyan-300"
-                                      : "bg-neutral-950 border border-neutral-800 text-neutral-500 active:text-white"
+                                      : "bg-neutral-950 border border-neutral-800 text-neutral-400 active:text-white"
                                   }`}
                                 >
                                   {r === 0 ? "Fallo" : r}
@@ -1069,7 +1069,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                               ))}
                             </div>
                             {set.completed && (
-                              <div className="mt-1.5 text-[9px]">
+                              <div className="mt-1.5 text-[11px]">
                                 <VelocityChip wEx={wEx} set={set} />
                               </div>
                             )}
@@ -1200,7 +1200,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                 </button>
               ))}
             </div>
-            <p className="text-center text-[11px] text-neutral-500">
+            <p className="text-center text-[11px] text-neutral-400">
               1-2 muy suave · 3-4 moderado · 5-6 duro · 7-8 muy duro · 9-10 máximo
             </p>
 
@@ -1241,7 +1241,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
             <div className="flex gap-2">
               <button
                 onClick={() => doFinish(undefined, partialReason)}
-                className="flex-1 py-3 text-xs text-neutral-500 hover:text-neutral-300 font-medium transition-colors min-h-[48px]"
+                className="flex-1 py-3 text-xs text-neutral-400 hover:text-neutral-300 font-medium transition-colors min-h-[48px]"
               >
                 Omitir
               </button>
@@ -1280,14 +1280,14 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                 >
                   {opt.emoji}
                   <span className="text-sm font-bold">{opt.label}</span>
-                  <span className="text-[10px] opacity-70 leading-tight">{opt.description}</span>
+                  <span className="text-[11px] opacity-70 leading-tight">{opt.description}</span>
                 </button>
               ))}
             </div>
 
             <button
               onClick={() => setDifficultySurvey(null)}
-              className="w-full py-2.5 text-xs text-neutral-500 hover:text-neutral-300 font-medium transition-colors"
+              className="w-full py-2.5 text-xs text-neutral-400 hover:text-neutral-300 font-medium transition-colors"
             >
               Omitir por ahora
             </button>

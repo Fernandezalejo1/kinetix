@@ -81,20 +81,20 @@ export const ExerciseAnatomySection: React.FC<ExerciseAnatomySectionProps> = ({
                 >
                   <div className="flex justify-between items-center text-xs">
                     <span className="font-bold text-white text-sm">{pm.name}</span>
-                    <span className="px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 font-mono font-bold text-[10px] border border-cyan-500/20">
+                    <span className="px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 font-mono font-bold text-[11px] border border-cyan-500/20">
                       Contribución: {pm.contributionPct}%
                     </span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[11px] text-neutral-300 pt-1 border-t border-neutral-800">
                     <div>
-                      <span className="text-neutral-500 font-medium">Origen:</span> {pm.origin}
+                      <span className="text-neutral-400 font-medium">Origen:</span> {pm.origin}
                     </div>
                     <div>
-                      <span className="text-neutral-500 font-medium">Inserción:</span> {pm.insertion}
+                      <span className="text-neutral-400 font-medium">Inserción:</span> {pm.insertion}
                     </div>
                   </div>
                   <div className="text-[11px] text-neutral-300">
-                    <span className="text-neutral-500 font-medium">Acción biomecánica:</span> {pm.action}
+                    <span className="text-neutral-400 font-medium">Acción biomecánica:</span> {pm.action}
                   </div>
                 </div>
               ))}
@@ -116,9 +116,9 @@ export const ExerciseAnatomySection: React.FC<ExerciseAnatomySectionProps> = ({
                   >
                     <div className="flex justify-between items-center">
                       <span className="font-bold text-neutral-200">{sm.name}</span>
-                      <span className="text-[10px] text-purple-400 capitalize">{sm.role.replace("_", " ")}</span>
+                      <span className="text-[11px] text-purple-400 capitalize">{sm.role.replace("_", " ")}</span>
                     </div>
-                    <div className="text-[10px] text-neutral-400">
+                    <div className="text-[11px] text-neutral-400">
                       Estabilización dinámica y co-activación
                     </div>
                   </div>
@@ -138,7 +138,7 @@ export const ExerciseAnatomySection: React.FC<ExerciseAnatomySectionProps> = ({
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
           <div className="p-3.5 rounded-xl bg-neutral-900 border border-neutral-800 space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-400">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-400">
               Momentos Articulares
             </span>
             <p className="text-neutral-300 text-xs leading-relaxed">
@@ -147,7 +147,7 @@ export const ExerciseAnatomySection: React.FC<ExerciseAnatomySectionProps> = ({
           </div>
 
           <div className="p-3.5 rounded-xl bg-neutral-900 border border-neutral-800 space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-purple-400">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-purple-400">
               Pico de Brazo de Momento
             </span>
             <p className="text-neutral-300 text-xs leading-relaxed">
@@ -156,7 +156,7 @@ export const ExerciseAnatomySection: React.FC<ExerciseAnatomySectionProps> = ({
           </div>
 
           <div className="p-3.5 rounded-xl bg-neutral-900 border border-neutral-800 space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400">
               Insuficiencia Activa
             </span>
             <p className="text-neutral-300 text-xs leading-relaxed">

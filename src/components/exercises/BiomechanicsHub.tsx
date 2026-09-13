@@ -41,7 +41,7 @@ export const BiomechanicsHub: React.FC = () => {
       <div className="p-6 sm:p-8 rounded-3xl bg-neutral-900 border border-neutral-800 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-2 max-w-xl">
           <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
               CIENCIA APLICADA AL ENTRENAMIENTO
             </span>
           </div>
@@ -73,7 +73,7 @@ export const BiomechanicsHub: React.FC = () => {
               <p className="text-[11px] text-neutral-400">Guía aparte para corregir la cabeza/proyección cervical y ganar ~1cm</p>
             </div>
           </div>
-          <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+          <span className="px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
             Fuera de los planes · 10 min/día
           </span>
         </div>
@@ -275,7 +275,7 @@ export const BiomechanicsHub: React.FC = () => {
                     <div>
                       <div className="flex items-center gap-2 mb-0.5">
                         <h4 className="text-sm font-bold text-white">{ex.nameEs}</h4>
-                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                        <span className="text-[11px] font-bold px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
                           {ex.equipment}
                         </span>
                       </div>

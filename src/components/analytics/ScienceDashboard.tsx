@@ -246,13 +246,13 @@ export const ScienceDashboard: React.FC = () => {
       <div className="grid grid-cols-2 gap-2 sm:gap-4">
         <div className="p-3 sm:p-5 rounded-2xl sm:rounded-3xl bg-neutral-900 border border-neutral-800 shadow-lg">
           <div className="flex items-center justify-between text-neutral-400 mb-1">
-            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider">Sesiones 7d</span>
+            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider">Sesiones 7d</span>
             <Calendar className="w-4 h-4 text-cyan-400" />
           </div>
           <div className="text-2xl sm:text-3xl font-black text-white">
             {weekStats.thisWeekWorkouts}
           </div>
-          <span className={`text-[10px] sm:text-[11px] font-bold mt-1 flex items-center gap-1 ${weekStats.thisWeekWorkouts >= weekStats.lastWeekWorkouts ? "text-emerald-400" : "text-amber-400"}`}>
+          <span className={`text-[11px] sm:text-[11px] font-bold mt-1 flex items-center gap-1 ${weekStats.thisWeekWorkouts >= weekStats.lastWeekWorkouts ? "text-emerald-400" : "text-amber-400"}`}>
             {weekStats.thisWeekWorkouts >= weekStats.lastWeekWorkouts
               ? <><TrendingUp className="w-3 h-3" /> +{weekStats.thisWeekWorkouts - weekStats.lastWeekWorkouts} vs anterior</>
               : <>{weekStats.thisWeekWorkouts - weekStats.lastWeekWorkouts} vs anterior</>}
@@ -261,14 +261,14 @@ export const ScienceDashboard: React.FC = () => {
 
         <div className="p-3 sm:p-5 rounded-2xl sm:rounded-3xl bg-neutral-900 border border-neutral-800 shadow-lg min-w-0 overflow-hidden">
           <div className="flex items-center justify-between text-neutral-400 mb-1 gap-2">
-            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider truncate">Tonelaje 7d</span>
+            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider truncate">Tonelaje 7d</span>
             <TrendingUp className="w-4 h-4 text-purple-400 shrink-0" />
           </div>
           <div className="text-xl sm:text-3xl font-black text-white min-w-0 tabular-nums break-words leading-tight">
             {weekStats.thisWeekVolume > 0 ? weekStats.thisWeekVolume.toLocaleString("es-ES") : "—"}{" "}
             {weekStats.thisWeekVolume > 0 && <span className="text-sm font-normal text-neutral-400">{weightUnit}</span>}
           </div>
-          <span className={`text-[10px] sm:text-[11px] font-bold mt-1 block ${weekStats.volumeDelta >= 0 ? "text-cyan-400" : "text-amber-400"}`}>
+          <span className={`text-[11px] sm:text-[11px] font-bold mt-1 block ${weekStats.volumeDelta >= 0 ? "text-cyan-400" : "text-amber-400"}`}>
             {workoutHistory.length > 0
               ? (weekStats.volumeDelta >= 0 ? `+${weekStats.volumeDelta}%` : `${weekStats.volumeDelta}%`) + " vs anterior"
               : "Completá tu primer entrenamiento para ver tu tonelaje"}
@@ -277,26 +277,26 @@ export const ScienceDashboard: React.FC = () => {
 
         <div className="p-3 sm:p-5 rounded-2xl sm:rounded-3xl bg-neutral-900 border border-neutral-800 shadow-lg">
           <div className="flex items-center justify-between text-neutral-400 mb-1">
-            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider">Ejercicios Únicos</span>
+            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider">Ejercicios Únicos</span>
             <Layers className="w-4 h-4 text-emerald-400" />
           </div>
           <div className="text-2xl sm:text-3xl font-black text-emerald-400">
             {weekStats.uniqueExercises}
           </div>
-          <span className="text-[10px] sm:text-[11px] font-bold text-neutral-400 mt-1 block">
+          <span className="text-[11px] sm:text-[11px] font-bold text-neutral-400 mt-1 block">
             {weekStats.thisWeekSets} series totales
           </span>
         </div>
 
         <div className="p-3 sm:p-5 rounded-2xl sm:rounded-3xl bg-neutral-900 border border-neutral-800 shadow-lg">
           <div className="flex items-center justify-between text-neutral-400 mb-1">
-            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider">Racha & PRs</span>
+            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider">Racha & PRs</span>
             <Flame className="w-4 h-4 text-amber-400" />
           </div>
           <div className="text-2xl sm:text-3xl font-black text-amber-400">
             {weekStats.streakDays} <span className="text-sm font-normal text-neutral-400">días</span>
           </div>
-          <span className="text-[10px] sm:text-[11px] font-bold text-neutral-400 mt-1 block">
+          <span className="text-[11px] sm:text-[11px] font-bold text-neutral-400 mt-1 block">
             {personalRecords.length} PRs · {weekStats.thisWeekDuration}min
           </span>
         </div>
@@ -312,7 +312,7 @@ export const ScienceDashboard: React.FC = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
                 MOTOR RIR / RPE ADAPTATIVO
               </span>
               <span className="text-xs text-neutral-400 font-medium">Algoritmo de Sobrecarga Progresiva</span>
@@ -328,11 +328,11 @@ export const ScienceDashboard: React.FC = () => {
 
           <div className="flex items-center gap-3 shrink-0">
             <div className="p-3.5 rounded-2xl bg-neutral-950 border border-neutral-800 text-center min-w-[100px]">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block">Listos para Subir</span>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400 block">Listos para Subir</span>
               <span className="text-xl font-black text-emerald-400">{readyToIncreaseCount} ejercicios</span>
             </div>
             <div className="p-3.5 rounded-2xl bg-neutral-950 border border-neutral-800 text-center min-w-[100px]">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block">Salto Promedio</span>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400 block">Salto Promedio</span>
               <span className="text-xl font-black text-cyan-400">{readyToIncreaseCount > 0 ? `+${avgDeltaWeight} ${weightUnit}` : "—"}</span>
             </div>
           </div>
@@ -370,7 +370,7 @@ export const ScienceDashboard: React.FC = () => {
         {/* Auto-Progression Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredProgressions.length === 0 && (
-            <p className="text-xs text-neutral-500 leading-relaxed col-span-full p-4 rounded-2xl bg-neutral-950 border border-neutral-800">
+            <p className="text-xs text-neutral-400 leading-relaxed col-span-full p-4 rounded-2xl bg-neutral-950 border border-neutral-800">
               Sin sesiones registradas todavía: completá un entrenamiento real (peso + reps + RIR) y acá vas a ver
               la recomendación de carga para cada ejercicio. Nada se estima sin datos.
             </p>
@@ -394,11 +394,11 @@ export const ScienceDashboard: React.FC = () => {
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-neutral-800 text-neutral-300 border border-neutral-700 break-words">
+                      <span className="text-[11px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-neutral-800 text-neutral-300 border border-neutral-700 break-words">
                         {(CATEGORY_ES[prog.category] ?? prog.category).toUpperCase()} • {(EQUIPMENT_ES[prog.equipment] ?? prog.equipment).toUpperCase()}
                       </span>
                       {prog.isCompound && (
-                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shrink-0">
+                        <span className="text-[11px] font-bold px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shrink-0">
                           Multiarticular
                         </span>
                       )}
@@ -425,7 +425,7 @@ export const ScienceDashboard: React.FC = () => {
                 <div className="p-3 sm:p-4 rounded-2xl bg-neutral-900/90 border border-neutral-800 grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-3">
                   {/* Previous Performance */}
                   <div className="space-y-0.5">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">
                       Última Sesión
                     </span>
                     <div className="text-lg font-black text-neutral-300">
@@ -452,7 +452,7 @@ export const ScienceDashboard: React.FC = () => {
                       <ArrowRight className="w-4 h-4" />
                     </div>
                     <span
-                      className={`text-[10px] font-black mt-1 ${
+                      className={`text-[11px] font-black mt-1 ${
                         prog.deltaWeight > 0 ? "text-emerald-400" : "text-neutral-400"
                       }`}
                     >
@@ -462,7 +462,7 @@ export const ScienceDashboard: React.FC = () => {
 
                   {/* Next Recommended Weight */}
                   <div className="text-right space-y-0.5">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-400">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-400">
                       Próxima Sesión
                     </span>
                     <div className="text-xl font-black text-white">
@@ -487,7 +487,7 @@ export const ScienceDashboard: React.FC = () => {
                       <span className="break-words">Esfuerzo Percibido: <strong className="text-white font-mono">{prog.rirAvailable ? `RIR ${prog.averageRir} (RPE ${prog.averageRpe})` : "—"}</strong></span>
                     </span>
                     <span
-                      className={`font-black text-[10px] uppercase tracking-wider px-2 py-0.5 rounded ${
+                      className={`font-black text-[11px] uppercase tracking-wider px-2 py-0.5 rounded ${
                         !prog.rirAvailable
                           ? "bg-neutral-800 text-neutral-400"
                           : prog.averageRir >= 2
@@ -504,39 +504,39 @@ export const ScienceDashboard: React.FC = () => {
                   {/* 4-Step RIR Visual Bar - 48px touch targets */}
                   <div className="grid grid-cols-4 gap-1.5 min-h-[48px] rounded-xl overflow-hidden bg-neutral-900 p-1.5 border border-neutral-800">
                     <div
-                      className={`min-h-[40px] rounded-lg transition-all flex items-center justify-center text-[10px] font-black ${
-                        prog.averageRir === 0 ? "bg-amber-500 text-white shadow-sm" : "bg-neutral-800 text-neutral-500"
+                      className={`min-h-[40px] rounded-lg transition-all flex items-center justify-center text-[11px] font-black ${
+                        prog.averageRir === 0 ? "bg-amber-500 text-white shadow-sm" : "bg-neutral-800 text-neutral-400"
                       }`}
                       title="RIR 0 (Fallo Concéntrico)"
                     >
                       RIR 0
                     </div>
                     <div
-                      className={`min-h-[40px] rounded-lg transition-all flex items-center justify-center text-[10px] font-black ${
-                        prog.averageRir === 1 ? "bg-purple-500 text-white shadow-sm" : "bg-neutral-800 text-neutral-500"
+                      className={`min-h-[40px] rounded-lg transition-all flex items-center justify-center text-[11px] font-black ${
+                        prog.averageRir === 1 ? "bg-purple-500 text-white shadow-sm" : "bg-neutral-800 text-neutral-400"
                       }`}
                       title="RIR 1 (1 rep en reserva)"
                     >
                       RIR 1
                     </div>
                     <div
-                      className={`min-h-[40px] rounded-lg transition-all flex items-center justify-center text-[10px] font-black ${
-                        prog.averageRir === 2 ? "bg-emerald-500 text-white shadow-sm" : "bg-neutral-800 text-neutral-500"
+                      className={`min-h-[40px] rounded-lg transition-all flex items-center justify-center text-[11px] font-black ${
+                        prog.averageRir === 2 ? "bg-emerald-500 text-white shadow-sm" : "bg-neutral-800 text-neutral-400"
                       }`}
                       title="RIR 2 (Sweet spot hipertrofia)"
                     >
                       RIR 2
                     </div>
                     <div
-                      className={`min-h-[40px] rounded-lg transition-all flex items-center justify-center text-[10px] font-black ${
-                        prog.averageRir >= 3 ? "bg-blue-500 text-white shadow-sm" : "bg-neutral-800 text-neutral-500"
+                      className={`min-h-[40px] rounded-lg transition-all flex items-center justify-center text-[11px] font-black ${
+                        prog.averageRir >= 3 ? "bg-blue-500 text-white shadow-sm" : "bg-neutral-800 text-neutral-400"
                       }`}
                       title="RIR 3+ (Submáximo / Sobrecarga alta)"
                     >
                       RIR 3+
                     </div>
                   </div>
-                  <div className="flex justify-between text-[9px] font-mono text-neutral-500 gap-0.5">
+                  <div className="flex justify-between text-[11px] font-mono text-neutral-400 gap-0.5">
                     <span>RIR 0</span>
                     <span>RIR 1</span>
                     <span className="text-emerald-400 font-bold">RIR 2</span>
@@ -582,7 +582,7 @@ export const ScienceDashboard: React.FC = () => {
                     {fullEx && (
                       <button
                         onClick={() => setSelectedExerciseForDetail(fullEx)}
-                        className="text-[10px] font-bold text-cyan-400 hover:text-cyan-300 underline shrink-0"
+                        className="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 underline shrink-0"
                       >
                         Ver Biomecánica
                       </button>
@@ -682,7 +682,7 @@ export const ScienceDashboard: React.FC = () => {
                   onChange={(e) => setSimRir(parseInt(e.target.value, 10))}
                   className="w-full h-2 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
                 />
-                <div className="hidden sm:flex justify-between text-[10px] text-neutral-500 font-mono">
+                <div className="hidden sm:flex justify-between text-[11px] text-neutral-400 font-mono">
                   <span>Fallo Concéntrico (0)</span>
                   <span>1 Rep</span>
                   <span>2 Reps (Óptimo MAV)</span>
@@ -695,10 +695,10 @@ export const ScienceDashboard: React.FC = () => {
             {/* Right Live Recommendation Card */}
             <div className="lg:col-span-6 p-5 rounded-2xl bg-neutral-900 border border-cyan-500/40 shadow-xl space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase tracking-wider text-cyan-400">
+                <span className="text-[11px] font-black uppercase tracking-wider text-cyan-400">
                   PREDICCIÓN PARA TU PRÓXIMA SESIÓN
                 </span>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
                   Confianza: {simRecommendation.confidenceScore}%
                 </span>
               </div>
@@ -715,7 +715,7 @@ export const ScienceDashboard: React.FC = () => {
                 </div>
 
                 <div className="text-right ml-auto">
-                  <span className="text-[10px] font-bold uppercase text-neutral-400 block">1RM Estimado</span>
+                  <span className="text-[11px] font-bold uppercase text-neutral-400 block">1RM Estimado</span>
                   <span className="text-xl font-black text-amber-400 font-mono">{sim1RM.average} {weightUnit}</span>
                 </div>
               </div>
@@ -814,7 +814,7 @@ export const ScienceDashboard: React.FC = () => {
           </div>
 
           {/* Legend */}
-          <div className="grid grid-cols-4 gap-1.5 pt-2 border-t border-neutral-800 text-[10px] font-bold text-center">
+          <div className="grid grid-cols-4 gap-1.5 pt-2 border-t border-neutral-800 text-[11px] font-bold text-center">
             <div className="p-1.5 rounded-lg bg-blue-950/40 text-blue-400 border border-blue-500/20">
               &lt; MEV (Mínimo)
             </div>
@@ -993,7 +993,7 @@ export const ScienceDashboard: React.FC = () => {
         {showPrForm && <ManualPrForm onDone={() => setShowPrForm(false)} />}
 
         {personalRecords.length === 0 ? (
-          <p className="text-xs text-neutral-500 leading-relaxed p-4 rounded-2xl bg-neutral-950 border border-neutral-800">
+          <p className="text-xs text-neutral-400 leading-relaxed p-4 rounded-2xl bg-neutral-950 border border-neutral-800">
             Todavía no hay récords: se crean solos al superar tu 1RM en una sesión, o cargalos manualmente con
             el botón de arriba.
           </p>
@@ -1007,7 +1007,7 @@ export const ScienceDashboard: React.FC = () => {
                 <div className="flex justify-between items-center gap-2 text-xs">
                   <span className="font-bold text-amber-400 uppercase tracking-wider truncate">{pr.type}</span>
                   <span className="flex items-center gap-1 shrink-0">
-                    <span className="text-[10px] text-neutral-500">{pr.date}</span>
+                    <span className="text-[11px] text-neutral-400">{pr.date}</span>
                     <DeletePrButton prId={pr.id} prName={pr.exerciseName} />
                   </span>
                 </div>

@@ -10,7 +10,7 @@ import {
   verifyVaultPassword,
   VAULT_MIN_PASSWORD,
 } from "../src/utils/vault";
-import { isVaultCiphertext, isVaultEnabled, isVaultLocked, safeParse, safeSet, initVaultSessionFromStorage } from "../src/utils/storage";
+import { isVaultCiphertext, isVaultEnabled, isVaultLocked, safeParse, safeSet, initVaultSessionFromStorage, flushVaultWrites } from "../src/utils/storage";
 import type { CompletedWorkout, Routine } from "../src/types";
 
 installTestEnv();
@@ -230,6 +230,57 @@ describe("P4: vault de cifrado en reposo", () => {
     expect(isVaultLocked()).toBe(false);
     expect(safeParse("kinetix_workout_history", [])).toEqual(data);
     expect(isVaultCiphertext(localStorage.getItem("kinetix_workout_history"))).toBe(true);
+  });
+
+  // ── Regresión: pérdida silenciosa de datos tras un reload ──────────────
+  // Antes, tras el reload se recuperaba el secreto de sesión pero NO la
+  // capacidad de envolver con contraseña: safeSet devolvía true, la UI mostraba
+  // el dato desde memoria y el envelope nunca llegaba al disco.
+  it("post-reload: una escritura nueva persiste en disco y sobrevive al lock", async () => {
+    safeSet("kinetix_workout_history", [{ id: "w1" }]);
+    await enableVault("contrasena-larga-123");
+    await unlockVault("contrasena-larga-123");
+
+    // Reload de la misma pestaña: sesión recuperada SIN contraseña.
+    expect(await initVaultSessionFromStorage()).toBe(true);
+
+    expect(safeSet("kinetix_workout_history", [{ id: "w1" }, { id: "w2" }])).toBe(true);
+    await flushVaultWrites();
+    expect(isVaultCiphertext(localStorage.getItem("kinetix_workout_history"))).toBe(true);
+
+    // Lock descarta la memoria: si el envelope no se escribió, w2 se pierde.
+    await lockVault();
+    expect(await unlockVault("contrasena-larga-123")).toBe(true);
+    expect(safeParse("kinetix_workout_history", [])).toEqual([{ id: "w1" }, { id: "w2" }]);
+  });
+
+  it("post-reload: una clave sin envelope previo también persiste", async () => {
+    safeSet("kinetix_workout_history", [{ id: "w1" }]);
+    await enableVault("contrasena-larga-123");
+    await unlockVault("contrasena-larga-123");
+    expect(await initVaultSessionFromStorage()).toBe(true);
+
+    // kinetix_readiness no tenía envelope: no hay DataKey previa que reutilizar.
+    expect(safeSet("kinetix_readiness", [{ day: "2025-06-01", verdict: "go" }])).toBe(true);
+    await flushVaultWrites();
+    expect(isVaultCiphertext(localStorage.getItem("kinetix_readiness"))).toBe(true);
+
+    await lockVault();
+    expect(await unlockVault("contrasena-larga-123")).toBe(true);
+    expect(safeParse("kinetix_readiness", [])).toEqual([{ day: "2025-06-01", verdict: "go" }]);
+  });
+
+  it("sin envoltura recuperable la sesión NO se da por desbloqueada", async () => {
+    safeSet("kinetix_workout_history", [{ id: "w1" }]);
+    await enableVault("contrasena-larga-123");
+    await unlockVault("contrasena-larga-123");
+    // Simula una sesión vieja: existe el secreto pero no la envoltura.
+    sessionStorage.removeItem("kinetix_vault_session_pw_v2");
+    expect(await initVaultSessionFromStorage()).toBe(false);
+    expect(isVaultLocked()).toBe(true);
+    // Y el dato en disco sigue intacto y abrible con la contraseña.
+    expect(await unlockVault("contrasena-larga-123")).toBe(true);
+    expect(safeParse("kinetix_workout_history", [])).toEqual([{ id: "w1" }]);
   });
 
   it("change password: la vieja muere, la nueva abre (los datos no se tocan)", async () => {

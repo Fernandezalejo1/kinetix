@@ -112,11 +112,11 @@ export const Navigation: React.FC<NavigationProps> = ({
             <div className="min-w-0 hidden sm:block">
               <div className="flex items-center gap-1.5">
                 <span className="text-lg sm:text-xl font-black tracking-tight text-white">KINETIX</span>
-                <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                <span className="text-[11px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
                   SCIENCE
                 </span>
               </div>
-              <p className="text-[10px] text-neutral-400 font-medium">
+              <p className="text-[11px] text-neutral-400 font-medium">
                 Evidence-Based Hypertrophy & Biomechanics Engine
               </p>
             </div>
@@ -140,7 +140,7 @@ export const Navigation: React.FC<NavigationProps> = ({
           <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             <button
               onClick={toggleWeightUnit}
-              className="px-2 py-1.5 sm:px-2.5 sm:py-2 rounded-xl bg-neutral-900 border border-neutral-800 text-[10px] sm:text-xs font-bold text-neutral-300 hover:text-white transition-colors touch-target"
+              className="px-2 py-1.5 sm:px-2.5 sm:py-2 rounded-xl bg-neutral-900 border border-neutral-800 text-[11px] sm:text-xs font-bold text-neutral-300 hover:text-white transition-colors touch-target"
               title="Cambiar unidades (los datos internos quedan en kg)"
               aria-label={`Cambiar unidad de peso. Actual: ${weightUnit === "kg" ? "kilogramos" : "libras"}`}
             >
@@ -153,7 +153,7 @@ export const Navigation: React.FC<NavigationProps> = ({
               title="Audio temporizador"
               aria-label={soundEnabled ? "Silenciar audio del temporizador" : "Activar audio del temporizador"}
             >
-              {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4 text-neutral-500" />}
+              {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4 text-neutral-400" />}
             </button>
 
             <button
@@ -274,7 +274,7 @@ export const Navigation: React.FC<NavigationProps> = ({
                       <Icon className="w-5 h-5 shrink-0" />
                       <span className="text-sm font-bold flex-1">{item.label}</span>
                       {isActive && <span className="w-2 h-2 rounded-full bg-cyan-400" />}
-                      <ChevronRight className="w-4 h-4 text-neutral-500" />
+                      <ChevronRight className="w-4 h-4 text-neutral-400" />
                     </button>
                   );
                 })}

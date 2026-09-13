@@ -83,13 +83,13 @@ const CrashCard: React.FC<{ crash: CrashInfo; onDismiss: () => void }> = ({ cras
           <div className="flex items-center gap-1.5">
             <button
               onClick={copyDetails}
-              className="px-2 py-1 rounded-md bg-red-800 hover:bg-red-700 text-red-50 text-[10px] font-bold min-h-[28px]"
+              className="px-2 py-1 rounded-md bg-red-800 hover:bg-red-700 text-red-50 text-[11px] font-bold min-h-[28px]"
             >
               {copied ? "✓ Copiado" : "Copiar"}
             </button>
             <button
               onClick={onDismiss}
-              className="px-2 py-1 rounded-md bg-red-800 hover:bg-red-700 text-red-50 text-[10px] font-bold min-h-[28px]"
+              className="px-2 py-1 rounded-md bg-red-800 hover:bg-red-700 text-red-50 text-[11px] font-bold min-h-[28px]"
             >
               ✕ Cerrar
             </button>
@@ -98,7 +98,7 @@ const CrashCard: React.FC<{ crash: CrashInfo; onDismiss: () => void }> = ({ cras
         <div className="max-h-40 overflow-y-auto px-3 py-2 overscroll-contain">
           <p className="text-xs font-mono font-bold text-red-100 break-words">{crash.message}</p>
           {crash.stack && import.meta.env.DEV && (
-            <pre className="mt-1.5 text-[10px] font-mono text-red-300/80 whitespace-pre-wrap break-words max-h-24 overflow-y-auto">
+            <pre className="mt-1.5 text-[11px] font-mono text-red-300/80 whitespace-pre-wrap break-words max-h-24 overflow-y-auto">
               {crash.stack}
             </pre>
           )}
@@ -175,7 +175,7 @@ export class GlobalErrorBoundary extends Component<{ children: ReactNode }, Boun
           <h1 className="text-lg font-bold text-neutral-100 mb-2">La app encontró un error</h1>
           <p className="text-xs font-mono text-red-400 max-w-md break-words mb-2">{this.state.error.message}</p>
           {this.state.error.stack && (
-            <pre className="text-[9px] font-mono text-red-500/60 max-w-md max-h-32 overflow-y-auto text-left mb-6 whitespace-pre-wrap break-words">
+            <pre className="text-[11px] font-mono text-red-500/60 max-w-md max-h-32 overflow-y-auto text-left mb-6 whitespace-pre-wrap break-words">
               {this.state.error.stack}
             </pre>
           )}
