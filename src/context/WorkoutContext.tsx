@@ -24,6 +24,11 @@ import { useRestTimer, RestTimerState } from "./useRestTimer";
 import { detectExecutionMode, isTimeBased, parseTargetSeconds } from "../utils/exerciseMode";
 import { safeParse, safeSet, safeRemove, readVaultAwareRaw, VALIDATORS, SANITIZERS, isArrayOrNull } from "../utils/storage";
 import { resolveStartingWeight, resolveNextWeightFromHistory } from "../utils/progressionEngine";
+import {
+  isNutritionGoalCustomized,
+  markNutritionGoalCustomized,
+  resolveDefaultNutritionGoal,
+} from "../utils/nutritionGoalSync";
 import { applyReadinessToSession } from "../utils/goalEngine";
 import type { ReadinessEntry } from "../types";
 import { localDateKey } from "../utils/dateUtils";
@@ -123,7 +128,10 @@ interface WorkoutContextType {
   addBodyMetric: (entry: BodyMetricEntry) => void;
   deleteBodyMetric: (entryId: string) => void;
   nutritionGoal: NutritionGoal;
+  /** Elección explícita del usuario (Nutrición): queda marcada y la fase no la pisa. */
   setNutritionGoal: (goal: NutritionGoal) => void;
+  /** Sincronización desde la fase de entrenamiento: no marca elección explícita. */
+  syncNutritionGoalFromPhase: (goal: NutritionGoal) => void;
   nutritionProfile: NutritionProfile;
   setNutritionProfile: (profile: NutritionProfile) => void;
   addWater: (ml: number) => void;
@@ -155,12 +163,23 @@ interface WorkoutContextType {
 const WorkoutContext = createContext<WorkoutContextType | undefined>(undefined);
 
 // Perfil nutricional + objetivo leídos desde LocalStorage.
+// Fuente única de verdad: la estrategia deriva de la fase de entrenamiento
+// (Perfil) salvo que el usuario la haya personalizado en Nutrición.
+const storageReader = (key: string): string | null => {
+  try {
+    return typeof localStorage !== "undefined" ? localStorage.getItem(key) : null;
+  } catch {
+    return null;
+  }
+};
 const readNutritionGoal = (): NutritionGoal => {
   const saved = safeParse<string | null>("kinetix_nutrition_goal", null, VALIDATORS["kinetix_nutrition_goal"]);
-  if (saved && ["cut", "maintenance", "lean_bulk", "bulk", "keto"].includes(saved)) {
-    return saved as NutritionGoal;
-  }
-  return "lean_bulk";
+  const valid =
+    saved && ["cut", "maintenance", "lean_bulk", "bulk", "keto"].includes(saved)
+      ? (saved as NutritionGoal)
+      : null;
+  if (valid && isNutritionGoalCustomized(storageReader)) return valid;
+  return resolveDefaultNutritionGoal(storageReader);
 };
 
 const readNutritionProfile = (): NutritionProfile => ({
@@ -1334,16 +1353,36 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
     setBodyMetrics((prev) => prev.filter((m) => m.id !== entryId));
   }, []);
 
-  const setNutritionGoal = useCallback((goal: NutritionGoal) => {
+  const applyNutritionGoal = useCallback((goal: NutritionGoal) => {
     setNutritionGoalState(goal);
     if (typeof localStorage !== "undefined") {
-      localStorage.setItem("kinetix_nutrition_goal", goal);
+      try {
+        localStorage.setItem("kinetix_nutrition_goal", goal);
+      } catch {
+        /* almacenamiento no disponible */
+      }
     }
     const savedMetrics = safeParse<BodyMetricEntry[] | null>("kinetix_body_metrics", null, isArrayOrNull);
     const weightKg = latestBodyMetric(savedMetrics ?? [])?.weightKg ?? DEFAULT_WEIGHT_KG;
     const profile = readNutritionProfile();
     setNutritionLog((prev) => ({ ...prev, ...computePersonalTargets(weightKg, goal, profile) }));
   }, []);
+
+  const setNutritionGoal = useCallback(
+    (goal: NutritionGoal) => {
+      // Elección explícita del usuario en Nutrición: la fase no la pisa.
+      markNutritionGoalCustomized();
+      applyNutritionGoal(goal);
+    },
+    [applyNutritionGoal]
+  );
+
+  const syncNutritionGoalFromPhase = useCallback(
+    (goal: NutritionGoal) => {
+      applyNutritionGoal(goal);
+    },
+    [applyNutritionGoal]
+  );
 
   const setNutritionProfile = useCallback((profile: NutritionProfile) => {
     setNutritionProfileState(profile);
@@ -1529,6 +1568,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
         deleteBodyMetric,
         nutritionGoal,
         setNutritionGoal,
+        syncNutritionGoalFromPhase,
         nutritionProfile,
         setNutritionProfile,
         addWater,

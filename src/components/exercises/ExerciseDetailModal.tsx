@@ -77,7 +77,7 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
     { id: "mistakes", label: "Errores & Consejos", icon: AlertTriangle, badge: "Biomecánica" },
     { id: "variations", label: "Variantes & Árbol", icon: GitBranch, badge: "Progresiones" },
     { id: "mobility", label: "Movilidad & Estiramientos", icon: Sparkles, badge: "Pre / Post" },
-    { id: "analytics", label: "Historial & Analytics", icon: BarChart2, badge: "Fuerza, PRs & Volumen" },
+    { id: "analytics", label: "Historial y progreso", icon: BarChart2, badge: "Fuerza, PRs & Volumen" },
   ];
 
   return (

@@ -90,7 +90,7 @@ export const ProgramsExplorer: React.FC = () => {
     const adapted = adaptRoutineToEquipment(routine, resolveCurrentEquipment());
     // P4 DUP: rotación fuerza/hipertrofia/potencia por exposiciones recientes.
     const { routine: duped, dupDay } = applyDupDay(adapted, workoutHistory, selectedProgram?.id);
-    if (dupDay) showToast(`Día DUP: ${dupDay} (rotación automática)`, "info");
+    if (dupDay) showToast(`Rotación: hoy toca ${dupDay} (ajuste automático)`, "info");
     startWorkoutFromRoutine(duped);
   };
 

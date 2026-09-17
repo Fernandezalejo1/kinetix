@@ -15,6 +15,7 @@ import { StorageWarning } from "./components/StorageWarning";
 import { PinLockScreen } from "./components/PinLockScreen";
 import { VaultLockScreen } from "./components/VaultLockScreen";
 import { createAutoBackup } from "./utils/backupService";
+import { decidePopState, isNavTabId, popTabStack, pushTabStack, reconcileTabStack } from "./utils/tabStack";
 import { isAppLocked, hasAppPin, lockAppIfNeeded } from "./utils/pinLock";
 import { isVaultLocked, isVaultEnabled, initVaultSessionFromStorage } from "./utils/vault";
 
@@ -83,16 +84,32 @@ const AppContent: React.FC = () => {
   // Posiciones de scroll por pestaña, para conservarlas al volver con Atrás.
   const scrollPositionsRef = useRef<Partial<Record<NavTab, number>>>({});
 
+  // Espejo sincrónico de la pestaña visible (los refs no esperan al render).
+  // Se actualiza en cada commit (cubre popTab/Escape/popstate) y también en
+  // navigateToTab antes del pushState para no duplicar entradas con toques rápidos.
+  const currentTabRef = useRef<NavTab>(currentTab);
+  useEffect(() => {
+    currentTabRef.current = currentTab;
+  }, [currentTab]);
+
   const navigateToTab = useCallback(
     (tab: NavTab) => {
+      if (tab === currentTabRef.current) return;
+      currentTabRef.current = tab;
+      if (!IS_NATIVE && typeof window !== "undefined") {
+        // En web cada pestaña deja una entrada en el historial: el botón
+        // Atrás del navegador recorre las pestañas en orden en vez de salir
+        // de la app al segundo toque (ver utils/tabStack.ts).
+        try {
+          window.history.pushState({ kxTab: tab }, "");
+        } catch {
+          /* historial no disponible */
+        }
+      }
       setCurrentTab((prev) => {
         if (tab === prev) return prev;
-        const stack = tabStackRef.current;
         // Sin duplicados consecutivos en el historial de pestañas.
-        if (stack[stack.length - 1] === prev) {
-          stack.pop();
-        }
-        stack.push(prev);
+        tabStackRef.current = pushTabStack(tabStackRef.current, prev);
         scrollPositionsRef.current[prev] = window.scrollY;
         return tab;
       });
@@ -109,22 +126,44 @@ const AppContent: React.FC = () => {
   }, [currentTab]);
 
   // Cierra la pestaña actual abierta, volviendo a la anterior (si existe).
+  // Sin bucles: salta entradas iguales a la actual.
   const popTab = useCallback((): boolean => {
-    const stack = tabStackRef.current;
-    if (stack.length === 0) return false;
-    const previous = stack.pop();
-    if (!previous || previous === currentTab) {
-      // Corregir cola: nunca entrar en bucle entre la misma pestaña.
-      return stack.length > 0 ? popTab() : false;
-    }
-    setCurrentTab(previous);
+    const res = popTabStack(tabStackRef.current, currentTabRef.current);
+    if (!res) return false;
+    tabStackRef.current = res.stack;
+    currentTabRef.current = res.previous;
+    setCurrentTab(res.previous);
     return true;
-  }, [currentTab]);
+  }, []);
+
+  // Aplica la pestaña que dicta el historial del navegador y reconcilia el
+  // stack interno con ella (varios Atrás consecutivos funcionan en orden).
+  const applyHistoryTab = useCallback((tab: NavTab) => {
+    tabStackRef.current = reconcileTabStack(tabStackRef.current, tab);
+    currentTabRef.current = tab;
+    setCurrentTab(tab);
+  }, []);
+
+  // Evita dobles retrocesos si se pulsa Escape dos veces antes de que llegue el popstate.
+  const historyNavPendingRef = useRef(false);
 
   // Atajo de teclado Esc (web/desktop): cierra capas, luego pestañas.
+  // En web el navegador manda (history.back + popstate) para no desincronizar
+  // el historial; Escape nunca saca del sitio.
   const handleEscape = useCallback(() => {
     if (consumeBack()) return;
-    if (popTab()) return;
+    if (IS_NATIVE) {
+      popTab();
+      return;
+    }
+    if (historyNavPendingRef.current) return;
+    if (tabStackRef.current.length === 0) return;
+    historyNavPendingRef.current = true;
+    try {
+      window.history.back();
+    } catch {
+      historyNavPendingRef.current = false;
+    }
   }, [consumeBack, popTab]);
 
   useEffect(() => {
@@ -219,20 +258,57 @@ const AppContent: React.FC = () => {
     }
   }, [layerCount]);
 
+  // Sembrar la entrada inicial con la pestaña actual (incluye ?tab=... de
+  // los atajos PWA): así el primer Atrás ya tiene una entrada nuestra.
   useEffect(() => {
     if (IS_NATIVE) return;
-    const onPopState = () => {
+    try {
+      window.history.replaceState({ kxTab: currentTabRef.current }, "");
+    } catch {
+      /* historial no disponible */
+    }
+  }, []);
+
+  useEffect(() => {
+    if (IS_NATIVE) return;
+    const onPopState = (e: PopStateEvent) => {
+      historyNavPendingRef.current = false;
       if (ignoreNextPopRef.current) {
         ignoreNextPopRef.current = false;
         return;
       }
-      if (consumeBack()) return;
-      if (popTab()) return;
-      // Sin navegación interna: dejar que el navegador siga (o cierre la pestaña).
+      const raw = (e.state ?? window.history.state) as { kxTab?: unknown } | null;
+      const stateTab = isNavTabId(raw?.kxTab) ? raw.kxTab : null;
+      const hadPhantom = webPhantomRef.current;
+      let overlayConsumed = false;
+      if (hadPhantom) {
+        // El Atrás del navegador cierra primero el overlay abierto.
+        webPhantomRef.current = false;
+        overlayConsumed = consumeBack();
+      }
+      const decision = decidePopState({
+        hadPhantom,
+        overlayConsumed,
+        stateTab,
+        current: currentTabRef.current,
+      });
+      if (decision.action === "close-overlay") {
+        if (decision.syncTab) applyHistoryTab(decision.syncTab);
+        return;
+      }
+      if (decision.action === "goto-tab") {
+        applyHistoryTab(decision.tab);
+        return;
+      }
+      if (decision.action === "pop-internal") {
+        popTab();
+      }
+      // ignore: la entrada destino ya es la visible; sin navegación interna
+      // se deja que el navegador siga (o cierre la pestaña).
     };
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
-  }, [consumeBack, popTab]);
+  }, [consumeBack, popTab, applyHistoryTab]);
 
   // Copia de seguridad automática (100% local, IndexedDB): revisa cada 15 min
   // si toca guardar un snapshot (cada 6h con datos), al volver a primer plano y

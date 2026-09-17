@@ -12,9 +12,11 @@ import {
 import { useWorkout } from "../../context/WorkoutContext";
 import { useToast } from "../../context/ToastContext";
 import { MealItem } from "../../types";
+import { NUTRITION_GOALS } from "../../data/nutritionData";
 
-/** La app es 100% KETO: los dos horarios (nocturno/diurno) usan comidas
- *  cetogénicas. Solo cambia el timing, nunca los macros base. */
+/** Los dos horarios (nocturno/diurno) usan una base cetogénica de comidas.
+ *  Solo cambia el timing, nunca los macros base. Si la estrategia activa no
+ *  es keto, el plan sirve como estructura de horarios (ver aviso en la UI). */
 type ScheduleType = "nocturno" | "normal";
 
 interface ScheduledMeal {
@@ -141,14 +143,14 @@ const NORMAL_SCHEDULE: ScheduledMeal[] = [
 
 const SCHEDULES: Record<ScheduleType, { label: string; short: string; icon: React.ReactNode; meals: ScheduledMeal[] }> = {
   nocturno: {
-    label: "Keto Nocturno (despierto 10:00 → trabajo de noche)",
-    short: "Keto Noche",
+    label: "Turno noche (despierto 10:00 → trabajo de noche)",
+    short: "Noche",
     icon: <Moon className="w-4 h-4" />,
     meals: NIGHT_SCHEDULE,
   },
   normal: {
-    label: "Keto Día (horario normal)",
-    short: "Keto Día",
+    label: "Horario de día (ritmo normal)",
+    short: "Día",
     icon: <Sun className="w-4 h-4" />,
     meals: NORMAL_SCHEDULE,
   },
@@ -156,10 +158,21 @@ const SCHEDULES: Record<ScheduleType, { label: string; short: string; icon: Reac
 
 export const MealSchedulerPanel: React.FC = () => {
   const [schedule, setSchedule] = useState<ScheduleType>("normal");
-  const { addMeal, updateMacroTargets, nutritionLog, nutritionProfile } = useWorkout();
+  const { addMeal, updateMacroTargets, nutritionLog, nutritionProfile, nutritionGoal } = useWorkout();
   const { showToast } = useToast();
 
   const config = SCHEDULES[schedule];
+
+  // Dirección del objetivo con el mismo léxico que Nutrición (evita el
+  // "déficit" fijo cuando la estrategia es volumen o mantenimiento).
+  const goalInDeficit = nutritionGoal === "keto" || nutritionGoal === "cut";
+  const goalDirection = goalInDeficit
+    ? `déficit −${nutritionProfile.deficitPercent}%`
+    : nutritionGoal === "maintenance"
+      ? "mantenimiento"
+      : nutritionGoal === "lean_bulk"
+        ? "superávit +8%"
+        : "superávit +12%";
 
   // Auto-escala el plan al objetivo personal de déficit (perfil Mifflin-St Jeor)
   const planTotal = config.meals.reduce((a, m) => a + m.calories, 0);
@@ -181,7 +194,7 @@ export const MealSchedulerPanel: React.FC = () => {
       id: `meal-sched-${Date.now()}-${meal.name.replace(/\s+/g, "-")}`,
       time: new Date().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }),
       dishName: `${meal.name} (${meal.time})`,
-      description: `${meal.foods} · Plan ${config.short} · Escalado a tu déficit`,
+      description: `${meal.foods} · Plan ${config.short} · Escalado a tu objetivo (${goalDirection})`,
       calories: meal.calories,
       protein: meal.protein,
       carbs: meal.carbs,
@@ -200,7 +213,7 @@ export const MealSchedulerPanel: React.FC = () => {
       carbs: totalCarbs,
       fats: totalFats,
     });
-    showToast(`Plan ${config.short} aplicado a tu objetivo: ${totalCalories} kcal (déficit −${nutritionProfile.deficitPercent}%)`, "success");
+    showToast(`Plan ${config.short} aplicado a tu objetivo: ${totalCalories} kcal (${goalDirection})`, "success");
   };
 
   return (
@@ -212,7 +225,7 @@ export const MealSchedulerPanel: React.FC = () => {
             Plan de Comidas Diario
           </h3>
           <p className="text-[11px] text-neutral-400 mt-0.5">
-            {totalCalories} kcal · P {totalProtein}g · C {totalCarbs}g · G {totalFats}g · Plan escalado a tu déficit (−{nutritionProfile.deficitPercent}%)
+            {totalCalories} kcal · P {totalProtein}g · C {totalCarbs}g · G {totalFats}g · Plan escalado a tu objetivo ({goalDirection})
           </p>
         </div>
         <button
@@ -253,6 +266,16 @@ export const MealSchedulerPanel: React.FC = () => {
         {schedule === "nocturno" ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
         {config.label} · Entrenar con buen combustible antes de cada sesión
       </div>
+
+      {/* El plan es de base cetogénica: si tu estrategia no es keto, úsalo
+          como estructura de horarios y ajustá las porciones a tu objetivo. */}
+      {nutritionGoal !== "keto" && (
+        <p className="text-[11px] text-neutral-400 leading-relaxed px-1">
+          Plan base cetogénico (grasa primero, sin azúcar). Tu estrategia es{" "}
+          <strong className="text-neutral-200">{NUTRITION_GOALS[nutritionGoal].label}</strong>:
+          úsalo como estructura de horarios y ajustá las porciones a tu objetivo.
+        </p>
+      )}
 
       {/* Meal list */}
       <div className="space-y-2.5">

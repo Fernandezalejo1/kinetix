@@ -310,7 +310,7 @@ const goalDirection =
   goalInDeficit
     ? `déficit −${nutritionProfile.deficitPercent}%`
     : nutritionGoal === "maintenance"
-    ? "mantenimiento (TDEE)"
+    ? "mantenimiento (gasto diario)"
     : nutritionGoal === "lean_bulk"
     ? "superávit leve +8%"
     : "superávit +12%";
@@ -318,7 +318,7 @@ const goalDirectionMain =
   goalInDeficit
     ? `Estás en déficit (−${nutritionProfile.deficitPercent}%)`
     : nutritionGoal === "maintenance"
-    ? "Estás en mantenimiento (TDEE)"
+    ? "Estás en mantenimiento (gasto diario)"
     : nutritionGoal === "lean_bulk"
     ? "Estás en superávit leve (+8%) para ganar masa magra"
     : "Estás en superávit (+12%) para ganar masa";
@@ -422,8 +422,8 @@ const goalDirectionMain =
           <h2 className="text-2xl font-black text-white tracking-tight">Nutrición</h2>
           <p className="text-xs text-neutral-400 mt-1">
             {currentWeight
-              ? `Objetivos para ${currentWeight} kg · ${NUTRITION_GOALS[nutritionGoal].label} · Déficit ${nutritionProfile.deficitPercent}% · Turno ${nutritionProfile.workStart}–${nutritionProfile.workEnd}`
-              : "Registrá tu peso en Analytics para calcular objetivos exactos"}
+              ? `Objetivos para ${currentWeight} kg · ${NUTRITION_GOALS[nutritionGoal].label} · ${goalDirection} · Turno ${nutritionProfile.workStart}–${nutritionProfile.workEnd}`
+              : "Registrá tu peso en Progreso para calcular objetivos exactos"}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -484,7 +484,7 @@ const goalDirectionMain =
             <div className="text-[11px] text-neutral-400">{currentWeight ? "basal / día" : "agregá tu peso"}</div>
           </div>
           <div className="p-3 rounded-2xl bg-neutral-950 border border-neutral-800">
-            <div className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Gasto (TDEE)</div>
+            <div className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Gasto diario</div>
             <div className="text-xl font-black text-emerald-300 font-mono mt-0.5 tabular-nums break-words">{currentWeight ? `${tdee} kcal` : "—"}</div>
             <div className="text-[11px] text-neutral-400">{currentWeight ? ACTIVITY_FACTORS[nutritionProfile.activityLevel].short : "≈ con 75 kg (estimado)"}</div>
           </div>
@@ -717,7 +717,8 @@ const goalDirectionMain =
 
       <WaterTracker />
 
-      <ElectrolytesTracker />
+      {/* Electrolitos: sección especializada de keto; solo visible con esa estrategia. */}
+      {nutritionGoal === "keto" && <ElectrolytesTracker />}
 
       {/* Edit targets modal */}
       {editingTargets && (

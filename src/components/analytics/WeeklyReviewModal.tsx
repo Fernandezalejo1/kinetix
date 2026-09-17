@@ -199,7 +199,7 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
               {metric(<TrendingUp className="w-3.5 h-3.5 text-neutral-400" />, `${review.volumeDeltaPercent > 0 ? "+" : ""}${review.volumeDeltaPercent}%`, "Volumen vs anterior", review.volumeDeltaPercent >= 0 ? "text-emerald-400" : "text-amber-300")}
               {metric(<Trophy className="w-3.5 h-3.5 text-neutral-400" />, `${review.prCount}`, "PRs")}
               {metric(<ShieldCheck className="w-3.5 h-3.5 text-neutral-400" />, review.avgRir != null ? `${review.avgRir}` : "—", "RIR promedio")}
-              {metric(<Activity className="w-3.5 h-3.5 text-neutral-400" />, review.avgReadiness != null ? `${review.avgReadiness}/100` : "—", "Readiness")}
+              {metric(<Activity className="w-3.5 h-3.5 text-neutral-400" />, review.avgReadiness != null ? `${review.avgReadiness}/100` : "—", "Energía")}
               {metric(<Moon className="w-3.5 h-3.5 text-neutral-400" />, review.avgSleepHours != null ? `${review.avgSleepHours}h` : "—", "Sueño")}
               {metric(<Flame className="w-3.5 h-3.5 text-neutral-400" />, `${review.cardioMinutes}${review.cardioTarget != null ? `/${review.cardioTarget}` : ""}`, "Cardio min")}
               {metric(<Scale className="w-3.5 h-3.5 text-neutral-400" />, review.weightDeltaKg != null ? `${review.weightDeltaKg > 0 ? "+" : ""}${review.weightDeltaKg} kg` : "—", "Peso (Δ)", review.weightDeltaKg != null && review.weightDeltaKg <= 0 ? "text-emerald-400" : "text-white")}

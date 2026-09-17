@@ -24,7 +24,12 @@ import { useWorkout } from "../../context/WorkoutContext";
 import { useToast } from "../../context/ToastContext";
 import { useBackHandler } from "../../context/BackNavContext";
 import { FocusTrap } from "../FocusTrap";
-import { GoalPhase } from "../../types";
+import { GoalPhase, NutritionGoal } from "../../types";
+import {
+  isNutritionGoalCustomized,
+  phaseToNutritionGoal,
+  type StorageReader,
+} from "../../utils/nutritionGoalSync";
 import { localDateKey } from "../../utils/dateUtils";
 import {
   PHASE_CONFIG,
@@ -39,7 +44,15 @@ import {
   READINESS_VERDICTS,
 } from "../../utils/goalEngine";
 import { computeAbsEstimate } from "../../utils/absEstimator";
-import { computePersonalTargets, DEFAULT_WEIGHT_KG } from "../../data/nutritionData";
+import { computePersonalTargets, DEFAULT_WEIGHT_KG, NUTRITION_GOALS } from "../../data/nutritionData";
+
+const localStorageReader: StorageReader = (key) => {
+  try {
+    return typeof localStorage !== "undefined" ? localStorage.getItem(key) : null;
+  } catch {
+    return null;
+  }
+};
 import { latestBodyMetric } from "../../utils/absEstimator";
 import { isNativePlatform, requestHealthSyncNow } from "../../utils/healthConnect";
 import { BASIC_LIFT_IDS } from "../../data/basicLifts";
@@ -70,7 +83,7 @@ const ReadinessGauge: React.FC<{ score: number; verdict: string; size?: number }
   const pct = Math.max(0, Math.min(100, score));
   const hex = READINESS_HEX[verdict] ?? "#34d399";
   return (
-    <div className="relative shrink-0" style={{ width: size, height: size }} role="img" aria-label={`Readiness ${score} de 100`}>
+    <div className="relative shrink-0" style={{ width: size, height: size }} role="img" aria-label={`Energía ${score} de 100`}>
       <svg viewBox="0 0 80 80" width={size} height={size}>
         <circle cx="40" cy="40" r={r} fill="none" stroke="rgba(255,255,255,0.10)" strokeWidth="8" />
         <circle
@@ -221,7 +234,7 @@ export const GoalHub: React.FC<GoalHubProps> = ({ onGoToPrograms }) => {
     addCardio,
     removeCardio,
   } = useGoal();
-  const { bodyMetrics, personalRecordHistory, nutritionProfile, updateMacroTargets, weightUnit } = useWorkout();
+  const { bodyMetrics, personalRecordHistory, nutritionProfile, nutritionGoal, updateMacroTargets, syncNutritionGoalFromPhase, weightUnit } = useWorkout();
   const { showToast } = useToast();
 
   const today = localDateKey();
@@ -257,12 +270,24 @@ export const GoalHub: React.FC<GoalHubProps> = ({ onGoToPrograms }) => {
 
   const applyPhase = (id: GoalPhase) => {
     setPhase(id);
-    // Recalcula los objetivos keto según la fase (déficit / mantenimiento / +8%).
+    // Fuente única de verdad: la fase alinea la estrategia nutricional, salvo
+    // que el usuario la haya personalizado en Nutrición (esa elección gana).
+    const mapped = phaseToNutritionGoal(id);
+    const customized = isNutritionGoalCustomized(localStorageReader);
+    const effective: NutritionGoal = customized ? nutritionGoal : mapped;
+    if (!customized && mapped !== nutritionGoal) syncNutritionGoalFromPhase(mapped);
+    // Recalcula los objetivos con la estrategia efectiva según la fase
+    // (déficit / mantenimiento / +8%).
     const weightKg = latestBodyMetric(bodyMetrics)?.weightKg ?? DEFAULT_WEIGHT_KG;
     const deficit = id === "cut" ? nutritionProfile.deficitPercent : id === "maintenance" ? 0 : -8;
-    const t = computePersonalTargets(weightKg, "keto", { ...nutritionProfile, deficitPercent: deficit });
+    const t = computePersonalTargets(weightKg, effective, { ...nutritionProfile, deficitPercent: deficit });
     updateMacroTargets({ calories: t.calories, protein: t.protein, carbs: t.carbs, fats: t.fats });
-    showToast(`Fase: ${PHASE_CONFIG[id].label} · Objetivos recalculados`, "success");
+    showToast(
+      customized
+        ? `Fase: ${PHASE_CONFIG[id].label} · Objetivos recalculados (tu estrategia nutricional no se tocó)`
+        : `Fase: ${PHASE_CONFIG[id].label} · Nutrición alineada a ${NUTRITION_GOALS[mapped].label}`,
+      "success"
+    );
   };
 
   // ---- Sueño ----
@@ -311,7 +336,7 @@ export const GoalHub: React.FC<GoalHubProps> = ({ onGoToPrograms }) => {
       soreness: rSoreness,
       sleepHours: parseFloat(rSleepHours) || 0,
     });
-    showToast("Readiness registrado", "success");
+    showToast("Energía registrada", "success");
   };
 
   // ---- Cardio ----
@@ -376,8 +401,8 @@ export const GoalHub: React.FC<GoalHubProps> = ({ onGoToPrograms }) => {
           summary={weeklySleepAvg != null ? `Promedio ${weeklySleepAvg} h (7 noches)` : "Sin noches registradas"}
           detail={
             todayReadiness
-              ? `Readiness de hoy ${todayReadiness.score}/100 · ${READINESS_VERDICTS[todayReadiness.verdict].label}`
-              : "Readiness de hoy sin registrar"
+              ? `Energía de hoy ${todayReadiness.score}/100 · ${READINESS_VERDICTS[todayReadiness.verdict].label}`
+              : "Energía de hoy sin registrar"
           }
           action="Registrar sueño o readiness"
           accent="bg-indigo-500/10 text-indigo-400 border-indigo-500/25"
@@ -696,7 +721,7 @@ export const GoalHub: React.FC<GoalHubProps> = ({ onGoToPrograms }) => {
                   <HeartPulse className="w-4 h-4" />
                 </span>
                 <div className="min-w-0">
-                  <h3 className="text-sm font-black text-white">Readiness · ¿Cómo estás hoy?</h3>
+                  <h3 className="text-sm font-black text-white">Energía · ¿Cómo estás hoy?</h3>
                   <p className="text-[11px] text-neutral-400">El coach decide: dale / moderado / descanso</p>
                 </div>
               </div>

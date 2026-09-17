@@ -503,8 +503,8 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
         {activeSession.notes?.startsWith("readiness:") && (
           <p className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-full px-2 py-0.5">
             {activeSession.notes.includes("descanso")
-              ? "Readiness bajo: −10% carga · +1 RIR"
-              : "Readiness medio: +1 RIR"}
+              ? "Energía baja hoy: −10% carga · +1 RIR"
+              : "Energía media hoy: +1 RIR"}
           </p>
         )}
 
@@ -739,7 +739,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                     <div className="px-3 pb-3 space-y-3">
                       {set.previousIsEstimate && !set.completed && (
                         <p className="text-xs text-cyan-300">
-                          Carga inicial sugerida por tu historial: {fmtW(set.weight)} {weightUnit}
+                          Estimación inicial (todavía sin historial): {fmtW(set.weight)} {weightUnit} · ajustala en tu primera serie
                         </p>
                       )}
                       {!set.previousIsEstimate && set.previousWeight ? (
@@ -1174,6 +1174,12 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                   )}
                 </div>
 
+                {/* Cuerpo del ejercicio: solo el ejercicio expandido muestra
+                    sus controles (progresión, temporizadores, series y barra
+                    de acciones); los plegados quedan en el resumen de la
+                    cabecera. Los de tiempo/cardio siempre están expandidos. */}
+                {isExpanded && (
+                <>
                 {/* Double Progression — live objective guidance */}
                 {!isTimeBased(wEx.exercise, wEx.targetReps) && (
                   <DoubleProgressionBanner wEx={wEx} />
@@ -1239,7 +1245,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                             <td className="py-2.5 text-neutral-400 font-mono text-[11px]">
                               {set.previousIsEstimate ? (
                                 <span className="text-cyan-400/90 font-bold">
-                                  Carga inicial sugerida · {fmtW(set.weight)}
+                                  Estimación inicial · {fmtW(set.weight)}
                                 </span>
                               ) : set.previousWeight ? (
                                 <span>{fmtW(set.previousWeight)} × {set.previousReps} @RIR{set.previousRir ?? 1}
@@ -1439,6 +1445,8 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                     <Sparkles className="w-3.5 h-3.5 text-purple-400" aria-hidden="true" />Añadir Drop Set
                   </button>
                 </div>
+                )}
+                </>
                 )}
 
               </div>

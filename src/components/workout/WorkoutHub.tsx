@@ -323,7 +323,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
               {/* P4 DUP: día de rotación aplicado a la rutina de hoy. */}
               {!activeSession && nextRoutine.dupDay && (
                 <span className="px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-violet-500/20 text-violet-300 border border-violet-500/30">
-                  DUP {nextRoutine.dupDay}
+                  Rotación · {nextRoutine.dupDay}
                 </span>
               )}
               {/* Advertencia que SÍ cambia la decisión: descarga en curso o sugerida. */}
@@ -378,18 +378,18 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
                   {nextRoutine.dupDay && (
                     <li className="flex items-start gap-2">
                       <span className="text-cyan-400 mt-0.5">→</span>
-                      <span><strong className="text-white">Rotación DUP:</strong> hoy toca {nextRoutine.dupDay} para distribuir la tensión del día</span>
+                      <span><strong className="text-white">Rotación:</strong> hoy toca {nextRoutine.dupDay} para distribuir la tensión del día</span>
                     </li>
                   )}
                   {verdictMeta && (
                     <li className="flex items-start gap-2">
                       <span className="text-cyan-400 mt-0.5">→</span>
-                      <span><strong className="text-white">Readiness de hoy:</strong> {verdictMeta.label} — {adjLabel}</span>
+                      <span><strong className="text-white">Energía de hoy:</strong> {verdictMeta.label} — {adjLabel}</span>
                     </li>
                   )}
                   <li className="flex items-start gap-2">
                     <span className="text-cyan-400 mt-0.5">→</span>
-                    <span><strong className="text-white">Ajuste automático:</strong> el peso inicial sale de tu historial + dificultad percibida, y el readiness de hoy lo regula antes de arrancar</span>
+                    <span><strong className="text-white">Ajuste automático:</strong> el peso inicial sale de tu historial + dificultad percibida, y tu energía de hoy lo regula antes de arrancar</span>
                   </li>
                 </ul>
               </div>
@@ -517,7 +517,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
               <h3 className="text-base font-black text-white">Ajustar el entrenamiento de hoy</h3>
               <p className="text-xs text-neutral-300 leading-relaxed">
                 {todayReadiness
-                  ? `Readiness de hoy: ${verdictMeta?.label ?? ""}. Se aplicará: ${adjLabel}.`
+                  ? `Energía de hoy: ${verdictMeta?.label ?? ""}. Se aplicará: ${adjLabel}.`
                   : "Todavía no registraste tu readiness de hoy. Sin él, la sesión arranca con el ajuste de peso por historial."}
               </p>
               {deloadRoutine && (
