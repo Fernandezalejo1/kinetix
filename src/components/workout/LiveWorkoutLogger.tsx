@@ -24,6 +24,7 @@ import {
   Repeat,
   ChevronDown,
   MoreHorizontal,
+  X,
 } from "lucide-react";
 import { useWorkout } from "../../context/WorkoutContext";
 import { useToast } from "../../context/ToastContext";
@@ -304,6 +305,12 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
     "workout-confirm-cancel",
     confirmCancel ? () => { setConfirmCancel(false); return true; } : null,
     210
+  );
+  // Atrás/Escape cierra el sheet de opciones del ejercicio (no navega).
+  useBackHandler(
+    "workout-ex-menu",
+    exMenuId ? () => { setExMenuId(null); return true; } : null,
+    150
   );
 
   // Auto-trigger difficulty survey when all working sets of an exercise are completed
@@ -687,6 +694,13 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
              *  La serie activa está abierta por defecto. */
             const renderSetEditor = (target: WorkoutExercise, set: WorkoutSet, isActiveSet: boolean) => {
               const isOpen = isActiveSet || Boolean(openSetIds[set.id]);
+              // Estilo Hevy: la fila cerrada siempre muestra el contexto
+              // (anterior real o estimación), sin obligar a abrir el editor.
+              const ghostShort = set.previousIsEstimate
+                ? `Estimación ${fmtW(set.weight)} ${weightUnit}`
+                : set.previousWeight
+                  ? `Anterior ${fmtW(set.previousWeight)} ${weightUnit} × ${set.previousReps}`
+                  : null;
               return (
                 <div
                   key={set.id}
@@ -723,9 +737,11 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                       <span className="block text-xs text-neutral-300">
                         {isActiveSet
                           ? "Serie activa"
-                          : set.completed
-                            ? (isOpen ? "Editar esta serie" : "Completada · tocá para editar")
-                            : "Pendiente · tocá para editar"}
+                          : isOpen
+                            ? "Editar esta serie"
+                            : set.completed
+                              ? ghostShort ? `Completada · ${ghostShort}` : "Completada"
+                              : ghostShort ?? "Pendiente · tocá para editar"}
                         {set.type !== "normal" ? ` · ${SET_TYPE_LABELS[set.type]}` : ""}
                       </span>
                     </span>
@@ -1051,7 +1067,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center gap-2 flex-wrap">
                         <span
-                          className={`font-black tracking-tight truncate ${
+                          className={`font-black tracking-tight line-clamp-2 leading-tight ${
                             isActiveExercise ? "text-lg text-white" : "text-sm text-neutral-100"
                           }`}
                         >
@@ -1102,21 +1118,35 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                           Opciones del ejercicio
                         </button>
                         {exMenuId === wEx.id && (
-                          <>
-                            <div
-                              className="fixed inset-0 z-20"
-                              onClick={() => setExMenuId(null)}
-                              aria-hidden="true"
-                            />
+                          <div
+                            className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm animate-fadeIn p-0 sm:p-4"
+                            onClick={() => setExMenuId(null)}
+                          >
                             <div
                               role="menu"
-                              className="absolute right-0 bottom-full mb-1 z-30 w-72 max-w-[calc(100vw-2rem)] bg-neutral-900 border border-neutral-700 rounded-2xl shadow-2xl overflow-hidden animate-fadeIn"
+                              aria-label={`Opciones de ${wEx.exercise.nameEs}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="bg-neutral-900 border border-neutral-700 rounded-t-3xl sm:rounded-3xl w-full sm:max-w-sm max-h-[82dvh] overflow-y-auto scrollbar-thin p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] space-y-1 shadow-2xl animate-slideUp"
                             >
+                              <div className="w-10 h-1 rounded-full bg-neutral-700 mx-auto mb-1 sm:hidden" aria-hidden="true" />
+                              <div className="flex items-center justify-between gap-2 px-2 pb-1">
+                                <p className="text-[11px] font-black uppercase tracking-wider text-neutral-400 truncate">
+                                  {wEx.exercise.nameEs}
+                                </p>
+                                <button
+                                  type="button"
+                                  onClick={() => setExMenuId(null)}
+                                  aria-label="Cerrar opciones"
+                                  className="p-2 -m-1 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors"
+                                >
+                                  <X className="w-4 h-4" aria-hidden="true" />
+                                </button>
+                              </div>
                               <button
                                 type="button"
                                 role="menuitem"
                                 onClick={() => { setSelectedExForPlate({ name: wEx.exercise.nameEs, weight: currentWorkingWeight }); setExMenuId(null); }}
-                                className="w-full min-h-[48px] px-4 flex items-center gap-3 text-left text-sm font-bold text-neutral-100 hover:bg-neutral-800"
+                                className="w-full min-h-[52px] px-4 rounded-xl flex items-center gap-3 text-left text-sm font-bold text-neutral-100 hover:bg-neutral-800"
                               >
                                 <Disc className="w-4 h-4 text-blue-400 shrink-0" aria-hidden="true" />
                                 Calculadora de discos
@@ -1125,7 +1155,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                                 type="button"
                                 role="menuitem"
                                 onClick={() => { setSelectedExForWarmup({ name: wEx.exercise.nameEs, weight: currentWorkingWeight }); setExMenuId(null); }}
-                                className="w-full min-h-[48px] px-4 flex items-center gap-3 text-left text-sm font-bold text-neutral-100 hover:bg-neutral-800"
+                                className="w-full min-h-[52px] px-4 rounded-xl flex items-center gap-3 text-left text-sm font-bold text-neutral-100 hover:bg-neutral-800"
                               >
                                 <Flame className="w-4 h-4 text-amber-400 shrink-0" aria-hidden="true" />
                                 Pirámide de calentamiento
@@ -1134,7 +1164,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                                 type="button"
                                 role="menuitem"
                                 onClick={() => { setSelectedExForTempo({ name: wEx.exercise.nameEs, tempo: wEx.exercise.defaultTempo }); setExMenuId(null); }}
-                                className="w-full min-h-[48px] px-4 flex items-center gap-3 text-left text-sm font-bold text-neutral-100 hover:bg-neutral-800"
+                                className="w-full min-h-[52px] px-4 rounded-xl flex items-center gap-3 text-left text-sm font-bold text-neutral-100 hover:bg-neutral-800"
                               >
                                 <Activity className="w-4 h-4 text-purple-400 shrink-0" aria-hidden="true" />
                                 Metrónomo de tempo
@@ -1143,7 +1173,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                                 type="button"
                                 role="menuitem"
                                 onClick={() => { setSelectedExerciseForDetail(wEx.exercise); setExMenuId(null); }}
-                                className="w-full min-h-[48px] px-4 flex items-center gap-3 text-left text-sm font-bold text-neutral-100 hover:bg-neutral-800"
+                                className="w-full min-h-[52px] px-4 rounded-xl flex items-center gap-3 text-left text-sm font-bold text-neutral-100 hover:bg-neutral-800"
                               >
                                 <Info className="w-4 h-4 text-cyan-400 shrink-0" aria-hidden="true" />
                                 Biomecánica y anatomía
@@ -1152,7 +1182,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                                 type="button"
                                 role="menuitem"
                                 onClick={() => { setReplacingWExId(wEx.id); setIsLibraryOpen(true); setExMenuId(null); }}
-                                className="w-full min-h-[48px] px-4 flex items-center gap-3 text-left text-sm font-bold text-neutral-100 hover:bg-neutral-800"
+                                className="w-full min-h-[52px] px-4 rounded-xl flex items-center gap-3 text-left text-sm font-bold text-neutral-100 hover:bg-neutral-800"
                               >
                                 <ArrowRightLeft className="w-4 h-4 text-neutral-300 shrink-0" aria-hidden="true" />
                                 Sustituir ejercicio
@@ -1161,13 +1191,13 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                                 type="button"
                                 role="menuitem"
                                 onClick={() => { setConfirmRemoveEx(wEx.id); setExMenuId(null); }}
-                                className="w-full min-h-[48px] px-4 flex items-center gap-3 text-left text-sm font-bold text-red-200 hover:bg-red-950/50 border-t border-neutral-800"
+                                className="w-full min-h-[52px] px-4 rounded-xl flex items-center gap-3 text-left text-sm font-bold text-red-200 hover:bg-red-950/50 border-t border-neutral-800"
                               >
                                 <Trash2 className="w-4 h-4 shrink-0" aria-hidden="true" />
                                 Quitar del entrenamiento
                               </button>
                             </div>
-                          </>
+                          </div>
                         )}
                       </div>
                     </div>
