@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef, Suspense } from "react";
+import { Capacitor, type PluginListenerHandle } from "@capacitor/core";
+import { App as CapApp } from "@capacitor/app";
+import { Keyboard } from "@capacitor/keyboard";
 import { WorkoutProvider, useWorkout } from "./context/WorkoutContext";
 import { GoalProvider } from "./context/GoalContext";
+import { BackNavProvider, useBackNav, useBackHandler } from "./context/BackNavContext";
 import { Navigation, NavTab } from "./components/Navigation";
 import { LiveWorkoutLogger } from "./components/workout/LiveWorkoutLogger";
 import { SettingsModal } from "./components/SettingsModal";
@@ -52,6 +56,8 @@ const getTabFromURL = (): NavTab => {
     : "hoy";
 };
 
+const IS_NATIVE = Capacitor.isNativePlatform();
+
 /** Minimal loading skeleton shown while a chunk downloads */
 const TabLoader: React.FC = () => (
   <div className="flex items-center justify-center py-24 animate-fadeIn" role="status" aria-live="polite">
@@ -66,6 +72,167 @@ const AppContent: React.FC = () => {
   const [currentTab, setCurrentTab] = useState<NavTab>(getTabFromURL);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { selectedExerciseForDetail, setSelectedExerciseForDetail, isWorkoutModalOpen, setIsWorkoutModalOpen } = useWorkout();
+
+  // Capa de "Atrás": registros de overlays + navegación de pestañas.
+  const { consumeBack } = useBackNav();
+
+  // Historial de pestañas visitadas (para "Atrás" de nivel pestaña). Se evitan
+  // entradas duplicadas consecutivas; cada back consume UNA entrada, sin bucles.
+  const tabStackRef = useRef<NavTab[]>([]);
+
+  // Posiciones de scroll por pestaña, para conservarlas al volver con Atrás.
+  const scrollPositionsRef = useRef<Partial<Record<NavTab, number>>>({});
+
+  const navigateToTab = useCallback(
+    (tab: NavTab) => {
+      setCurrentTab((prev) => {
+        if (tab === prev) return prev;
+        const stack = tabStackRef.current;
+        // Sin duplicados consecutivos en el historial de pestañas.
+        if (stack[stack.length - 1] === prev) {
+          stack.pop();
+        }
+        stack.push(prev);
+        scrollPositionsRef.current[prev] = window.scrollY;
+        return tab;
+      });
+    },
+    []
+  );
+
+  // Restaurar el scroll de la pestaña al volver a ella (dom-content ya listo).
+  useEffect(() => {
+    const saved = scrollPositionsRef.current[currentTab];
+    window.requestAnimationFrame(() => {
+      window.scrollTo(0, saved ?? 0);
+    });
+  }, [currentTab]);
+
+  // Cierra la pestaña actual abierta, volviendo a la anterior (si existe).
+  const popTab = useCallback((): boolean => {
+    const stack = tabStackRef.current;
+    if (stack.length === 0) return false;
+    const previous = stack.pop();
+    if (!previous || previous === currentTab) {
+      // Corregir cola: nunca entrar en bucle entre la misma pestaña.
+      return stack.length > 0 ? popTab() : false;
+    }
+    setCurrentTab(previous);
+    return true;
+  }, [currentTab]);
+
+  // Atajo de teclado Esc (web/desktop): cierra capas, luego pestañas.
+  const handleEscape = useCallback(() => {
+    if (consumeBack()) return;
+    if (popTab()) return;
+  }, [consumeBack, popTab]);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") handleEscape();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [handleEscape]);
+
+  // Android nativo: botón Atrás gestionado por Capacitor (App plugin). El plugin
+  // consume el evento cuando hay listener, así que somos responsables de toda la
+  // navegación: teclado → overlays → pestañas → salida.
+  const keyboardVisibleRef = useRef(false);
+
+  useEffect(() => {
+    if (!IS_NATIVE) return;
+    const handles: Promise<PluginListenerHandle>[] = [
+      Keyboard.addListener("keyboardDidShow", () => { keyboardVisibleRef.current = true; }),
+      Keyboard.addListener("keyboardDidHide", () => { keyboardVisibleRef.current = false; }),
+    ];
+    return () => {
+      handles.forEach((h) => void h.then((handle) => handle.remove()));
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!IS_NATIVE) return;
+    let active = true;
+    const listener = CapApp.addListener("backButton", async () => {
+      if (!active) return;
+      // 1) Teclado visible: ocultarlo sin navegar (fallback; Android ya cierra
+      // el teclado nativamente antes de llegar aquí en la mayoría de los casos).
+      if (keyboardVisibleRef.current) {
+        keyboardVisibleRef.current = false;
+        try {
+          await Keyboard.hide();
+        } catch {
+          /* plugin de teclado no disponible */
+        }
+        return;
+      }
+      // 2) Overlays (diálogos, fichas, menús) en orden inverso al apilado.
+      if (consumeBack()) return;
+      // 3) Pestañas: volver a la anterior conservando su estado.
+      if (popTab()) return;
+      // 4) Navegación interna agotada → comportamiento normal de salida.
+      // La sesión activa persiste en localStorage: volver a la app la retoma.
+      await CapApp.exitApp();
+    });
+    return () => {
+      active = false;
+      void listener.then((l) => l.remove());
+    };
+  }, [consumeBack, popTab]);
+
+  // Capas globales de la app: la sesión activa NO se descarta con Atrás; solo
+  // se colapsa al panel anterior (la pill verde del header permite reabrirla).
+  useBackHandler(
+    "workout-modal",
+    isWorkoutModalOpen ? () => { setIsWorkoutModalOpen(false); return true; } : null,
+    100
+  );
+  useBackHandler(
+    "settings-modal",
+    isSettingsOpen ? () => { setIsSettingsOpen(false); return true; } : null,
+    100
+  );
+  useBackHandler(
+    "exercise-detail",
+    selectedExerciseForDetail ? () => { setSelectedExerciseForDetail(null); return true; } : null,
+    100
+  );
+
+  // Web/PWA: el botón Atrás del navegador se traduce a la misma navegación.
+  // Mientras haya overlays registrados mantenemos una entrada de historial para
+  // que el back del navegador los cierre; al vaciarse, se desenrosca la entrada.
+  const webPhantomRef = useRef(false);
+  const ignoreNextPopRef = useRef(false);
+  const { layerCount } = useBackNav();
+
+  useEffect(() => {
+    if (IS_NATIVE) return;
+    const open = layerCount > 0;
+    if (open && !webPhantomRef.current) {
+      webPhantomRef.current = true;
+      history.pushState({ kxOverlay: true }, "");
+    } else if (!open && webPhantomRef.current && window.history.state && window.history.state.kxOverlay) {
+      webPhantomRef.current = false;
+      ignoreNextPopRef.current = true;
+      window.history.back();
+    }
+  }, [layerCount]);
+
+  useEffect(() => {
+    if (IS_NATIVE) return;
+    const onPopState = () => {
+      if (ignoreNextPopRef.current) {
+        ignoreNextPopRef.current = false;
+        return;
+      }
+      if (consumeBack()) return;
+      if (popTab()) return;
+      // Sin navegación interna: dejar que el navegador siga (o cierre la pestaña).
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [consumeBack, popTab]);
 
   // Copia de seguridad automática (100% local, IndexedDB): revisa cada 15 min
   // si toca guardar un snapshot (cada 6h con datos), al volver a primer plano y
@@ -87,123 +254,81 @@ const AppContent: React.FC = () => {
     };
   }, []);
 
-  // Contador de entradas "fantasma" en el historial: cada vez que se abre un
-  // modal se hace pushState. Si el modal se cierra con su botón propio (no con
-  // back), esa entrada queda huérfana en el historial y el back posterior la
-  // salta como navegación fantasma. Este ref perm ite limpiarla al cerrar.
-  // `dismissPhantomRef` marca que el próximo popstate es NUESTRO back() de
-  // limpieza (no un back real del usuario): el handler lo ignora.
-  const pendingPhantomRef = useRef(false);
-  const dismissPhantomRef = useRef(false);
-
-  const handleBack = useCallback(() => {
-    if (selectedExerciseForDetail) {
-      setSelectedExerciseForDetail(null);
-      return true;
-    }
-    if (isWorkoutModalOpen) {
-      setIsWorkoutModalOpen(false);
-      return true;
-    }
-    if (isSettingsOpen) {
-      setIsSettingsOpen(false);
-      return true;
-    }
-    return false;
-  }, [selectedExerciseForDetail, isWorkoutModalOpen, isSettingsOpen, setSelectedExerciseForDetail, setIsWorkoutModalOpen]);
-
-  // Push a history entry when a modal opens so Android back button closes it.
-  // Cuando el modal se cierra por su propio botón (X/Escape/submit), desenrosca
-  // la entrada fantasma para que el back posterior no navegue a ningún lado.
-  useEffect(() => {
-    const hasModalOpen = !!(selectedExerciseForDetail || isWorkoutModalOpen || isSettingsOpen);
-    if (hasModalOpen) {
-      pendingPhantomRef.current = true;
-      history.pushState({ modal: true }, "");
-    } else if (pendingPhantomRef.current) {
-      pendingPhantomRef.current = false;
-      // Solo desenroscar si la entrada actual es la que nosotros agregamos.
-      if (window.history.state && window.history.state.modal) {
-        dismissPhantomRef.current = true;
-        window.history.back();
-      }
-    }
-  }, [selectedExerciseForDetail, isWorkoutModalOpen, isSettingsOpen]);
+  // Pestañas visitadas: se mantienen montadas (ocultas) para conservar filtros,
+  // búsquedas, scroll y borradores al volver con Atrás o cambiar de pestaña.
+  const [visitedTabs, setVisitedTabs] = useState<Set<NavTab>>(() => new Set([currentTab]));
 
   useEffect(() => {
-    const onPopState = () => {
-      // Este pop fue generado por nuestro propio back() de limpieza: ignorar.
-      if (dismissPhantomRef.current) {
-        dismissPhantomRef.current = false;
-        return;
-      }
-      setCurrentTab(getTabFromURL());
-      const handled = handleBack();
-      if (!handled) {
-        // El back del usuario llegó a una entrada fantasma de un modal ya
-        // cerrado o a la raíz: en Android nativo cerramos la app cuando no hay
-        // más modal que desplegar; en web dejamos que el navegador la gestione.
-        const bridge = (window as unknown as { AndroidBridge?: { closeApp: () => void } }).AndroidBridge;
-        if (window.history.state && window.history.state.modal) {
-          dismissPhantomRef.current = true;
-          window.history.back();
-        } else if (bridge) {
-          bridge.closeApp();
-        }
-      }
-    };
+    setVisitedTabs((prev) => {
+      if (prev.has(currentTab)) return prev;
+      const next = new Set(prev);
+      next.add(currentTab);
+      return next;
+    });
+  }, [currentTab]);
 
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") handleBack();
-    };
-
-    window.addEventListener("popstate", onPopState);
-    window.addEventListener("keydown", onKeyDown);
-    return () => {
-      window.removeEventListener("popstate", onPopState);
-      window.removeEventListener("keydown", onKeyDown);
-    };
-  }, [handleBack]);
+  const panelClass = (tab: NavTab) => (currentTab === tab ? "block" : "hidden");
 
   return (
     <div className="min-h-dvh bg-neutral-950 text-neutral-100 flex flex-col font-sans antialiased selection:bg-cyan-500 selection:text-black">
       <Navigation
         currentTab={currentTab}
-        onSelectTab={setCurrentTab}
+        onSelectTab={navigateToTab}
         onOpenSettings={() => setIsSettingsOpen(true)}
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 pt-3 sm:pt-6 pb-20 md:pb-6">
-        {/* TodayHub is eagerly loaded for instant first paint (default tab) */}
-        {currentTab === "hoy" && (
+        <div className={panelClass("hoy")}>
           <TodayHub
-            onGoToWorkout={() => setCurrentTab("workout")}
-            onGoToPrograms={() => setCurrentTab("programs")}
-            onGoToBiomechanics={() => setCurrentTab("exercises")}
-            onGoToNutrition={() => setCurrentTab("nutrition")}
+            onGoToWorkout={() => navigateToTab("workout")}
+            onGoToPrograms={() => navigateToTab("programs")}
+            onGoToBiomechanics={() => navigateToTab("exercises")}
+            onGoToNutrition={() => navigateToTab("nutrition")}
           />
-        )}
+        </div>
 
-        {/* WorkoutHub is eagerly loaded for instant first paint */}
-        {currentTab === "workout" && (
+        <div className={panelClass("workout")}>
           <WorkoutHub
-            onGoToPrograms={() => setCurrentTab("programs")}
-            onGoToBiomechanics={() => setCurrentTab("exercises")}
+            onGoToPrograms={() => navigateToTab("programs")}
+            onGoToBiomechanics={() => navigateToTab("exercises")}
           />
-        )}
+        </div>
 
-        {/* Everything else is lazy-loaded on first visit */}
         <Suspense fallback={<TabLoader />}>
-          {currentTab === "programs" && <ProgramsExplorer />}
-          {currentTab === "exercises" && <BiomechanicsHub />}
-          {currentTab === "analytics" && <ScienceDashboard />}
-          {currentTab === "nutrition" && <NutritionVisionHub />}
-          {currentTab === "reto" && <ChallengeHub />}
-          {currentTab === "objetivo" && <GoalHub onGoToPrograms={() => setCurrentTab("programs")} />}
+          {visitedTabs.has("programs") && (
+            <div className={panelClass("programs")}>
+              <ProgramsExplorer />
+            </div>
+          )}
+          {visitedTabs.has("exercises") && (
+            <div className={panelClass("exercises")}>
+              <BiomechanicsHub />
+            </div>
+          )}
+          {visitedTabs.has("analytics") && (
+            <div className={panelClass("analytics")}>
+              <ScienceDashboard />
+            </div>
+          )}
+          {visitedTabs.has("nutrition") && (
+            <div className={panelClass("nutrition")}>
+              <NutritionVisionHub />
+            </div>
+          )}
+          {visitedTabs.has("reto") && (
+            <div className={panelClass("reto")}>
+              <ChallengeHub />
+            </div>
+          )}
+          {visitedTabs.has("objetivo") && (
+            <div className={panelClass("objetivo")}>
+              <GoalHub onGoToPrograms={() => navigateToTab("programs")} />
+            </div>
+          )}
         </Suspense>
       </main>
 
-      <LiveWorkoutLogger onGoToAnalytics={() => setCurrentTab("analytics")} />
+      <LiveWorkoutLogger onGoToAnalytics={() => navigateToTab("analytics")} />
 
       {/* SettingsModal stays mounted so the workout reminder keeps active while closed */}
       <SettingsModal open={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
@@ -295,9 +420,11 @@ export default function App() {
   return (
     <WorkoutProvider>
       <GoalProvider>
-        <StepsEngine />
-        <HealthSyncEngine />
-        <AppWithPin />
+        <BackNavProvider>
+          <StepsEngine />
+          <HealthSyncEngine />
+          <AppWithPin />
+        </BackNavProvider>
       </GoalProvider>
     </WorkoutProvider>
   );

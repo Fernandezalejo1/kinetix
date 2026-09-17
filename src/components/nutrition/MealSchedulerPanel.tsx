@@ -217,7 +217,7 @@ export const MealSchedulerPanel: React.FC = () => {
         </div>
         <button
           onClick={applyTargets}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold shadow-lg shadow-cyan-600/20 transition-all"
+          className="min-h-[44px] flex items-center gap-1.5 px-3 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold shadow-lg shadow-cyan-600/20 transition-all"
         >
           <CheckCircle2 className="w-4 h-4" />
           Aplicar a objetivos
@@ -297,7 +297,7 @@ export const MealSchedulerPanel: React.FC = () => {
 
                 <button
                   onClick={() => addScheduledMeal(meal)}
-                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-neutral-800 hover:bg-cyan-600 text-neutral-300 hover:text-white text-[11px] font-bold border border-neutral-700 hover:border-cyan-500 transition-all shrink-0"
+                  className="min-h-[44px] flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-neutral-800 hover:bg-cyan-600 text-neutral-300 hover:text-white text-[11px] font-bold border border-neutral-700 hover:border-cyan-500 transition-all shrink-0"
                   title="Agregar a comidas de hoy"
                 >
                   <Plus className="w-3 h-3" />

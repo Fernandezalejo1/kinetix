@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useWorkout } from "../context/WorkoutContext";
 import { useToast } from "../context/ToastContext";
+import { useBackHandler } from "../context/BackNavContext";
 
 export type NavTab = "hoy" | "workout" | "programs" | "exercises" | "analytics" | "nutrition" | "reto" | "objetivo";
 
@@ -77,6 +78,9 @@ export const Navigation: React.FC<NavigationProps> = ({
     };
   }, [moreOpen]);
 
+  // Atrás cierra el menú "Más" antes de navegar.
+  useBackHandler("nav-more-menu", moreOpen ? () => { setMoreOpen(false); return true; } : null, 200);
+
   // 5 destinos primarios (Hoy, Entrenar, Progreso, Nutrición, Perfil) +
   // overflow con el resto (Programas, Ejercicios, Reto). Lenguaje consistente.
   const navItems = [
@@ -103,7 +107,7 @@ export const Navigation: React.FC<NavigationProps> = ({
           <button
             type="button"
             aria-label="Ir a Hoy"
-            className="flex items-center gap-2 cursor-pointer min-w-0 shrink-0 rounded-xl"
+            className="relative flex items-center gap-2 cursor-pointer min-w-0 shrink-0 rounded-xl after:absolute after:-inset-x-1 after:-inset-y-1.5 after:content-['']"
             onClick={() => onSelectTab("hoy")}
           >
             <div className="w-8 h-8 sm:w-10 sm:h-10 shrink-0 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.25)]">
@@ -215,7 +219,7 @@ export const Navigation: React.FC<NavigationProps> = ({
                 aria-current={isActive ? "page" : undefined}
                 aria-label={item.label}
                 className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 min-h-[56px] relative transition-all press-scale ${
-                  isActive ? "text-cyan-400" : "text-neutral-400 active:text-neutral-200"
+                  isActive ? "text-cyan-300" : "text-neutral-300 active:text-white"
                 }`}
               >
                 {isActive && (
@@ -241,7 +245,7 @@ export const Navigation: React.FC<NavigationProps> = ({
               aria-haspopup="menu"
               aria-label="Más secciones"
               className={`w-full flex flex-col items-center justify-center gap-0.5 py-1.5 min-h-[56px] relative transition-all press-scale ${
-                isOverflowActive ? "text-cyan-400" : moreOpen ? "text-white" : "text-neutral-400 active:text-neutral-200"
+                isOverflowActive ? "text-cyan-300" : moreOpen ? "text-white" : "text-neutral-300 active:text-white"
               }`}
             >
               {isOverflowActive && (

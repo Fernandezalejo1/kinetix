@@ -167,7 +167,7 @@ export const BiomechanicsHub: React.FC = () => {
             <div className="flex gap-1 bg-neutral-950 p-1 rounded-xl border border-neutral-800 ml-auto">
               <button
                 onClick={() => setPreviewAnatomyView("front")}
-                className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+                className={`min-h-[44px] px-3 py-2 rounded-lg text-xs font-bold transition-all ${
                   previewAnatomyView === "front" ? "bg-cyan-600 text-white" : "text-neutral-400 hover:text-white"
                 }`}
               >
@@ -175,7 +175,7 @@ export const BiomechanicsHub: React.FC = () => {
               </button>
               <button
                 onClick={() => setPreviewAnatomyView("back")}
-                className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+                className={`min-h-[44px] px-3 py-2 rounded-lg text-xs font-bold transition-all ${
                   previewAnatomyView === "back" ? "bg-cyan-600 text-white" : "text-neutral-400 hover:text-white"
                 }`}
               >

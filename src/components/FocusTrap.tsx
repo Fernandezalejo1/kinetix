@@ -38,7 +38,9 @@ export const FocusTrap: React.FC<{ children: ReactNode }> = ({ children }) => {
     const active = document.activeElement as HTMLElement | null;
     if (!active || !root.contains(active)) {
       const f = first();
-      f?.focus();
+      // preventScroll: mover el foco NO debe desplazar la página ni el fondo
+      // (al cerrar, el usuario debe volver exactamente a donde estaba).
+      f?.focus({ preventScroll: true });
     }
 
     const onKeyDown = (e: KeyboardEvent) => {
@@ -82,7 +84,7 @@ export const FocusTrap: React.FC<{ children: ReactNode }> = ({ children }) => {
       const wasTop = topTrap() === root;
       const index = activeTraps.indexOf(root);
       if (index >= 0) activeTraps.splice(index, 1);
-      if (wasTop && restoreRef.current?.isConnected) restoreRef.current.focus();
+      if (wasTop && restoreRef.current?.isConnected) restoreRef.current.focus({ preventScroll: true });
     };
   }, []);
 

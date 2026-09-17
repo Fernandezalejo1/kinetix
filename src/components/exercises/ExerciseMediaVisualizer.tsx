@@ -3,6 +3,7 @@ import { Video, Film, Box, ExternalLink, Activity, Info, Flame, Dumbbell, Target
 import { Exercise } from "../../types";
 import { Exercise3DVisualizer } from "./Exercise3DVisualizer";
 import { ExerciseAnimationPlayer } from "./ExerciseAnimationPlayer";
+import { muscleLabelEs } from "../../utils/muscleLabels";
 
 interface ExerciseMediaVisualizerProps {
   exercise: Exercise;
@@ -291,12 +292,13 @@ export const ExerciseMediaVisualizer: React.FC<ExerciseMediaVisualizerProps> = (
         <div className="flex items-center gap-2">
           <Flame className="w-3.5 h-3.5 text-red-400" />
           <span>
-            Músculo Motor Activo en Rojo: <strong className="text-white">{exercise.primaryMuscles.join(", ")}</strong>
+            Músculos principales (marcados en rojo en la demostración):{" "}
+            <strong className="text-white">{exercise.primaryMuscles.map(muscleLabelEs).join(", ")}</strong>
           </span>
         </div>
 
-        <div className="text-[11px] text-neutral-400 font-mono">
-          Tempo Sugerido: <strong className="text-cyan-400">{exercise.defaultTempo}</strong>
+        <div className="text-xs text-neutral-300 font-mono">
+          Tempo sugerido: <strong className="text-cyan-300">{exercise.defaultTempo}</strong>
         </div>
       </div>
     </div>

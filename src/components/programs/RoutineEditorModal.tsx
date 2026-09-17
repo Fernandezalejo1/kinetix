@@ -16,6 +16,7 @@ import { useWorkout } from "../../context/WorkoutContext";
 import { ExerciseLibraryModal } from "../exercises/ExerciseLibraryModal";
 import { ExerciseDetailModal } from "../exercises/ExerciseDetailModal";
 import { FocusTrap } from "../FocusTrap";
+import { useBackHandler } from "../../context/BackNavContext";
 import { CustomRoutine, CustomRoutineExercise, Exercise } from "../../types";
 import { EXERCISES_DATABASE } from "../../data/exercisesData";
 
@@ -42,6 +43,17 @@ export const RoutineEditorModal: React.FC<RoutineEditorModalProps> = ({
   const [supersetMode, setSupersetMode] = useState(false);
   const [supersetPair, setSupersetPair] = useState<number[]>([]);
   const [confirmDelete, setConfirmDelete] = useState(false);
+
+  // Atrás cierra el editor de rutinas conservando el borrador (el estado queda
+  // vivo mientras el modal sigue montado; "Cancelar" descarta explícitamente).
+  useBackHandler("routine-editor", isOpen ? () => { onClose(); return true; } : null);
+
+  // Atrás cierra primero la ficha del ejercicio abierta dentro del editor.
+  useBackHandler(
+    "routine-editor-exercise-detail",
+    selectedExerciseForDetail ? () => { setSelectedExerciseForDetail(null); return true; } : null,
+    150
+  );
 
   if (!isOpen) return null;
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { Play, Pause, RotateCw, ZoomIn, ZoomOut, Layers, Compass, Crosshair, Sparkles, Repeat2 } from "lucide-react";
+import { Play, Pause, RotateCw, ZoomIn, ZoomOut, Layers, Compass, Crosshair, Sparkles, Repeat2, ChevronDown } from "lucide-react";
 import { Exercise, MuscleGroup } from "../../types";
+import { resistanceProfileLabelEs } from "../../utils/equipmentLabels";
 
 const ANATOMY_FRONT = "/assets/anatomy/frontal.webp";
 const ANATOMY_BACK = "/assets/anatomy/trasera.webp";
@@ -38,7 +39,10 @@ export const Exercise3DVisualizer: React.FC<Exercise3DVisualizerProps> = ({
   const [showMuscles, setShowMuscles] = useState(true);
   const [showSkeleton, setShowSkeleton] = useState(false);
   const [showForceVectors, setShowForceVectors] = useState(true);
-  const [showJointAngles, setShowJointAngles] = useState(true);
+  const [showJointAngles, setShowJointAngles] = useState(false);
+  // Opciones avanzadas fuera del área de la figura y vista ampliada.
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [enlarged, setEnlarged] = useState(false);
 
   const allMuscles = useMemo(
     () => [...new Set([...exercise.primaryMuscles, ...exercise.secondaryMuscles])],
@@ -147,76 +151,47 @@ export const Exercise3DVisualizer: React.FC<Exercise3DVisualizerProps> = ({
 
   return (
     <div
-      className={`relative bg-gradient-to-b from-neutral-950 via-neutral-900 to-neutral-950 rounded-2xl border border-neutral-800 overflow-hidden select-none flex flex-col ${className}`}
+      className={`relative bg-gradient-to-b from-neutral-950 via-neutral-900 to-neutral-950 rounded-2xl border border-neutral-800 overflow-hidden select-none flex flex-col ${
+        // La figura manda: el alto nunca queda por debajo de los controles
+        // (antes podía colapsar a ~0 px y la anatomía desaparecía).
+        enlarged ? "w-full h-[70dvh] min-h-[460px]" : `${className} min-h-[400px]`
+      }`}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
     >
-      {/* 3D Viewport Controls Overlay Top */}
-      <div className="absolute top-3 left-3 right-3 z-20 flex items-center justify-between pointer-events-none">
-        <div className="flex items-center gap-2 pointer-events-auto">
-          <div className="px-2.5 py-1 rounded-lg bg-neutral-900/90 border border-neutral-700/80 backdrop-blur-md text-[11px] font-bold text-cyan-400 flex items-center gap-1.5 shadow-lg">
-            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-            Atlas Anatómico
-          </div>
-          <span className="px-2 py-0.5 rounded-md bg-purple-950/80 border border-purple-500/30 text-[11px] font-mono text-purple-300">
-            {Math.round(rotationY)}° Azimut | {Math.round(rotationX)}° Tilt
-          </span>
-        </div>
+      {/* Controles mínimos sobre la figura: solo la vista y ampliar. El resto
+          (capas, ángulos, tensión) vive fuera del área de la anatomía. */}
+      <div className="absolute top-3 left-3 right-3 z-20 flex items-start justify-between gap-2 pointer-events-none">
+        <span className="px-2.5 py-1.5 rounded-lg bg-neutral-900/90 border border-neutral-700/80 backdrop-blur-md text-xs font-bold text-cyan-300 shadow-lg pointer-events-auto">
+          Vista {viewSide === "back" ? "posterior" : "frontal"}
+        </span>
 
-        {/* Layer Filters */}
-        <div className="flex items-center gap-1 bg-neutral-900/90 p-1 rounded-xl border border-neutral-700/80 backdrop-blur-md pointer-events-auto">
+        <div className="flex items-center gap-1.5 pointer-events-auto">
           <button
+            type="button"
             onClick={() => setOverrideSide(viewSide === "front" ? "back" : "front")}
-            title="Alternar Frontal / Trasera"
-            className={`p-1.5 rounded-lg text-xs transition-all ${
-              viewSide === "back" ? "bg-rose-500/20 text-rose-400 border border-rose-500/30" : "bg-cyan-500/20 text-cyan-400 border border-cyan-500/30"
-            }`}
+            aria-label={`Cambiar a vista ${viewSide === "back" ? "frontal" : "posterior"}`}
+            className="min-h-[44px] px-3 rounded-xl bg-neutral-900/90 border border-neutral-700/80 backdrop-blur-md text-xs font-bold text-neutral-100 flex items-center gap-1.5 press-scale"
           >
-            <Repeat2 className="w-3.5 h-3.5" />
+            <Repeat2 className="w-3.5 h-3.5" aria-hidden="true" />
+            {viewSide === "back" ? "Frontal" : "Posterior"}
           </button>
           <button
-            onClick={() => setShowMuscles(!showMuscles)}
-            title="Músculos Activos"
-            className={`p-1.5 rounded-lg text-xs transition-all ${
-              showMuscles ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/30" : "text-neutral-400 hover:text-white"
-            }`}
+            type="button"
+            onClick={() => setEnlarged((v) => !v)}
+            aria-pressed={enlarged}
+            className="min-h-[44px] px-3 rounded-xl bg-neutral-900/90 border border-neutral-700/80 backdrop-blur-md text-xs font-bold text-neutral-100 flex items-center gap-1.5 press-scale"
           >
-            <Sparkles className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={() => setShowSkeleton(!showSkeleton)}
-            title="Esqueleto Óseo (X-Ray)"
-            className={`p-1.5 rounded-lg text-xs transition-all ${
-              showSkeleton ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "text-neutral-400 hover:text-white"
-            }`}
-          >
-            <Layers className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={() => setShowJointAngles(!showJointAngles)}
-            title="Ángulos Articulares"
-            className={`p-1.5 rounded-lg text-xs transition-all ${
-              showJointAngles ? "bg-amber-500/20 text-amber-400 border border-amber-500/30" : "text-neutral-400 hover:text-white"
-            }`}
-          >
-            <Crosshair className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={() => setShowForceVectors(!showForceVectors)}
-            title="Vector de Fuerza"
-            className={`p-1.5 rounded-lg text-xs transition-all ${
-              showForceVectors ? "bg-purple-500/20 text-purple-400 border border-purple-500/30" : "text-neutral-400 hover:text-white"
-            }`}
-          >
-            <Compass className="w-3.5 h-3.5" />
+            {enlarged ? <ZoomOut className="w-3.5 h-3.5" aria-hidden="true" /> : <ZoomIn className="w-3.5 h-3.5" aria-hidden="true" />}
+            {enlarged ? "Reducir" : "Ampliar"}
           </button>
         </div>
       </div>
 
       {/* 3D Interactive Canvas Render */}
-      <div className="relative flex-1 flex items-center justify-center cursor-grab active:cursor-grabbing overflow-hidden">
+      <div className="relative flex-1 min-h-[220px] flex items-center justify-center cursor-grab active:cursor-grabbing overflow-hidden">
         {/* Subtle 3D Grid Floor */}
         <div
           className="absolute inset-0 opacity-15 pointer-events-none"
@@ -488,40 +463,34 @@ export const Exercise3DVisualizer: React.FC<Exercise3DVisualizerProps> = ({
           </svg>
         </div>
 
-        {/* Live Tension Meter HUD Card Bottom-Right */}
-        <div className="absolute bottom-3 right-3 p-2.5 rounded-xl bg-neutral-950/90 border border-neutral-800 backdrop-blur-md text-xs space-y-1.5 shadow-xl pointer-events-none">
-          <div className="flex justify-between items-center gap-4">
-            <span className="text-[11px] uppercase font-bold text-neutral-400">Tensión Muscular</span>
-            <span className="font-mono font-bold text-cyan-400">{currentTensionPct}%</span>
-          </div>
-          <div className="w-32 h-1.5 bg-neutral-800 rounded-full overflow-hidden">
+      </div>
+
+      {/* Controles de reproducción y datos, fuera del área de la figura */}
+      <div className="p-3 bg-neutral-950 border-t border-neutral-800/80 flex flex-col gap-2 z-20">
+        {/* Tensión muscular del momento (antes flotaba sobre la anatomía) */}
+        <div className="flex items-center gap-3 text-xs">
+          <span className="font-bold text-neutral-300 shrink-0">Tensión</span>
+          <div className="flex-1 h-1.5 bg-neutral-800 rounded-full overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full transition-all duration-75"
               style={{ width: `${currentTensionPct}%` }}
             />
           </div>
-          <div className="text-[11px] text-neutral-400 flex items-center justify-between">
-            <span>{phaseCycle > 0.6 ? "Excéntrico / Estiramiento" : phaseCycle < 0.2 ? "Bloqueo / Acortamiento" : "Concéntrico"}</span>
-            <span className="font-bold text-purple-400">{exercise.resistanceProfile}</span>
-          </div>
+          <span className="font-mono font-bold text-cyan-300 tabular-nums shrink-0">{currentTensionPct}%</span>
         </div>
+        <p className="text-xs text-neutral-300">
+          {phaseCycle > 0.6 ? "Excéntrico / estiramiento" : phaseCycle < 0.2 ? "Bloqueo / acortamiento" : "Concéntrico"}
+          <span className="text-neutral-400"> · {resistanceProfileLabelEs(exercise.resistanceProfile)}</span>
+        </p>
 
-        {/* Drag Guidance Prompt */}
-        <div className="absolute top-12 left-3 text-[11px] text-neutral-400/80 bg-black/40 px-2 py-0.5 rounded-md backdrop-blur-sm pointer-events-none">
-          Arrastra para rotar 360° | Zoom con botones
-        </div>
-      </div>
-
-      {/* Playback Controls & Timeline Bar Bottom */}
-      <div className="p-3 bg-neutral-950 border-t border-neutral-800/80 flex flex-col gap-2 z-20">
         {/* Scrub Timeline */}
         <div className="flex items-center gap-3">
           <button
             onClick={() => setIsPlaying(!isPlaying)}
-            className="p-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white transition-all shadow-md"
-            title={isPlaying ? "Pausar" : "Reproducir"}
+            aria-label={isPlaying ? "Pausar animación" : "Reproducir animación"}
+            className="min-w-[44px] min-h-[44px] rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white transition-all shadow-md flex items-center justify-center"
           >
-            {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-white" />}
+            {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-white" />}
           </button>
 
           <input
@@ -537,58 +506,102 @@ export const Exercise3DVisualizer: React.FC<Exercise3DVisualizerProps> = ({
             className="flex-1 accent-cyan-400 h-1.5 bg-neutral-800 rounded-lg cursor-pointer"
           />
 
-          <span className="text-[11px] font-mono text-neutral-400 w-10 text-right">
+          <span className="text-xs font-mono text-neutral-300 w-10 text-right">
             {Math.round(timelineProgress * 100)}%
           </span>
         </div>
 
-        {/* Action Buttons (Speed, Zoom, Reset Angle) */}
-        <div className="flex items-center justify-between text-xs pt-1 border-t border-neutral-900">
-          <div className="flex items-center gap-1.5">
-            <span className="text-[11px] text-neutral-400">Velocidad:</span>
-            {[0.5, 1, 1.5].map((spd) => (
+        <p className="text-xs text-neutral-400 flex items-center gap-1.5">
+          <Compass className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+          Arrastrá sobre la figura para rotarla · {Math.round(rotationY)}° azimut · {Math.round(rotationX)}° inclinación
+        </p>
+
+        {/* Acciones: agrupadas para no quitarle espacio a la figura. Los nombres
+            van en texto porque cuatro iconos idénticos no explican qué hacen. */}
+        <button
+          type="button"
+          onClick={() => setShowAdvanced((v) => !v)}
+          aria-expanded={showAdvanced}
+          className="w-full min-h-[44px] rounded-xl bg-neutral-900 border border-neutral-800 text-xs font-bold text-neutral-200 flex items-center justify-center gap-2"
+        >
+          Velocidad, zoom y capas
+          <ChevronDown className={`w-3.5 h-3.5 text-neutral-400 transition-transform ${showAdvanced ? "rotate-180" : ""}`} aria-hidden="true" />
+        </button>
+
+        {showAdvanced && (
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="font-bold text-neutral-300">Velocidad</span>
+          {[0.5, 1, 1.5].map((spd) => (
+            <button
+              key={spd}
+              type="button"
+              onClick={() => setPlaybackSpeed(spd)}
+              aria-pressed={playbackSpeed === spd}
+              aria-label={`Velocidad ${spd}x`}
+              className={`min-h-[44px] px-3 rounded-xl text-xs font-bold transition-all border ${
+                playbackSpeed === spd
+                  ? "bg-neutral-800 text-cyan-300 border-neutral-700"
+                  : "text-neutral-300 border-neutral-800"
+              }`}
+            >
+              {spd}x
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => setZoom((z) => Math.min(1.8, z + 0.15))}
+            aria-label="Acercar figura"
+            className="min-h-[44px] px-3 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-neutral-200 border border-neutral-800 flex items-center gap-1.5"
+          >
+            <ZoomIn className="w-4 h-4" aria-hidden="true" /> Acercar
+          </button>
+          <button
+            type="button"
+            onClick={() => setZoom((z) => Math.max(0.7, z - 0.15))}
+            aria-label="Alejar figura"
+            className="min-h-[44px] px-3 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-neutral-200 border border-neutral-800 flex items-center gap-1.5"
+          >
+            <ZoomOut className="w-4 h-4" aria-hidden="true" /> Alejar
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setRotationY(25);
+              setRotationX(10);
+              setZoom(1);
+            }}
+            aria-label="Reiniciar cámara"
+            className="min-h-[44px] px-3 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-neutral-200 border border-neutral-800 flex items-center gap-1.5"
+          >
+            <RotateCw className="w-4 h-4" aria-hidden="true" /> Reiniciar
+          </button>
+
+          {/* Capas anatómicas: agrupadas y con nombre */}
+          <div className="w-full flex flex-wrap gap-1.5 pt-1 border-t border-neutral-900">
+            {[
+              { key: "muscles", label: "Músculos activos", on: showMuscles, toggle: () => setShowMuscles(!showMuscles), icon: Sparkles },
+              { key: "skeleton", label: "Esqueleto", on: showSkeleton, toggle: () => setShowSkeleton(!showSkeleton), icon: Layers },
+              { key: "angles", label: "Ángulos articulares", on: showJointAngles, toggle: () => setShowJointAngles(!showJointAngles), icon: Crosshair },
+              { key: "force", label: "Vector de fuerza", on: showForceVectors, toggle: () => setShowForceVectors(!showForceVectors), icon: Compass },
+            ].map((item) => (
               <button
-                key={spd}
-                onClick={() => setPlaybackSpeed(spd)}
-                className={`px-2 py-0.5 rounded text-[11px] font-bold transition-all ${
-                  playbackSpeed === spd
-                    ? "bg-neutral-800 text-cyan-400 border border-neutral-700"
-                    : "text-neutral-400 hover:text-neutral-300"
+                key={item.key}
+                type="button"
+                onClick={item.toggle}
+                aria-pressed={item.on}
+                className={`min-h-[44px] px-3 rounded-xl text-xs font-bold border flex items-center gap-1.5 transition-all ${
+                  item.on
+                    ? "bg-cyan-500/15 text-cyan-200 border-cyan-500/40"
+                    : "bg-neutral-900 text-neutral-300 border-neutral-800"
                 }`}
               >
-                {spd}x
+                <item.icon className="w-3.5 h-3.5" aria-hidden="true" />
+                {item.label}
               </button>
             ))}
           </div>
-
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setZoom((z) => Math.min(1.8, z + 0.15))}
-              className="p-1 rounded bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border border-neutral-800"
-              title="Acercar"
-            >
-              <ZoomIn className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={() => setZoom((z) => Math.max(0.7, z - 0.15))}
-              className="p-1 rounded bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border border-neutral-800"
-              title="Alejar"
-            >
-              <ZoomOut className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={() => {
-                setRotationY(25);
-                setRotationX(10);
-                setZoom(1);
-              }}
-              className="p-1 rounded bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border border-neutral-800"
-              title="Reiniciar Cámara 3D"
-            >
-              <RotateCw className="w-3.5 h-3.5" />
-            </button>
-          </div>
         </div>
+        )}
       </div>
     </div>
   );

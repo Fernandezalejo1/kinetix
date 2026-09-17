@@ -277,7 +277,7 @@ export const StepsPanel: React.FC<StepsPanelProps> = ({ compact: _compact }) => 
             </p>
           </div>
         </div>
-        <button onClick={() => setExpanded((e) => !e)} className="p-2 min-w-[40px] min-h-[40px] rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors flex items-center justify-center">
+        <button onClick={() => setExpanded((e) => !e)} className="p-2 min-w-[44px] min-h-[44px] rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors flex items-center justify-center">
           {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </button>
       </div>

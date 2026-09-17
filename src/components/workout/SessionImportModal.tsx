@@ -7,6 +7,7 @@ import { Exercise, DifficultyLevel } from "../../types";
 import { e1rmFromSet } from "../../utils/startingLoads";
 import { localDateKey } from "../../utils/dateUtils";
 import { FocusTrap } from "../FocusTrap";
+import { useBackHandler } from "../../context/BackNavContext";
 
 interface ParsedSet {
   weight: number;
@@ -89,6 +90,9 @@ export const SessionImportModal: React.FC<{ isOpen: boolean; onClose: () => void
     setQuery("");
     onClose();
   };
+
+  // Atrás cierra el importador de sesiones.
+  useBackHandler("session-import", isOpen ? () => { onClose(); return true; } : null);
 
   if (!isOpen) return null;
 

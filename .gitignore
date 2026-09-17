@@ -28,3 +28,14 @@ android/local.properties
 
 # Credenciales de firma del release (usar keystore.properties.example)
 android/keystore.properties
+
+# Arnés temporal de comparación de la revisión UX (Freebuff)
+ux-check.html
+ux-frame-proxy.mjs
+
+# Extracción de frames del video de revisión (análisis local)
+video-review/
+video-review-deps/
+
+# Exports de sesión de agentes (debug local)
+new-session-*.json

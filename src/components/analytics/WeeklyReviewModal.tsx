@@ -14,6 +14,7 @@ import {
   RefreshCcw,
 } from "lucide-react";
 import { FocusTrap } from "../FocusTrap";
+import { useBackHandler } from "../../context/BackNavContext";
 import { useWorkout } from "../../context/WorkoutContext";
 import { useGoal } from "../../context/GoalContext";
 import { useToast } from "../../context/ToastContext";
@@ -100,6 +101,9 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
     cardioLog,
     bodyMetrics,
   ]);
+
+  // Atrás cierra la revisión semanal sin aplicar cambios.
+  useBackHandler("weekly-review", isOpen ? () => { onClose(); return true; } : null);
 
   if (!isOpen) return null;
 

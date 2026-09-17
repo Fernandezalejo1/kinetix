@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   X,
   Video,
@@ -8,7 +8,7 @@ import {
   GitBranch,
   Sparkles,
   BarChart2,
-  Shield
+  ChevronDown,
 } from "lucide-react";
 import { Exercise } from "../../types";
 import { useWorkout } from "../../context/WorkoutContext";
@@ -21,6 +21,8 @@ import { ExerciseVariationsTreeSection } from "./ExerciseVariationsTreeSection";
 import { ExerciseMobilitySection } from "./ExerciseMobilitySection";
 import { ExerciseAnalyticsSection } from "./ExerciseAnalyticsSection";
 import { FocusTrap } from "../FocusTrap";
+import { useBackHandler } from "../../context/BackNavContext";
+import { equipmentLabelEs } from "../../utils/equipmentLabels";
 
 interface ExerciseDetailModalProps {
   exercise: Exercise | null;
@@ -41,7 +43,27 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
   onClose,
 }) => {
   const [activeTab, setActiveTab] = useState<ModalTab>("media");
+  const [showTechTags, setShowTechTags] = useState(false);
   const { weightUnit } = useWorkout();
+  const scrollRef = useRef(0);
+
+  // La ficha se abre encima de la lista: al cerrarla (X o Atrás) volvemos
+  // EXACTAMENTE al punto de desplazamiento donde estaba el usuario.
+  useEffect(() => {
+    scrollRef.current = window.scrollY;
+    const saved = scrollRef.current;
+    return () => {
+      window.requestAnimationFrame(() => window.scrollTo(0, saved));
+    };
+  }, []);
+
+  // Atrás cierra la ficha y devuelve exactamente al lugar anterior (misma
+  // prioridad alta que el resto de capas superpuestas: se cierra lo de arriba).
+  useBackHandler(
+    "exercise-detail-modal",
+    rawExercise ? () => { onClose(); return true; } : null,
+    160
+  );
 
   if (!rawExercise) return null;
 
@@ -76,28 +98,42 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
         <div className="p-4 sm:p-6 pt-[calc(env(safe-area-inset-top)+1rem)] sm:pt-6 border-b border-neutral-800 bg-neutral-950/80 shrink-0">
           <div className="flex items-start justify-between gap-3">
             <div className="space-y-1 min-w-0">
-              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1">
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-                  {exercise.category.toUpperCase()}
-                </span>
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-neutral-800 text-neutral-300 border border-neutral-700 capitalize">
-                  {exercise.equipment}
-                </span>
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20">
-                  {exercise.resistanceProfile === "lengthened"
-                    ? "Sobrecarga en Estiramiento"
-                    : exercise.resistanceProfile === "shortened"
-                    ? "Sobrecarga en Acortamiento"
-                    : "Curva Media Balanceada"}
-                </span>
-                {!exercise.analytics?.isEditorialEstimate && exercise.analytics?.hypertrophyTier && (
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  {exercise.analytics.hypertrophyTier}
-                </span>
-              )}
-              </div>
+              {/* 1) Nombre primero: las etiquetas técnicas no desplazan el contenido. */}
               <h2 className="text-xl sm:text-3xl font-black text-white tracking-tight">{exercise.nameEs}</h2>
-              <p className="text-xs text-neutral-400 font-medium">{exercise.name}</p>
+              <p className="text-xs text-neutral-300 font-medium">
+                {equipmentLabelEs(exercise.equipment)} · {exercise.name}
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowTechTags((v) => !v)}
+                aria-expanded={showTechTags}
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-cyan-300 hover:text-cyan-200 min-h-[44px]"
+              >
+                {showTechTags ? "Ocultar datos técnicos" : "Datos técnicos"}
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showTechTags ? "rotate-180" : ""}`} aria-hidden="true" />
+              </button>
+              {showTechTags && (
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                    {exercise.category.toUpperCase()}
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-neutral-800 text-neutral-200 border border-neutral-700">
+                    {equipmentLabelEs(exercise.equipment)}
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-purple-500/10 text-purple-300 border border-purple-500/20">
+                    {exercise.resistanceProfile === "lengthened"
+                      ? "Sobrecarga en estiramiento (más tensión con el músculo alargado)"
+                      : exercise.resistanceProfile === "shortened"
+                      ? "Sobrecarga en acortamiento (más tensión con el músculo acortado)"
+                      : "Curva de resistencia media equilibrada"}
+                  </span>
+                  {!exercise.analytics?.isEditorialEstimate && exercise.analytics?.hypertrophyTier && (
+                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                      {exercise.analytics.hypertrophyTier}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
 
             <button
@@ -174,11 +210,7 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
           )}
         </div>
 
-        {/* Modal Footer — safe-area, no fixed covering button */}
-        <div className="p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] bg-neutral-950 border-t border-neutral-800 flex items-center justify-center gap-2 shrink-0">
-          <Shield className="w-3.5 h-3.5 text-cyan-400" />
-          <span className="text-[11px] text-neutral-400">Ficha Biomecánica KINETIX · usa la X arriba para cerrar</span>
-        </div>
+
       </div>
     </div>
     </FocusTrap>

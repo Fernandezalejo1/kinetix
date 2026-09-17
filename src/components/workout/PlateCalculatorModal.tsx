@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { X, Disc } from "lucide-react";
 import { calculatePlates } from "../../utils/scienceCalculators";
 import { FocusTrap } from "../FocusTrap";
+import { useBackHandler } from "../../context/BackNavContext";
 
 interface PlateCalculatorModalProps {
   isOpen: boolean;
@@ -18,6 +19,9 @@ export const PlateCalculatorModal: React.FC<PlateCalculatorModalProps> = ({
 }) => {
   const [targetWeight, setTargetWeight] = useState<number>(initialWeight);
   const [barWeight, setBarWeight] = useState<number>(20);
+
+  // Atrás cierra la calculadora.
+  useBackHandler("plate-calculator", isOpen ? () => { onClose(); return true; } : null);
 
   if (!isOpen) return null;
 

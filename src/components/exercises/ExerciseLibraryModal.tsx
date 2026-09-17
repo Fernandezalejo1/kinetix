@@ -4,6 +4,7 @@ import { Exercise } from "../../types";
 import { EXERCISES_DATABASE } from "../../data/exercisesData";
 import { MUSCLE_LANDMARKS_CONFIG } from "../../utils/scienceCalculators";
 import { FocusTrap } from "../FocusTrap";
+import { useBackHandler } from "../../context/BackNavContext";
 
 interface ExerciseLibraryModalProps {
   isOpen: boolean;
@@ -24,6 +25,9 @@ export const ExerciseLibraryModal: React.FC<ExerciseLibraryModalProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedEquipment, setSelectedEquipment] = useState<string>("all");
   const [selectedProfile, setSelectedProfile] = useState<string>("all");
+
+  // Atrás cierra la biblioteca de ejercicios.
+  useBackHandler("exercise-library", isOpen ? () => { onClose(); return true; } : null);
 
   if (!isOpen) return null;
 

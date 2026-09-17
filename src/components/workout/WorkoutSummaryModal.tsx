@@ -18,6 +18,7 @@ import { PersonalRecord, CompletedWorkout } from "../../types";
 import { resolveNextWeightFromHistory } from "../../utils/progressionEngine";
 import { useWorkout } from "../../context/WorkoutContext";
 import { FocusTrap } from "../FocusTrap";
+import { useBackHandler } from "../../context/BackNavContext";
 
 interface WorkoutSummaryModalProps {
   isOpen: boolean;
@@ -36,6 +37,9 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
 }) => {
   const [copied, setCopied] = useState(false);
   const { exerciseHistory, personalRecords } = useWorkout();
+
+  // Atrás cierra el resumen de sesión.
+  useBackHandler("workout-summary", isOpen ? () => { onClose(); return true; } : null);
 
   if (!isOpen || !workout) return null;
 

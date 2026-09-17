@@ -22,6 +22,8 @@ import {
   TrendingUp,
   AlertCircle,
   Repeat,
+  ChevronDown,
+  MoreHorizontal,
 } from "lucide-react";
 import { useWorkout } from "../../context/WorkoutContext";
 import { useToast } from "../../context/ToastContext";
@@ -35,6 +37,30 @@ const PARTIAL_REASONS = [
   "Dolor o molestia",
   "Calidad de sueño",
 ];
+
+/** Tipos de serie con nombre legible (el set de hoy es `normal`). */
+const SET_TYPE_LABELS: Record<SetType, string> = {
+  normal: "Normal",
+  warmup: "Calentamiento",
+  dropset: "Drop Set",
+  myorep: "Myo-Reps",
+  restpause: "Rest-Pause",
+  failure: "Al fallo",
+  cardio: "Cardio",
+};
+
+/** Qué significa cada tipo, en una línea (evita etiquetas técnicas sin contexto). */
+const SET_TYPE_HELP: Record<SetType, string> = {
+  normal: "Serie efectiva estándar, contada para el volumen del ejercicio.",
+  warmup: "Aproximación: no cuenta como volumen efectivo.",
+  dropset: "Bajás el peso sin descansar y seguís con la misma serie.",
+  myorep: "Serie base al fallo + mini-series con pocas respiraciones de pausa.",
+  restpause: "Pausas cortas dentro de la serie para sumar repeticiones, sin cambiar el peso.",
+  failure: "Serie llevada al fallo técnico.",
+  cardio: "Bloque de cardio, se registra con su propio temporizador.",
+};
+
+const SELECTABLE_SET_TYPES: SetType[] = ["normal", "warmup", "dropset", "myorep", "restpause", "failure"];
 const PlateCalculatorModal = React.lazy(() =>
   import("./PlateCalculatorModal").then((m) => ({ default: m.PlateCalculatorModal }))
 );
@@ -44,14 +70,12 @@ const WarmupGeneratorModal = React.lazy(() =>
 const TempoMetronomeModal = React.lazy(() =>
   import("./TempoMetronomeModal").then((m) => ({ default: m.TempoMetronomeModal }))
 );
-const ExerciseDetailModal = React.lazy(() =>
-  import("../exercises/ExerciseDetailModal").then((m) => ({ default: m.ExerciseDetailModal }))
-);
 const ExerciseLibraryModal = React.lazy(() =>
   import("../exercises/ExerciseLibraryModal").then((m) => ({ default: m.ExerciseLibraryModal }))
 );
 import { WorkoutSummaryModal } from "./WorkoutSummaryModal";
 import { FocusTrap } from "../FocusTrap";
+import { useBackHandler } from "../../context/BackNavContext";
 import { analyzeDoubleProgression } from "../../utils/doubleProgression";
 import { resolveLiveProgression } from "../../utils/progressionEngine";
 import { isTimeBased } from "../../utils/exerciseMode";
@@ -94,6 +118,9 @@ const VelocityChip: React.FC<{ wEx: WorkoutExercise; set: WorkoutSet }> = ({ wEx
 const DoubleProgressionBanner: React.FC<{ wEx: WorkoutExercise }> = ({ wEx }) => {
   const { updateSet } = useWorkout();
   const { showToast } = useToast();
+  // La explicación larga se despliega a demanda: el objetivo de la sesión ya se
+  // ve de un vistazo en la fila compacta.
+  const [showHelp, setShowHelp] = useState(false);
   const a = useMemo(() => resolveLiveProgression(wEx) as ReturnType<typeof analyzeDoubleProgression>, [wEx]);
 
   const applyIncrease = useCallback(() => {
@@ -118,7 +145,7 @@ const DoubleProgressionBanner: React.FC<{ wEx: WorkoutExercise }> = ({ wEx }) =>
           <span className="min-w-0 flex-1"><strong className="font-black">{a.message}</strong></span>
           <button
             onClick={applyIncrease}
-            className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-black shadow-lg shadow-emerald-600/20 transition-colors"
+            className="min-h-[44px] px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black shadow-lg shadow-emerald-600/20 transition-colors"
           >
             Aplicar +{a.deltaWeight} kg a las series restantes
           </button>
@@ -129,13 +156,24 @@ const DoubleProgressionBanner: React.FC<{ wEx: WorkoutExercise }> = ({ wEx }) =>
 
   return (
     <div className="px-4 sm:px-5 pt-3">
-      <div className="flex items-center gap-2 flex-wrap text-[11px] bg-neutral-950/50 border border-neutral-800 rounded-xl px-3 py-2.5 text-neutral-400">
-        <Target className="w-4 h-4 text-cyan-400 shrink-0" />
-        <span className="min-w-0 flex-1">
-          <strong className="text-white">{a.targetSets ? `${a.targetSets}×` : ""}{a.range.min}–{a.range.max} reps</strong>
-          <span className="text-neutral-400"> · RIR {a.targetRir ?? "—"} · hoy {a.maxReps}/{a.range.max}</span>
-          <span className="block text-neutral-400 mt-0.5">{a.message}</span>
-        </span>
+      <div className="bg-neutral-950/50 border border-neutral-800 rounded-xl px-3 py-2">
+        <div className="flex items-center gap-2 flex-wrap text-xs text-neutral-300">
+          <Target className="w-4 h-4 text-cyan-400 shrink-0" aria-hidden="true" />
+          <span className="min-w-0 flex-1">
+            <strong className="text-white">{a.targetSets ? `${a.targetSets}×` : ""}{a.range.min}–{a.range.max} reps</strong>
+            <span className="text-neutral-300"> · RIR {a.targetRir ?? "—"} · hoy {a.maxReps}/{a.range.max}</span>
+          </span>
+          <button
+            type="button"
+            onClick={() => setShowHelp((v) => !v)}
+            aria-expanded={showHelp}
+            className="min-h-[44px] px-1 text-xs font-bold text-neutral-300 hover:text-white flex items-center gap-1"
+          >
+            ¿Cómo progreso?
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showHelp ? "rotate-180" : ""}`} aria-hidden="true" />
+          </button>
+        </div>
+        {showHelp && <p className="text-xs text-neutral-300 mt-1.5 leading-relaxed">{a.message}</p>}
       </div>
     </div>
   );
@@ -166,7 +204,6 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
     cancelWorkout,
     weightUnit,
     setSelectedExerciseForDetail,
-    selectedExerciseForDetail,
   } = useWorkout();
 
   // FIX (bloqueante 4): los datos SIEMPRE se guardan en kg (unidad canónica).
@@ -192,6 +229,17 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
   // P2: motivo opcional cuando la sesión termina con series sin completar.
   const [partialReason, setPartialReason] = useState<string | null>(null);
   const [confirmRemoveEx, setConfirmRemoveEx] = useState<string | null>(null);
+  // Simplificación del registro en vivo: por defecto solo la serie activa
+  // muestra sus controles completos. El resto se pliega para no tener que
+  // desplazarse por decenas de controles.
+  const [openSetIds, setOpenSetIds] = useState<Record<string, boolean>>({});
+  const [completedOpenIds, setCompletedOpenIds] = useState<Record<string, boolean>>({});
+  const [setTypeOpenIds, setSetTypeOpenIds] = useState<Record<string, boolean>>({});
+  const [exMenuId, setExMenuId] = useState<string | null>(null);
+  const [collapsedExIds, setCollapsedExIds] = useState<Record<string, boolean>>({});
+  const [overrideExId, setOverrideExId] = useState<string | null>(null);
+  const [headerSettingsOpen, setHeaderSettingsOpen] = useState(false);
+  const [quickAdjustIds, setQuickAdjustIds] = useState<Record<string, boolean>>({});
   const [summaryModal, setSummaryModal] = useState<{
     isOpen: boolean;
     workout: CompletedWorkout | null;
@@ -238,8 +286,25 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
   const handleCancelConfirmed = () => {
     cancelWorkout();
     setConfirmCancel(false);
-    showToast("Entrenamiento cancelado", "info");
+    showToast("Entrenamiento descartado", "info");
   };
+
+  // Atrás en las encuestas modales internas: cierran ellas, no toda la sesión.
+  useBackHandler(
+    "workout-srpe-survey",
+    srpeSurvey ? () => { setSrpeSurvey(false); return true; } : null,
+    200
+  );
+  useBackHandler(
+    "workout-difficulty-survey",
+    difficultySurvey ? () => { setDifficultySurvey(null); return true; } : null,
+    200
+  );
+  useBackHandler(
+    "workout-confirm-cancel",
+    confirmCancel ? () => { setConfirmCancel(false); return true; } : null,
+    210
+  );
 
   // Auto-trigger difficulty survey when all working sets of an exercise are completed
   useEffect(() => {
@@ -370,6 +435,15 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
     return acc + wex.sets.filter((s) => s.completed).length;
   }, 0);
 
+  const totalSetsCount = activeSession.exercises.reduce((acc, wex) => acc + wex.sets.length, 0);
+
+  // Ejercicio "activo": el primero con series pendientes. Se muestra expandido;
+  // los demás quedan como filas compactas (menos desplazamiento para entrenar).
+  const activeExerciseId =
+    activeSession.exercises.find((e) => e.sets.some((s) => !s.completed))?.id ??
+    activeSession.exercises[activeSession.exercises.length - 1]?.id ??
+    null;
+
   return (
     <FocusTrap>
       <div
@@ -383,77 +457,123 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
       {/* Floating Session Timer Header — a lightweight stopwatch that stays fixed
           at the top so it never takes over the center of the screen. Uses
           responsive (vw/clamp) sizing to stay legible from 4" to 7" screens. */}
-      <div className="sticky top-0 z-20 shrink-0 px-3 sm:px-8 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-3 border-b border-neutral-700"
+      <div className="sticky top-0 z-20 shrink-0 px-3 sm:px-6 pt-[calc(env(safe-area-inset-top)+0.6rem)] pb-2.5 border-b border-neutral-700"
            style={{ backgroundColor: '#1a1a1a' }}>
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          {/* Active badge + routine name (compact) */}
+        <div className="flex items-center justify-between gap-3">
+          {/* Rutina + progreso (compacto) */}
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981] shrink-0" />
+            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981] shrink-0" />
             <div className="min-w-0">
-              <h2 className="text-sm sm:text-lg font-black text-white tracking-tight truncate">
+              <h2 className="text-sm sm:text-base font-black text-white tracking-tight truncate">
                 {activeSession.routineName}
               </h2>
-              <div className="flex items-center gap-2 text-xs text-neutral-400 font-mono">
-                <span>{completedSetsCount} series</span>
-                <span>•</span>
-                <span className="text-purple-400 font-bold">{kgToDisplay(currentVolume, weightUnit).toLocaleString("es-AR")} {weightUnit}</span>
+              <div className="flex items-center gap-2 text-xs text-neutral-300 font-mono tabular-nums">
+                <span>{completedSetsCount}/{totalSetsCount} series</span>
+                <span aria-hidden="true">•</span>
+                <span className="text-purple-300 font-bold">{kgToDisplay(currentVolume, weightUnit).toLocaleString("es-AR")} {weightUnit}</span>
               </div>
-              {/* P1: badge de autoregulación por readiness */}
-              {activeSession.notes?.startsWith("readiness:") && (
-                <p className="mt-1 inline-flex items-center gap-1 text-[11px] font-bold text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-full px-2 py-0.5">
-                  {activeSession.notes.includes("descanso")
-                    ? "Readiness bajo: −10% carga · +1 RIR"
-                    : "Readiness medio: +1 RIR"}
-                </p>
-              )}
             </div>
           </div>
 
-          {/* Floating stopwatch pill — the session time, prominent & responsive */}
-          <div className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-2xl bg-neutral-950/80 border border-cyan-500/40 shadow-lg shadow-cyan-900/20 ml-auto shrink-0">
-            <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
-            <span className="font-black text-white font-mono tabular-nums text-[clamp(1.1rem,5.5vw,1.75rem)] leading-none">
+          {/* Cronómetro de sesión */}
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-neutral-950/80 border border-cyan-500/40 shrink-0">
+            <Clock className="w-4 h-4 text-cyan-400" aria-hidden="true" />
+            <span className="font-black text-white font-mono tabular-nums text-lg sm:text-xl leading-none">
               {formatStopwatch(elapsedSeconds)}
             </span>
           </div>
         </div>
 
-        {/* Action buttons */}
-        <div className="flex items-center gap-1.5 sm:gap-2 mt-3">
-          <button
-            onClick={() => setSoundEnabled(!soundEnabled)}
-            className="p-2.5 rounded-xl bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-700 min-w-[44px] min-h-[44px] flex items-center justify-center"
-            title="Sonido de Temporizador"
-          >
-            {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-          </button>
+        {/* Progreso de la sesión: se ve de un vistazo cuánto falta */}
+        <div
+          className="mt-2 h-1.5 bg-neutral-800 rounded-full overflow-hidden"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={Math.max(1, totalSetsCount)}
+          aria-valuenow={completedSetsCount}
+          aria-label="Series completadas de la sesión"
+        >
+          <div
+            className="h-full bg-cyan-400 rounded-full transition-all duration-500"
+            style={{ width: `${totalSetsCount > 0 ? Math.min(100, (completedSetsCount / totalSetsCount) * 100) : 0}%` }}
+          />
+        </div>
 
+        {/* P1: autoregulación aplicada (visible, porque cambia los pesos) */}
+        {activeSession.notes?.startsWith("readiness:") && (
+          <p className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-full px-2 py-0.5">
+            {activeSession.notes.includes("descanso")
+              ? "Readiness bajo: −10% carga · +1 RIR"
+              : "Readiness medio: +1 RIR"}
+          </p>
+        )}
+
+        {/* Acciones: finalizar y minimizar siempre accesibles; los ajustes de
+            sesión (sonido / descanso automático) quedan en un menú etiquetado. */}
+        <div className="flex items-center gap-1.5 mt-2.5">
           <button
-            onClick={() => setAutoStartTimer(!autoStartTimer)}
-            className="p-2.5 rounded-xl bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-700 min-w-[44px] min-h-[44px] flex items-center justify-center"
-            title={autoStartTimer ? "Auto-iniciar temporizador tras cada serie (activo)" : "Auto-iniciar temporizador tras cada serie (desactivado)"}
-            aria-pressed={autoStartTimer}
+            onClick={handleFinish}
+            className="flex-1 min-h-[48px] px-4 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-black rounded-xl shadow-lg shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 press-scale"
           >
-            <Repeat className={`w-4 h-4 ${autoStartTimer ? "text-cyan-400" : "text-neutral-400"}`} />
+            <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
+            Finalizar
           </button>
 
           <button
             onClick={() => setIsWorkoutModalOpen(false)}
-            className="px-4 min-h-[44px] rounded-xl bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-700 text-xs font-semibold flex items-center justify-center"
-            title="Minimizar (sigue en segundo plano)"
+            className="min-h-[48px] px-4 rounded-xl bg-neutral-800 text-neutral-200 hover:text-white border border-neutral-700 text-xs font-bold flex items-center justify-center gap-1.5 press-scale"
+            title="Minimizar (la sesión sigue activa)"
           >
-            <Minimize2 className="w-4 h-4 sm:hidden" />
-            <span className="hidden sm:inline">Minimizar</span>
+            <Minimize2 className="w-4 h-4" aria-hidden="true" />
+            <span>Minimizar</span>
           </button>
 
           <button
-            onClick={handleFinish}
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-1.5"
+            onClick={() => setHeaderSettingsOpen((v) => !v)}
+            aria-expanded={headerSettingsOpen}
+            aria-label="Ajustes de la sesión"
+            title="Ajustes de la sesión"
+            className="min-h-[48px] min-w-[48px] px-3 rounded-xl bg-neutral-800 text-neutral-200 hover:text-white border border-neutral-700 flex items-center justify-center gap-1.5 press-scale"
           >
-            <CheckCircle2 className="w-4 h-4" />
-            Finalizar
+            <Repeat className={`w-4 h-4 ${autoStartTimer ? "text-cyan-400" : "text-neutral-300"} shrink-0`} aria-hidden="true" />
+            <span className="text-xs font-bold">Ajustes</span>
           </button>
         </div>
+
+        {headerSettingsOpen && (
+          <div className="mt-2 p-2 rounded-2xl bg-neutral-950 border border-neutral-800 space-y-1.5 animate-fadeIn">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={soundEnabled}
+              onClick={() => setSoundEnabled(!soundEnabled)}
+              className="w-full min-h-[48px] px-3 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-between gap-3 text-left"
+            >
+              <span className="flex items-center gap-2 text-xs font-bold text-neutral-200">
+                {soundEnabled ? <Volume2 className="w-4 h-4 text-cyan-400" /> : <VolumeX className="w-4 h-4 text-neutral-400" />}
+                Sonido del temporizador
+              </span>
+              <span className={`text-[11px] font-black px-2 py-0.5 rounded-full border ${soundEnabled ? "text-cyan-300 border-cyan-500/40 bg-cyan-500/10" : "text-neutral-400 border-neutral-700"}`}>
+                {soundEnabled ? "Activado" : "Desactivado"}
+              </span>
+            </button>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={autoStartTimer}
+              onClick={() => setAutoStartTimer(!autoStartTimer)}
+              className="w-full min-h-[48px] px-3 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-between gap-3 text-left"
+            >
+              <span className="flex items-center gap-2 text-xs font-bold text-neutral-200">
+                <Repeat className={`w-4 h-4 ${autoStartTimer ? "text-cyan-400" : "text-neutral-400"}`} />
+                Iniciar descanso al completar la serie
+              </span>
+              <span className={`text-[11px] font-black px-2 py-0.5 rounded-full border ${autoStartTimer ? "text-cyan-300 border-cyan-500/40 bg-cyan-500/10" : "text-neutral-400 border-neutral-700"}`}>
+                {autoStartTimer ? "Activado" : "Desactivado"}
+              </span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Floating Smart Rest Timer Widget if Active */}
@@ -542,6 +662,349 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
             const currentWorkingWeight = firstWorkingSet ? firstWorkingSet.weight : 40;
 
             const hasSuperset = Boolean(wEx.supersetGroupId);
+            const isTimedEx = Boolean(wEx.notes?.startsWith("cardio:")) || isTimeBased(wEx.exercise, wEx.targetReps);
+            const doneCount = wEx.sets.filter((s) => s.completed).length;
+            const completedSetsMobile = wEx.sets.filter((s) => s.completed);
+            const pendingSetsMobile = wEx.sets.filter((s) => !s.completed);
+            const isActiveExercise = wEx.id === activeExerciseId;
+            const isExpanded =
+              isTimedEx || overrideExId === wEx.id || (isActiveExercise && !collapsedExIds[wEx.id]);
+            const nextPending = pendingSetsMobile[0] ?? null;
+
+            const toggleExercise = () => {
+              if (isTimedEx) return;
+              if (isExpanded) {
+                setOverrideExId(null);
+                setCollapsedExIds((prev) => ({ ...prev, [wEx.id]: true }));
+              } else {
+                setOverrideExId(wEx.id);
+                setCollapsedExIds((prev) => ({ ...prev, [wEx.id]: false }));
+              }
+            };
+
+            /** Editor de serie: fila compacta siempre visible; los controles
+             *  (peso, reps, RIR, completar) se abren en la serie que se toca.
+             *  La serie activa está abierta por defecto. */
+            const renderSetEditor = (target: WorkoutExercise, set: WorkoutSet, isActiveSet: boolean) => {
+              const isOpen = isActiveSet || Boolean(openSetIds[set.id]);
+              return (
+                <div
+                  key={set.id}
+                  className={`rounded-2xl border overflow-hidden ${
+                    set.completed
+                      ? "bg-emerald-950/20 border-emerald-500/30"
+                      : isActiveSet
+                        ? "bg-neutral-950 border-cyan-500/50 ring-1 ring-cyan-500/20"
+                        : "bg-neutral-950/60 border-neutral-800"
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setOpenSetIds((prev) => ({ ...prev, [set.id]: !prev[set.id] }))}
+                    aria-expanded={isOpen}
+                    className="w-full px-3 py-2 min-h-[56px] flex items-center gap-3 text-left"
+                  >
+                    <span
+                      className={`w-8 h-8 rounded-xl flex items-center justify-center text-sm font-black shrink-0 ${
+                        set.completed
+                          ? "bg-emerald-500 text-neutral-950"
+                          : isActiveSet
+                            ? "bg-cyan-500 text-neutral-950"
+                            : "bg-neutral-800 text-neutral-200"
+                      }`}
+                    >
+                      {set.completed ? <Check className="w-4 h-4 stroke-[3]" aria-hidden="true" /> : set.setNumber}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-bold text-white tabular-nums">
+                        {fmtW(set.weight)} {weightUnit} × {set.reps}
+                        <span className="text-neutral-200"> @RIR {set.rir ?? 1}</span>
+                      </span>
+                      <span className="block text-xs text-neutral-300">
+                        {isActiveSet
+                          ? "Serie activa"
+                          : set.completed
+                            ? (isOpen ? "Editar esta serie" : "Completada · tocá para editar")
+                            : "Pendiente · tocá para editar"}
+                        {set.type !== "normal" ? ` · ${SET_TYPE_LABELS[set.type]}` : ""}
+                      </span>
+                    </span>
+                    <ChevronDown
+                      className={`w-4 h-4 text-neutral-300 shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
+                      aria-hidden="true"
+                    />
+                  </button>
+
+                  {isOpen && (
+                    <div className="px-3 pb-3 space-y-3">
+                      {set.previousIsEstimate && !set.completed && (
+                        <p className="text-xs text-cyan-300">
+                          Carga inicial sugerida por tu historial: {fmtW(set.weight)} {weightUnit}
+                        </p>
+                      )}
+                      {!set.previousIsEstimate && set.previousWeight ? (
+                        <p className="text-xs text-neutral-300 tabular-nums">
+                          Última vez: {fmtW(set.previousWeight)} {weightUnit} × {set.previousReps} @RIR {set.previousRir ?? 1}
+                          {set.weight !== set.previousWeight && !set.completed && (
+                            <span className={`ml-1 font-bold ${set.weight > set.previousWeight ? "text-emerald-300" : "text-amber-300"}`}>
+                              · ajustado a {fmtW(set.weight)} {weightUnit}
+                            </span>
+                          )}
+                        </p>
+                      ) : null}
+
+                      <div className="space-y-2.5">
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs font-bold text-neutral-200">Peso</span>
+                            <span className="text-xs text-neutral-400">{weightUnit}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                updateSet(target.id, set.id, {
+                                  weight: Math.max(0, weightKgFromDisplay(weightDisplay(set.weight) - weightStep)),
+                                })
+                              }
+                              className="w-12 h-12 shrink-0 rounded-xl bg-neutral-800 text-white text-2xl font-bold flex items-center justify-center active:bg-neutral-700"
+                              aria-label={`Bajar peso de la serie ${set.setNumber}`}
+                            >
+                              −
+                            </button>
+                            <input
+                              type="number"
+                              inputMode="decimal"
+                              min="0"
+                              step={weightStep}
+                              value={weightDisplay(set.weight)}
+                              onChange={(e) =>
+                                updateSet(target.id, set.id, {
+                                  weight: weightKgFromDisplay(parseFloat(e.target.value) || 0),
+                                })
+                              }
+                              onBlur={(e) => {
+                                const raw = parseFloat(e.target.value);
+                                if (!Number.isFinite(raw)) return;
+                                const snapped = Math.max(0, Math.round(raw / weightStep) * weightStep);
+                                if (Math.abs(snapped - raw) > 0.001) {
+                                  updateSet(target.id, set.id, { weight: weightKgFromDisplay(snapped) });
+                                }
+                              }}
+                              aria-label={`Peso de la serie ${set.setNumber} en ${weightUnit}`}
+                              className="flex-1 min-w-0 h-12 text-center rounded-xl bg-neutral-900 border border-neutral-700 font-black text-white text-lg tabular-nums focus:outline-none focus:border-cyan-500"
+                            />
+                            <button
+                              type="button"
+                              onClick={() =>
+                                updateSet(target.id, set.id, {
+                                  weight: weightKgFromDisplay(weightDisplay(set.weight) + weightStep),
+                                })
+                              }
+                              className="w-12 h-12 shrink-0 rounded-xl bg-cyan-600/20 text-cyan-200 text-2xl font-bold flex items-center justify-center active:bg-cyan-600/40"
+                              aria-label={`Subir peso de la serie ${set.setNumber}`}
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs font-bold text-neutral-200">Repeticiones</span>
+                            <span className="text-xs text-neutral-400">{wEx.targetReps ? `objetivo ${wEx.targetReps}` : ""}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => updateSet(target.id, set.id, { reps: Math.max(1, set.reps - 1) })}
+                              className="w-12 h-12 shrink-0 rounded-xl bg-neutral-800 text-white text-2xl font-bold flex items-center justify-center active:bg-neutral-700"
+                              aria-label={`Bajar repeticiones de la serie ${set.setNumber}`}
+                            >
+                              −
+                            </button>
+                            <input
+                              type="number"
+                              inputMode="numeric"
+                              min="1"
+                              max="99"
+                              value={set.reps}
+                              onChange={(e) =>
+                                updateSet(target.id, set.id, {
+                                  reps: Math.min(99, Math.max(1, parseInt(e.target.value, 10) || 1)),
+                                })
+                              }
+                              aria-label={`Repeticiones de la serie ${set.setNumber}`}
+                              className="flex-1 min-w-0 h-12 text-center rounded-xl bg-neutral-900 border border-neutral-700 font-black text-white text-lg tabular-nums focus:outline-none focus:border-cyan-500"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => updateSet(target.id, set.id, { reps: set.reps + 1 })}
+                              className="w-12 h-12 shrink-0 rounded-xl bg-cyan-600/20 text-cyan-200 text-2xl font-bold flex items-center justify-center active:bg-cyan-600/40"
+                              aria-label={`Subir repeticiones de la serie ${set.setNumber}`}
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs font-bold text-neutral-200">RIR · repeticiones en reserva</span>
+                            <span className="text-xs text-neutral-400">
+                              {(set.rir ?? 1) === 0 ? "al fallo" : `${set.rir ?? 1} en reserva`}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-5 gap-1.5">
+                            {[0, 1, 2, 3, 4].map((r) => (
+                              <button
+                                key={r}
+                                type="button"
+                                onClick={() => updateSet(target.id, set.id, { rir: r })}
+                                aria-pressed={(set.rir ?? 1) === r}
+                                aria-label={r === 0 ? "Serie al fallo" : `RIR ${r}`}
+                                className={`min-h-[48px] rounded-xl text-xs font-bold transition-all ${
+                                  (set.rir ?? 1) === r
+                                    ? r === 0
+                                      ? "bg-red-500/20 border border-red-500/50 text-red-200"
+                                      : "bg-cyan-500/20 border border-cyan-500/50 text-cyan-100"
+                                    : "bg-neutral-900 border border-neutral-800 text-neutral-300 active:text-white"
+                                }`}
+                              >
+                                {r === 0 ? "Fallo" : r}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (typeof navigator !== "undefined" && navigator.vibrate) {
+                            navigator.vibrate(35);
+                          }
+                          completeSetAndTriggerTimer(target.id, set.id);
+                        }}
+                        className={`w-full h-12 rounded-xl flex items-center justify-center gap-2 text-sm font-black transition-all press-scale ${
+                          set.completed
+                            ? "bg-emerald-500 text-neutral-950 shadow-md shadow-emerald-500/30"
+                            : "bg-emerald-600 text-white shadow-lg shadow-emerald-600/25"
+                        }`}
+                      >
+                        <Check className="w-4 h-4 stroke-[3]" aria-hidden="true" />
+                        {set.completed ? "Serie completada" : "Completar serie"}
+                      </button>
+
+                      {set.completed && <VelocityChip wEx={target} set={set} />}
+
+                      {/* Ajustes especializados: ocultos por defecto */}
+                      <button
+                        type="button"
+                        onClick={() => setSetTypeOpenIds((prev) => ({ ...prev, [set.id]: !prev[set.id] }))}
+                        aria-expanded={Boolean(setTypeOpenIds[set.id])}
+                        className="w-full min-h-[44px] rounded-xl bg-neutral-900 border border-neutral-800 text-xs font-bold text-neutral-200 flex items-center justify-center gap-2"
+                      >
+                        <MoreHorizontal className="w-4 h-4 text-cyan-400" aria-hidden="true" />
+                        Opciones de serie
+                        <ChevronDown
+                          className={`w-3.5 h-3.5 text-neutral-400 transition-transform ${setTypeOpenIds[set.id] ? "rotate-180" : ""}`}
+                          aria-hidden="true"
+                        />
+                      </button>
+
+                      {setTypeOpenIds[set.id] && (
+                        <div className="p-3 rounded-2xl bg-neutral-900 border border-neutral-800 space-y-3">
+                          <div>
+                            <span className="block text-xs font-bold text-neutral-200 mb-1.5">Tipo de serie</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {SELECTABLE_SET_TYPES.map((t) => (
+                                <button
+                                  key={t}
+                                  type="button"
+                                  aria-pressed={set.type === t}
+                                  onClick={() => updateSet(target.id, set.id, { type: t })}
+                                  className={`min-h-[44px] px-3 rounded-xl text-xs font-bold border transition-all ${
+                                    set.type === t
+                                      ? "bg-cyan-500/20 border-cyan-500/50 text-cyan-100"
+                                      : "bg-neutral-950 border-neutral-800 text-neutral-300"
+                                  }`}
+                                >
+                                  {SET_TYPE_LABELS[t]}
+                                </button>
+                              ))}
+                            </div>
+                            <p className="text-xs text-neutral-300 leading-relaxed mt-2">{SET_TYPE_HELP[set.type]}</p>
+                          </div>
+
+                          <div>
+                            <button
+                              type="button"
+                              onClick={() => setQuickAdjustIds((prev) => ({ ...prev, [set.id]: !prev[set.id] }))}
+                              aria-expanded={Boolean(quickAdjustIds[set.id])}
+                              className="w-full min-h-[44px] rounded-xl bg-neutral-950 border border-neutral-800 text-xs font-bold text-neutral-200 flex items-center justify-center gap-2"
+                            >
+                              Ajustes rápidos de peso y reps
+                              <ChevronDown className={`w-3.5 h-3.5 text-neutral-400 transition-transform ${quickAdjustIds[set.id] ? "rotate-180" : ""}`} aria-hidden="true" />
+                            </button>
+                            {quickAdjustIds[set.id] && (
+                              <div className="mt-2 space-y-2">
+                                <div className="flex flex-wrap gap-1.5">
+                                  {weightChips.map((delta) => (
+                                    <button
+                                      key={`w${delta}`}
+                                      type="button"
+                                      onClick={() =>
+                                        updateSet(target.id, set.id, {
+                                          weight: Math.max(0, weightKgFromDisplay(weightDisplay(set.weight) + delta)),
+                                        })
+                                      }
+                                      className={`min-h-[44px] min-w-[56px] px-2 rounded-xl text-xs font-bold border ${
+                                        delta > 0
+                                          ? "bg-cyan-500/10 text-cyan-200 border-cyan-500/25"
+                                          : "bg-neutral-950 text-neutral-300 border-neutral-800"
+                                      }`}
+                                    >
+                                      {delta > 0 ? `+${delta}` : delta} {weightUnit}
+                                    </button>
+                                  ))}
+                                </div>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {[-2, -1, 1, 2, 5].map((delta) => (
+                                    <button
+                                      key={`r${delta}`}
+                                      type="button"
+                                      onClick={() => updateSet(target.id, set.id, { reps: Math.max(1, set.reps + delta) })}
+                                      className={`min-h-[44px] min-w-[56px] px-2 rounded-xl text-xs font-bold border ${
+                                        delta > 0
+                                          ? "bg-cyan-500/10 text-cyan-200 border-cyan-500/25"
+                                          : "bg-neutral-950 text-neutral-300 border-neutral-800"
+                                      }`}
+                                      aria-label={`${delta > 0 ? "Sumar" : "Restar"} ${Math.abs(delta)} repeticiones`}
+                                    >
+                                      {delta > 0 ? `+${delta}` : delta} reps
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => removeSet(target.id, set.id)}
+                            className="w-full min-h-[44px] rounded-xl bg-red-950/40 border border-red-500/30 text-red-200 text-xs font-bold flex items-center justify-center gap-2"
+                          >
+                            <Trash2 className="w-4 h-4" aria-hidden="true" />
+                            Quitar esta serie
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            };
 
             return (
               <div
@@ -565,82 +1028,150 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                   </div>
                 )}
 
-                {/* Exercise Header */}
-                <div className="p-4 sm:p-5 bg-neutral-950/60 border-b border-neutral-800 flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[11px] font-mono font-bold text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-2 py-0.5 rounded-md">
-                        EJERCICIO {exIndex + 1}
+                {/* Cabecera del ejercicio: plegable. El ejercicio activo se abre
+                    solo; los demás resumen su estado y su próxima serie. */}
+                <div className="bg-neutral-950/60 border-b border-neutral-800">
+                  <button
+                    type="button"
+                    onClick={toggleExercise}
+                    aria-expanded={isExpanded}
+                    className="w-full text-left px-3.5 sm:px-4 py-2.5 min-h-[64px] flex items-center gap-3"
+                  >
+                    <span
+                      className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black shrink-0 ${
+                        pendingSetsMobile.length > 0 && isActiveExercise
+                          ? "bg-cyan-500 text-neutral-950"
+                          : doneCount === wEx.sets.length && wEx.sets.length > 0
+                            ? "bg-emerald-500/20 text-emerald-200"
+                            : "bg-neutral-800 text-neutral-200"
+                      }`}
+                    >
+                      {exIndex + 1}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center gap-2 flex-wrap">
+                        <span
+                          className={`font-black tracking-tight truncate ${
+                            isActiveExercise ? "text-lg text-white" : "text-sm text-neutral-100"
+                          }`}
+                        >
+                          {wEx.exercise.nameEs}
+                        </span>
+                        {isActiveExercise && pendingSetsMobile.length > 0 && (
+                          <span className="px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-200 border border-cyan-500/30">
+                            En curso
+                          </span>
+                        )}
+                        {doneCount === wEx.sets.length && wEx.sets.length > 0 && (
+                          <span className="px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-200 border border-emerald-500/30">
+                            Completado
+                          </span>
+                        )}
                       </span>
-                      <span className="text-[11px] font-semibold text-purple-400 bg-purple-500/10 border border-purple-500/20 px-2 py-0.5 rounded-md">
-                        {wEx.exercise.resistanceProfile === "lengthened" ? "Estiramiento" : "Contracción"}
+                      <span className="block text-xs text-neutral-300 mt-0.5 tabular-nums">
+                        {doneCount}/{wEx.sets.length} series · descanso {wEx.targetRestSeconds}s
+                        {!isExpanded && nextPending ? ` · siguiente: ${fmtW(nextPending.weight)} ${weightUnit} × ${nextPending.reps}` : ""}
                       </span>
-                      <span className="text-[11px] font-mono text-neutral-400">
-                        Tempo: <strong className="text-white">{wEx.exercise.defaultTempo}</strong>
-                      </span>
+                    </span>
+                    {!isTimedEx && (
+                      <ChevronDown
+                        className={`w-5 h-5 text-neutral-300 shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                        aria-hidden="true"
+                      />
+                    )}
+                  </button>
+
+                  {isExpanded && (
+                    <div className="px-3.5 sm:px-4 pb-3 flex items-center justify-between gap-2 flex-wrap">
+                      <p className="text-xs text-neutral-300">
+                        Tempo {wEx.exercise.defaultTempo ?? "—"} ·{" "}
+                        {wEx.exercise.resistanceProfile === "lengthened" ? "carga en estiramiento" : "carga en contracción"}
+                      </p>
+
+                      {/* Acciones secundarias del ejercicio en un menú etiquetado
+                          (antes: 6 botones sueltos, 4 solo con icono). */}
+                      <div className="relative shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => setExMenuId(exMenuId === wEx.id ? null : wEx.id)}
+                          aria-expanded={exMenuId === wEx.id}
+                          aria-haspopup="menu"
+                          className="min-h-[44px] px-3 rounded-xl bg-neutral-800 text-neutral-100 text-xs font-bold border border-neutral-700 flex items-center gap-2 press-scale"
+                        >
+                          <MoreHorizontal className="w-4 h-4 text-cyan-400" aria-hidden="true" />
+                          Opciones del ejercicio
+                        </button>
+                        {exMenuId === wEx.id && (
+                          <>
+                            <div
+                              className="fixed inset-0 z-20"
+                              onClick={() => setExMenuId(null)}
+                              aria-hidden="true"
+                            />
+                            <div
+                              role="menu"
+                              className="absolute right-0 bottom-full mb-1 z-30 w-72 max-w-[calc(100vw-2rem)] bg-neutral-900 border border-neutral-700 rounded-2xl shadow-2xl overflow-hidden animate-fadeIn"
+                            >
+                              <button
+                                type="button"
+                                role="menuitem"
+                                onClick={() => { setSelectedExForPlate({ name: wEx.exercise.nameEs, weight: currentWorkingWeight }); setExMenuId(null); }}
+                                className="w-full min-h-[48px] px-4 flex items-center gap-3 text-left text-sm font-bold text-neutral-100 hover:bg-neutral-800"
+                              >
+                                <Disc className="w-4 h-4 text-blue-400 shrink-0" aria-hidden="true" />
+                                Calculadora de discos
+                              </button>
+                              <button
+                                type="button"
+                                role="menuitem"
+                                onClick={() => { setSelectedExForWarmup({ name: wEx.exercise.nameEs, weight: currentWorkingWeight }); setExMenuId(null); }}
+                                className="w-full min-h-[48px] px-4 flex items-center gap-3 text-left text-sm font-bold text-neutral-100 hover:bg-neutral-800"
+                              >
+                                <Flame className="w-4 h-4 text-amber-400 shrink-0" aria-hidden="true" />
+                                Pirámide de calentamiento
+                              </button>
+                              <button
+                                type="button"
+                                role="menuitem"
+                                onClick={() => { setSelectedExForTempo({ name: wEx.exercise.nameEs, tempo: wEx.exercise.defaultTempo }); setExMenuId(null); }}
+                                className="w-full min-h-[48px] px-4 flex items-center gap-3 text-left text-sm font-bold text-neutral-100 hover:bg-neutral-800"
+                              >
+                                <Activity className="w-4 h-4 text-purple-400 shrink-0" aria-hidden="true" />
+                                Metrónomo de tempo
+                              </button>
+                              <button
+                                type="button"
+                                role="menuitem"
+                                onClick={() => { setSelectedExerciseForDetail(wEx.exercise); setExMenuId(null); }}
+                                className="w-full min-h-[48px] px-4 flex items-center gap-3 text-left text-sm font-bold text-neutral-100 hover:bg-neutral-800"
+                              >
+                                <Info className="w-4 h-4 text-cyan-400 shrink-0" aria-hidden="true" />
+                                Biomecánica y anatomía
+                              </button>
+                              <button
+                                type="button"
+                                role="menuitem"
+                                onClick={() => { setReplacingWExId(wEx.id); setIsLibraryOpen(true); setExMenuId(null); }}
+                                className="w-full min-h-[48px] px-4 flex items-center gap-3 text-left text-sm font-bold text-neutral-100 hover:bg-neutral-800"
+                              >
+                                <ArrowRightLeft className="w-4 h-4 text-neutral-300 shrink-0" aria-hidden="true" />
+                                Sustituir ejercicio
+                              </button>
+                              <button
+                                type="button"
+                                role="menuitem"
+                                onClick={() => { setConfirmRemoveEx(wEx.id); setExMenuId(null); }}
+                                className="w-full min-h-[48px] px-4 flex items-center gap-3 text-left text-sm font-bold text-red-200 hover:bg-red-950/50 border-t border-neutral-800"
+                              >
+                                <Trash2 className="w-4 h-4 shrink-0" aria-hidden="true" />
+                                Quitar del entrenamiento
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </div>
-                    <h3 className="text-lg font-black text-white tracking-tight">
-                      {wEx.exercise.nameEs}
-                    </h3>
-                  </div>
-
-                  {/* Exercise Micro Utilities */}
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <button
-                      onClick={() => setSelectedExForPlate({ name: wEx.exercise.nameEs, weight: currentWorkingWeight })}
-                      className="flex items-center gap-1 px-3 min-h-[44px] rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white text-xs font-semibold border border-neutral-700 transition-colors"
-                      title="Calculadora de Discos en Barra"
-                    >
-                      <Disc className="w-3.5 h-3.5 text-blue-400" />
-                      <span className="hidden sm:inline">Discos</span>
-                    </button>
-
-                    <button
-                      onClick={() => setSelectedExForWarmup({ name: wEx.exercise.nameEs, weight: currentWorkingWeight })}
-                      className="flex items-center gap-1 px-3 min-h-[44px] rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white text-xs font-semibold border border-neutral-700 transition-colors"
-                      title="Pirámide de Calentamiento Científica"
-                    >
-                      <Flame className="w-3.5 h-3.5 text-amber-400" />
-                      <span className="hidden sm:inline">Calentar</span>
-                    </button>
-
-                    <button
-                      onClick={() => setSelectedExForTempo({ name: wEx.exercise.nameEs, tempo: wEx.exercise.defaultTempo })}
-                      className="flex items-center gap-1 px-3 min-h-[44px] rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white text-xs font-semibold border border-neutral-700 transition-colors"
-                      title="Metrónomo de Tempo en Vivo"
-                    >
-                      <Activity className="w-3.5 h-3.5 text-purple-400" />
-                      <span className="hidden sm:inline">Tempo</span>
-                    </button>
-
-                    <button
-                      onClick={() => setSelectedExerciseForDetail(wEx.exercise)}
-                      className="p-2.5 min-w-[44px] min-h-[44px] rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-cyan-400 border border-neutral-700 transition-colors flex items-center justify-center"
-                      title="Ver Biomecánica y Anatomía"
-                    >
-                      <Info className="w-4 h-4" />
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setReplacingWExId(wEx.id);
-                        setIsLibraryOpen(true);
-                      }}
-                      className="p-2.5 min-w-[44px] min-h-[44px] rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white border border-neutral-700 transition-colors flex items-center justify-center"
-                      title="Sustituir Ejercicio"
-                    >
-                      <ArrowRightLeft className="w-4 h-4" />
-                    </button>
-
-                    <button
-                      onClick={() => setConfirmRemoveEx(wEx.id)}
-                      className="p-2.5 min-w-[44px] min-h-[44px] rounded-xl bg-neutral-800 hover:bg-red-900/40 text-neutral-400 hover:text-red-400 border border-neutral-700 transition-colors flex items-center justify-center"
-                      title="Eliminar del entrenamiento"
-                      aria-label={`Eliminar ${wEx.exercise.nameEs || wEx.exercise.name} del entrenamiento`}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
+                  )}
                 </div>
 
                 {/* Double Progression — live objective guidance */}
@@ -857,259 +1388,55 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                 </div>
                 )}
 
-                {/* Sets Cards — Mobile (hidden for cardio & time-based) */}
+                {/* Sets Cards — Mobile: una serie activa con controles cómodos y
+                    el resto plegado (antes cada serie mostraba ~12 controles). */}
                 {!wEx.notes?.startsWith("cardio:") && !isTimeBased(wEx.exercise, wEx.targetReps) && (
-                <div className="p-3 space-y-3 md:hidden">
-                  {wEx.sets.map((set) => {
-                    return (
-                      <div
-                        key={set.id}
-                        className={`rounded-2xl border p-3 space-y-2.5 ${
-                          set.completed
-                            ? "bg-emerald-950/20 border-emerald-500/30"
-                            : "bg-neutral-950/60 border-neutral-800"
-                        }`}
+                <div className="p-3 space-y-2 md:hidden">
+                  {completedSetsMobile.length > 0 && (
+                    <div className="rounded-2xl bg-neutral-950/50 border border-neutral-800 overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() => setCompletedOpenIds((prev) => ({ ...prev, [wEx.id]: !prev[wEx.id] }))}
+                        aria-expanded={Boolean(completedOpenIds[wEx.id])}
+                        className="w-full min-h-[48px] px-3 flex items-center justify-between gap-2 text-left"
                       >
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${set.completed ? "bg-emerald-500 text-neutral-950" : "bg-neutral-800 text-neutral-300"}`}>
-                              {set.setNumber}
-                            </span>
-                            <select
-                              value={set.type}
-                              onChange={(e) =>
-                                updateSet(wEx.id, set.id, { type: e.target.value as SetType })
-                              }
-                              className="text-[11px] uppercase font-bold bg-neutral-900 border border-neutral-800 rounded-lg px-2 py-1.5 text-neutral-300 focus:outline-none"
-                            >
-                              <option value="normal" className="bg-neutral-900 text-white">Normal</option>
-                              <option value="warmup" className="bg-neutral-900 text-amber-400">Calent.</option>
-                              <option value="dropset" className="bg-neutral-900 text-purple-400">Drop Set</option>
-                              <option value="myorep" className="bg-neutral-900 text-blue-400">Myo-Rep</option>
-                              <option value="failure" className="bg-neutral-900 text-red-400">Fallo</option>
-                            </select>
-                            {set.previousIsEstimate ? (
-                              <span className="text-[11px] font-mono text-cyan-400/90 truncate">
-                                carga inicial sugerida · {fmtW(set.weight)}
-                              </span>
-                            ) : set.previousWeight ? (
-                              <span className="text-[11px] font-mono text-neutral-400 truncate">
-                                antes {fmtW(set.previousWeight)} × {set.previousReps} @RIR{set.previousRir ?? 1}
-                                {set.weight !== set.previousWeight && !set.completed && (
-                                  <span className={`ml-1 font-bold ${set.weight > set.previousWeight ? "text-emerald-400" : "text-amber-400"}`}>
-                                    · auto {set.weight > set.previousWeight ? "↑" : "↓"} {fmtW(set.weight)}
-                                  </span>
-                                )}
-                              </span>
-                            ) : null}
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => removeSet(wEx.id, set.id)}
-                            className="text-neutral-400 hover:text-red-400 transition-colors p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg shrink-0"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                        <span className="flex items-center gap-2 text-xs font-bold text-emerald-300">
+                          <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
+                          {completedSetsMobile.length} {completedSetsMobile.length === 1 ? "serie completada" : "series completadas"}
+                        </span>
+                        <span className="text-[11px] text-neutral-300 font-mono truncate hidden xs:inline">
+                          {fmtW(completedSetsMobile[completedSetsMobile.length - 1].weight)} {weightUnit} × {completedSetsMobile[completedSetsMobile.length - 1].reps}
+                        </span>
+                        <ChevronDown className={`w-4 h-4 text-neutral-300 shrink-0 transition-transform ${completedOpenIds[wEx.id] ? "rotate-180" : ""}`} aria-hidden="true" />
+                      </button>
+                      {completedOpenIds[wEx.id] && (
+                        <div className="p-2 pt-0 space-y-2">
+                          {completedSetsMobile.map((set) => renderSetEditor(wEx, set, false))}
                         </div>
+                      )}
+                    </div>
+                  )}
 
-                        <div className="grid grid-cols-2 gap-2">
-                          <div className="min-w-0">
-                            <label className="block text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-1">Peso ({weightUnit})</label>
-                            <div className="flex items-center justify-between bg-neutral-950 rounded-xl border border-neutral-800 p-1 min-w-0">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  updateSet(wEx.id, set.id, {
-                                    weight: Math.max(0, weightKgFromDisplay(weightDisplay(set.weight) - weightStep)),
-                                  })
-                                }
-                                className="w-9 h-10 shrink-0 flex items-center justify-center text-neutral-400 active:text-white rounded-lg bg-neutral-900 text-base touch-target"
-                                aria-label={`Bajar peso de la serie ${set.setNumber}`}
-                              >
-                                −
-                              </button>
-                              <input
-                                type="number"
-                                inputMode="decimal"
-                                min="0"
-                                step={weightStep}
-                                value={weightDisplay(set.weight)}
-                                onChange={(e) =>
-                                  updateSet(wEx.id, set.id, {
-                                    weight: weightKgFromDisplay(parseFloat(e.target.value) || 0),
-                                  })
-                                }
-                                onBlur={(e) => {
-                                  const raw = parseFloat(e.target.value);
-                                  if (!Number.isFinite(raw)) return;
-                                  // Anti-errores de tipeo: ajusta a múltiplo del paso (2.5 kg / 5 lbs)
-                                  const snapped = Math.max(0, Math.round(raw / weightStep) * weightStep);
-                                  if (Math.abs(snapped - raw) > 0.001) {
-                                    updateSet(wEx.id, set.id, { weight: weightKgFromDisplay(snapped) });
-                                  }
-                                }}
-                                className="flex-1 min-w-0 text-center bg-transparent font-bold text-white text-sm focus:outline-none touch-target"
-                              />
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  updateSet(wEx.id, set.id, {
-                                    weight: weightKgFromDisplay(weightDisplay(set.weight) + weightStep),
-                                  })
-                                }
-                                className="w-9 h-10 shrink-0 flex items-center justify-center text-neutral-400 active:text-white rounded-lg bg-cyan-600/20 text-cyan-300 text-base font-bold touch-target"
-                                aria-label={`Subir peso de la serie ${set.setNumber}`}
-                              >
-                                +
-                              </button>
-                            </div>
-                            {/* Chips de ajuste rápido de peso */}
-                            <div className="flex items-center gap-1 mt-1.5 overflow-x-auto scrollbar-none py-0.5">
-                              {weightChips.map((delta) => (
-                                <button
-                                  key={delta}
-                                  type="button"
-                                  onClick={() =>
-                                    updateSet(wEx.id, set.id, {
-                                      weight: Math.max(0, weightKgFromDisplay(weightDisplay(set.weight) + delta)),
-                                    })
-                                  }
-                                  className={`px-1.5 py-0.5 rounded-md text-[11px] font-mono font-bold shrink-0 transition-colors ${
-                                    delta > 0
-                                      ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/25 active:bg-cyan-500/30"
-                                      : "bg-neutral-900 text-neutral-400 border border-neutral-800 active:bg-neutral-800"
-                                  }`}
-                                >
-                                  {delta > 0 ? `+${delta}` : delta}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                          <div className="min-w-0">
-                            <label className="block text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-1">Reps</label>
-                            <div className="flex items-center justify-between bg-neutral-950 rounded-xl border border-neutral-800 p-1 min-w-0">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  updateSet(wEx.id, set.id, {
-                                    reps: Math.max(1, set.reps - 1),
-                                  })
-                                }
-                                className="w-9 h-10 shrink-0 flex items-center justify-center text-neutral-400 active:text-white rounded-lg bg-neutral-900 text-base touch-target"
-                                aria-label={`Bajar reps de la serie ${set.setNumber}`}
-                              >
-                                −
-                              </button>
-                              <input
-                                type="number"
-                                inputMode="numeric"
-                                min="1"
-                                max="99"
-                                value={set.reps}
-                                onChange={(e) =>
-                                  updateSet(wEx.id, set.id, {
-                                    reps: Math.min(99, Math.max(1, parseInt(e.target.value, 10) || 1)),
-                                  })
-                                }
-                                className="flex-1 min-w-0 text-center bg-transparent font-bold text-white text-sm focus:outline-none touch-target"
-                              />
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  updateSet(wEx.id, set.id, {
-                                    reps: set.reps + 1,
-                                  })
-                                }
-                                className="w-9 h-10 shrink-0 flex items-center justify-center text-neutral-400 active:text-white rounded-lg bg-cyan-600/20 text-cyan-300 text-base font-bold touch-target"
-                                aria-label={`Subir reps de la serie ${set.setNumber}`}
-                              >
-                                +
-                              </button>
-                            </div>
-                            {/* Chips de ajuste rápido de reps */}
-                            <div className="flex items-center gap-1 mt-1.5 overflow-x-auto scrollbar-none py-0.5">
-                              {[-2, -1, 1, 2, 5].map((delta) => (
-                                <button
-                                  key={delta}
-                                  type="button"
-                                  onClick={() =>
-                                    updateSet(wEx.id, set.id, {
-                                      reps: Math.max(1, set.reps + delta),
-                                    })
-                                  }
-                                  className={`px-2 py-0.5 rounded-md text-[11px] font-mono font-bold shrink-0 transition-colors ${
-                                    delta > 0
-                                      ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/25 active:bg-cyan-500/30"
-                                      : "bg-neutral-900 text-neutral-400 border border-neutral-800 active:bg-neutral-800"
-                                  }`}
-                                >
-                                  {delta > 0 ? `+${delta}` : delta}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                          <div className="col-span-2">
-                            <label className="block text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-1">RIR (Reps en Reserva)</label>
-                            <div className="grid grid-cols-5 gap-1 sm:gap-1.5">
-                              {[0, 1, 2, 3, 4].map((r) => (
-                                <button
-                                  key={r}
-                                  type="button"
-                                  onClick={() => updateSet(wEx.id, set.id, { rir: r })}
-                                  className={`min-h-[44px] rounded-xl text-[11px] sm:text-xs font-bold transition-all ${
-                                    (set.rir ?? 1) === r
-                                      ? r === 0
-                                        ? "bg-red-500/20 border border-red-500/40 text-red-400"
-                                        : "bg-cyan-500/20 border border-cyan-500/40 text-cyan-300"
-                                      : "bg-neutral-950 border border-neutral-800 text-neutral-400 active:text-white"
-                                  }`}
-                                >
-                                  {r === 0 ? "Fallo" : r}
-                                </button>
-                              ))}
-                            </div>
-                            {set.completed && (
-                              <div className="mt-1.5 text-[11px]">
-                                <VelocityChip wEx={wEx} set={set} />
-                              </div>
-                            )}
-                          </div>
-                        </div>
+                  {pendingSetsMobile.map((set, i) => renderSetEditor(wEx, set, i === 0))}
 
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (typeof navigator !== "undefined" && navigator.vibrate) {
-                              navigator.vibrate(35);
-                            }
-                            completeSetAndTriggerTimer(wEx.id, set.id);
-                          }}
-                          className={`w-full h-11 rounded-xl flex items-center justify-center gap-2 text-sm font-bold transition-all ${
-                            set.completed
-                              ? "bg-emerald-500 text-neutral-950 shadow-md shadow-emerald-500/30"
-                              : "bg-emerald-600/15 text-emerald-400 border border-emerald-500/30 active:bg-emerald-600 active:text-white"
-                          }`}
-                        >
-                          <Check className="w-4 h-4 stroke-[3]" />
-                          {set.completed ? "Serie Completada" : "Completar Serie"}
-                        </button>
-                      </div>
-                    );
-                  })}
+                  {pendingSetsMobile.length === 0 && wEx.sets.length > 0 && (
+                    <p className="text-xs text-emerald-300 font-bold px-1 py-2 flex items-center gap-2">
+                      <Check className="w-4 h-4 stroke-[3]" aria-hidden="true" />
+                      Ejercicio completado · sumá una serie extra si querés seguir
+                    </p>
+                  )}
                 </div>
                 )}
 
-                {/* Add Set Options Bar */}
+                {/* Barra de series: la acción rápida es una serie normal; Drop Set,
+                    Myo-Reps y el resto viven en "Opciones de serie". */}
                 {!wEx.notes?.startsWith("cardio:") && (
-                <div className="px-4 pb-4 sm:px-5 sm:pb-5 flex items-center gap-2 pt-4 flex-wrap">
-                  <button type="button" onClick={() => addSet(wEx.id, "normal")} className="px-3 min-h-[44px] rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-bold border border-neutral-700 flex items-center gap-1.5 transition-colors">
-                    <Plus className="w-3.5 h-3.5 text-cyan-400" />Serie Normal
+                <div className="px-4 pb-4 sm:px-5 sm:pb-5 flex items-center gap-2 pt-3 flex-wrap">
+                  <button type="button" onClick={() => addSet(wEx.id, "normal")} className="px-3.5 min-h-[48px] rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-100 text-sm font-bold border border-neutral-700 flex items-center gap-1.5 transition-colors press-scale">
+                    <Plus className="w-4 h-4 text-cyan-400" aria-hidden="true" />Añadir serie
                   </button>
-                  <button type="button" onClick={() => addSet(wEx.id, "dropset")} className="px-3 min-h-[44px] rounded-xl bg-purple-950/30 hover:bg-purple-900/40 text-purple-300 text-xs font-bold border border-purple-500/30 flex items-center gap-1.5 transition-colors">
-                    <Sparkles className="w-3.5 h-3.5 text-purple-400" />Drop Set
-                  </button>
-                  <button type="button" onClick={() => addSet(wEx.id, "myorep")} className="px-3 min-h-[44px] rounded-xl bg-blue-950/30 hover:bg-blue-900/40 text-blue-300 text-xs font-bold border border-blue-500/30 flex items-center gap-1.5 transition-colors">
-                    <Activity className="w-3.5 h-3.5 text-blue-400" />Myo-Reps
+                  <button type="button" onClick={() => addSet(wEx.id, "dropset")} className="px-3.5 min-h-[48px] rounded-xl bg-neutral-900 hover:bg-neutral-800 text-purple-300 text-xs font-bold border border-purple-500/30 flex items-center gap-1.5 transition-colors press-scale">
+                    <Sparkles className="w-3.5 h-3.5 text-purple-400" aria-hidden="true" />Añadir Drop Set
                   </button>
                 </div>
                 )}
@@ -1137,17 +1464,18 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
             onClick={() => setConfirmCancel(true)}
             className="text-xs text-red-400/80 hover:text-red-400 font-medium underline py-3 touch-target"
           >
-            Descartar y cancelar sesión
+            Cancelar entrenamiento
           </button>
         </div>
       </div>
 
-      {/* Cancel session confirmation */}
+      {/* Cancel session confirmation: opciones explícitas y sin ambigüedad */}
       <ConfirmDialog
         open={confirmCancel}
-        title="Cancelar entrenamiento"
-        message="¿Seguro que deseas cancelar el entrenamiento en curso? Se perderá todo el progreso de esta sesión."
-        confirmLabel="Cancelar sesión"
+        title="¿Descartar el entrenamiento?"
+        message="Se perderá TODO el progreso de la sesión actual (series, pesos y tiempo). La sesión puede retomarse si seguís entrenando."
+        confirmLabel="Descartar entrenamiento"
+        cancelLabel="Seguir entrenando"
         danger
         onConfirm={handleCancelConfirmed}
         onCancel={() => setConfirmCancel(false)}
@@ -1325,12 +1653,10 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
           />
         )}
 
-        {selectedExerciseForDetail && (
-          <ExerciseDetailModal
-            exercise={selectedExerciseForDetail}
-            onClose={() => setSelectedExerciseForDetail(null)}
-          />
-        )}
+        {/* La ficha del ejercicio se renderiza UNA sola vez, en App (capa
+            global). Antes se montaba también aquí, con el mismo estado del
+            contexto: al abrirla desde el entrenamiento aparecían dos fichas
+            idénticas superpuestas. */}
 
         <ExerciseLibraryModal
           isOpen={isLibraryOpen}

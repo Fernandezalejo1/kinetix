@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { X, Flame, ShieldAlert, CheckCircle } from "lucide-react";
 import { generateWarmupPyramid } from "../../utils/scienceCalculators";
 import { FocusTrap } from "../FocusTrap";
+import { useBackHandler } from "../../context/BackNavContext";
 
 interface WarmupGeneratorModalProps {
   isOpen: boolean;
@@ -24,6 +25,9 @@ export const WarmupGeneratorModal: React.FC<WarmupGeneratorModalProps> = ({
 }) => {
   const [workingWeight, setWorkingWeight] = useState<number>(initialWorkingWeight);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
+
+  // Atrás cierra la pirámide de calentamiento.
+  useBackHandler("warmup-generator", isOpen ? () => { onClose(); return true; } : null);
 
   if (!isOpen) return null;
 

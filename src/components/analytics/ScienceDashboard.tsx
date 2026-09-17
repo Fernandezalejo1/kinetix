@@ -354,7 +354,7 @@ export const ScienceDashboard: React.FC = () => {
               <button
                 key={f.id}
                 onClick={() => setProgressionFilter(f.id)}
-                className={`px-3.5 py-1.5 rounded-xl transition-all whitespace-nowrap ${
+                className={`min-h-[44px] px-3.5 py-1.5 rounded-xl transition-all whitespace-nowrap ${
                   progressionFilter === f.id
                     ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/20"
                     : "bg-neutral-950 border border-neutral-800 text-neutral-400 hover:text-white"
@@ -754,7 +754,7 @@ export const ScienceDashboard: React.FC = () => {
             <div className="flex gap-1 bg-neutral-950 p-1 rounded-xl border border-neutral-800 ml-auto">
               <button
                 onClick={() => setHeatmapView("front")}
-                className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+                className={`min-h-[44px] px-3 py-2 rounded-lg text-xs font-bold transition-all ${
                   heatmapView === "front" ? "bg-cyan-600 text-white" : "text-neutral-400 hover:text-white"
                 }`}
               >
@@ -762,7 +762,7 @@ export const ScienceDashboard: React.FC = () => {
               </button>
               <button
                 onClick={() => setHeatmapView("back")}
-                className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+                className={`min-h-[44px] px-3 py-2 rounded-lg text-xs font-bold transition-all ${
                   heatmapView === "back" ? "bg-cyan-600 text-white" : "text-neutral-400 hover:text-white"
                 }`}
               >
@@ -848,7 +848,7 @@ export const ScienceDashboard: React.FC = () => {
               <button
                 key={vl.muscle}
                 onClick={() => setSelectedMuscle(vl.muscle)}
-                className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all ${
+                className={`min-h-[44px] px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all ${
                   selectedMuscle === vl.muscle
                     ? "bg-cyan-600 text-white shadow-sm"
                     : "bg-neutral-950 text-neutral-400 hover:text-white border border-neutral-800"
@@ -1001,11 +1001,14 @@ export const ScienceDashboard: React.FC = () => {
               <p className="text-xs text-neutral-400">De tus sesiones o cargados a mano. Nada estimado sin datos.</p>
             </div>
           </div>
+          {/* Acción secundaria: no compite con la acción principal de la app. */}
           <button
+            type="button"
             onClick={() => setShowPrForm((v) => !v)}
-            className="px-3 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold transition-colors shrink-0"
+            aria-expanded={showPrForm}
+            className="min-h-[44px] px-3 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-neutral-200 text-xs font-bold transition-colors shrink-0"
           >
-            {showPrForm ? "Cerrar" : "+ Cargar 1RM"}
+            {showPrForm ? "Cerrar formulario" : "Cargar 1RM a mano"}
           </button>
         </div>
 

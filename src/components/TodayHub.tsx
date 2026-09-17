@@ -2,7 +2,6 @@ import React, { useMemo, useState } from "react";
 import {
   Play,
   Clock,
-  Plus,
   Layers,
   Activity,
   Utensils,
@@ -11,6 +10,9 @@ import {
   Zap,
   RefreshCcw,
   Dumbbell,
+  ChevronDown,
+  AlertTriangle,
+  SlidersHorizontal,
 } from "lucide-react";
 import { useWorkout } from "../context/WorkoutContext";
 import { useGoal } from "../context/GoalContext";
@@ -26,7 +28,6 @@ import {
 import { EquipmentAccess } from "../types";
 import { localDateKey } from "../utils/dateUtils";
 import { previewExerciseCount } from "../utils/sessionPreview";
-import { CardioToggle } from "./workout/CardioToggle";
 import { WeeklyReviewModal } from "./analytics/WeeklyReviewModal";
 
 interface TodayHubProps {
@@ -65,6 +66,9 @@ export const TodayHub: React.FC<TodayHubProps> = ({
   } = useWorkout();
   const { phase } = useGoal();
   const [isReviewOpen, setIsReviewOpen] = useState(false);
+  // Explicaciones largas (programación, progresión, justificación) plegadas:
+  // la primera vista responde qué toca, cuánto dura y qué hacer.
+  const [showDetails, setShowDetails] = useState(false);
   // P3: dónde se entrena HOY (override diario del equipamiento del perfil).
   const [todayEquipment, setTodayEquipmentState] = useState<EquipmentAccess | null>(() => loadTodayEquipment());
 
@@ -143,8 +147,8 @@ export const TodayHub: React.FC<TodayHubProps> = ({
             <div className="min-w-0 flex-1">
               <p className="text-[11px] font-black uppercase tracking-wider text-emerald-400">Sesión activa</p>
               <p className="text-sm font-black text-white truncate mt-0.5">{activeSession.routineName}</p>
-              <p className="text-[11px] text-neutral-400 mt-0.5">
-                {activeSession.exercises.length} ejercicios · tocá para continuar
+              <p className="text-xs text-neutral-300 mt-0.5 leading-relaxed">
+                Continuar entrenamiento · {activeSession.exercises.length} ejercicios
               </p>
             </div>
             <ArrowRight className="w-4 h-4 text-emerald-300 shrink-0 opacity-60 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
@@ -161,17 +165,18 @@ export const TodayHub: React.FC<TodayHubProps> = ({
               <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
                 Hoy te toca
               </span>
-              <span className="flex items-center gap-1.5 text-[11px] text-neutral-400 font-bold">
-                <Clock className="w-3.5 h-3.5" /> ~{nextRoutine.estimatedDurationMin} min
+              <span className="flex items-center gap-1.5 text-xs text-neutral-300 font-bold">
+                <Clock className="w-3.5 h-3.5 text-neutral-400" /> ~{nextRoutine.estimatedDurationMin} min
               </span>
+              <span aria-hidden="true" className="text-neutral-600">·</span>
+              <span className="text-xs text-neutral-300 font-bold tabular-nums">{nextExerciseCount} ejercicios</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-3">
               {nextRoutine.targetSplit}
             </h2>
-            <p className="text-sm text-neutral-400 mt-1 max-w-xl leading-relaxed">
+            <p className="text-sm text-neutral-300 mt-1 max-w-xl leading-relaxed">
               {nextRoutine.name}
               <span className="text-neutral-400">
-                {" · "}{nextExerciseCount} ejercicios
                 {nextLastDays === null
                   ? " · primera vez con esta rutina"
                   : nextLastDays === 0
@@ -179,82 +184,125 @@ export const TodayHub: React.FC<TodayHubProps> = ({
                     : ` · última vez hace ${nextLastDays} ${nextLastDays === 1 ? "día" : "días"}`}
               </span>
             </p>
-            {nextRoutine.description && (
-              <p className="text-xs text-neutral-400 mt-2 leading-relaxed max-w-md">{nextRoutine.description}</p>
+            {/* Advertencia que cambia la decisión (no se pliega en "Ver detalles") */}
+            {shortFit && (
+              <p className="mt-2 flex items-start gap-2 text-xs font-bold text-amber-300 leading-relaxed">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
+                <span>
+                  Esta sesión dura ~{nextRoutine.estimatedDurationMin} min y tus preferencias marcan {userMinutes} min.
+                  Hay una versión corta de ~{shortFit.estimatedDurationMin} min disponible en Ajustar entrenamiento.
+                </span>
+              </p>
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-            <button
-              onClick={() => startWorkoutFromRoutine(nextRoutine)}
-              className="flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-black shadow-xl shadow-cyan-600/25 transition-all press-scale"
-            >
-              <Play className="w-4 h-4 fill-white shrink-0" />
-              Iniciar sesión
-            </button>
-            {shortFit && (
+          <div className="space-y-2.5">
+            {/* Un único botón principal: iniciar o continuar según corresponda. */}
+            {activeSession ? (
+              <p className="text-xs text-neutral-300 leading-relaxed">
+                Tenés una sesión activa: continuála desde la tarjeta de arriba. Al terminar, esta sesión
+                programada queda disponible.
+              </p>
+            ) : (
               <button
-                onClick={() => startWorkoutFromRoutine(shortFit)}
-                className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl bg-cyan-950 hover:bg-cyan-900 text-cyan-300 text-xs font-black border border-cyan-500/30 transition-all press-scale"
-                title={`Rutina que entra en tus ${userMinutes} min preferidos`}
+                onClick={() => startWorkoutFromRoutine(nextRoutine)}
+                className="w-full flex items-center justify-center gap-2 px-5 py-4 rounded-2xl bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-black shadow-xl shadow-cyan-600/25 transition-all press-scale"
               >
-                <Clock className="w-4 h-4 shrink-0" />
-                Versión {shortFit.estimatedDurationMin} min
+                <Play className="w-4 h-4 fill-white shrink-0" />
+                <span className="truncate">
+                  Iniciar entrenamiento
+                  <span className="block text-[11px] font-bold text-cyan-100/90 normal-case">
+                    {nextExerciseCount} ejercicios · ~{nextRoutine.estimatedDurationMin} min
+                  </span>
+                </span>
               </button>
             )}
-            <button
-              onClick={() => startEmptyWorkout("Entrenamiento Libre")}
-              className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-sm font-bold border border-neutral-700 transition-all press-scale"
-            >
-              <Plus className="w-4 h-4 shrink-0" />
-              Sesión libre
-            </button>
-          </div>
 
-          <CardioToggle />
-
-          {/* P3: lugar de entrenamiento de hoy — adapta la rutina al equipamiento real */}
-          <div className="flex items-center justify-between gap-2 w-full px-3 py-2 rounded-2xl bg-neutral-950 border border-neutral-800">
-            <span className="flex items-center gap-2 text-[11px] font-bold text-neutral-300">
-              <Dumbbell className="w-3.5 h-3.5 text-cyan-400" />
-              Hoy entreno en
-            </span>
-            <div className="flex gap-1" role="radiogroup" aria-label="Lugar de entrenamiento de hoy">
-              {EQUIPMENT_OPTIONS.map((opt) => (
+            <div className="flex flex-wrap items-center gap-x-4">
+              <button
+                onClick={onGoToWorkout}
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-cyan-300 hover:text-cyan-200 transition-colors min-h-[44px]"
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+                Ajustar entrenamiento
+              </button>
+              {!activeSession && (
                 <button
-                  key={opt.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={currentEquipment === opt.value}
-                  onClick={() => changeTodayEquipment(opt.value)}
-                  className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-[11px] font-bold transition-all touch-target ${
-                    currentEquipment === opt.value
-                      ? "bg-cyan-600 text-white shadow-lg shadow-cyan-600/25"
-                      : "bg-neutral-900 text-neutral-400 hover:text-white border border-neutral-800"
-                  }`}
+                  onClick={() => startEmptyWorkout("Entrenamiento Libre")}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-neutral-300 hover:text-white transition-colors min-h-[44px]"
                 >
-                  {opt.label}
+                  <Dumbbell className="w-3.5 h-3.5 text-neutral-400" />
+                  Entrenamiento libre
                 </button>
-              ))}
+              )}
+              <button
+                onClick={() => setShowDetails((v) => !v)}
+                aria-expanded={showDetails}
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-neutral-300 hover:text-white transition-colors min-h-[44px]"
+              >
+                Ver detalles
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showDetails ? "rotate-180" : ""}`} />
+              </button>
             </div>
-          </div>
 
-          <div className="flex flex-wrap items-center gap-2 text-[11px] text-neutral-400">
-            <button onClick={onGoToWorkout} className="flex items-center gap-1 font-bold text-neutral-400 hover:text-white transition-colors">
-              Cambiar sesión <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-            <span aria-hidden="true" className="text-neutral-500">·</span>
-            <button
-              onClick={() => setIsReviewOpen(true)}
-              className="flex items-center gap-1 font-bold text-neutral-400 hover:text-white transition-colors"
-            >
-              <RefreshCcw className="w-3.5 h-3.5" />
-              Revisión semanal
-            </button>
-            <span aria-hidden="true" className="text-neutral-500">·</span>
-            <span>
-              Sobrecarga progresiva: subís peso solo cuando cumplís el objetivo de reps con el RIR planificado.
-            </span>
+            {/* Explicaciones largas (programación, progresión, duración) + lugar
+                de entrenamiento: mismo dato único que usa Entrenar. */}
+            {showDetails && (
+              <div className="p-3.5 rounded-2xl bg-neutral-950 border border-neutral-800 space-y-3 animate-fadeIn">
+                {nextRoutine.description && (
+                  <p className="text-xs text-neutral-300 leading-relaxed">{nextRoutine.description}</p>
+                )}
+                <p className="text-xs text-neutral-300 leading-relaxed">
+                  <strong className="text-white">Progresión:</strong> subís peso solo cuando cumplís el objetivo de
+                  repeticiones con el RIR planificado. El peso inicial sale de tu historial y de la dificultad percibida.
+                </p>
+                <p className="text-xs text-neutral-300 leading-relaxed">
+                  <strong className="text-white">Duración:</strong> ~{nextRoutine.estimatedDurationMin} min para{" "}
+                  {nextExerciseCount} ejercicios
+                  {shortFit ? ` · hay una versión corta de ~${shortFit.estimatedDurationMin} min` : ""}.
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => setIsReviewOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-neutral-900 border border-neutral-700 text-xs font-bold text-neutral-200 hover:text-white transition-colors min-h-[44px]"
+                  >
+                    <RefreshCcw className="w-3.5 h-3.5" />
+                    Revisión semanal
+                  </button>
+                  <button
+                    onClick={onGoToWorkout}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-neutral-900 border border-neutral-700 text-xs font-bold text-neutral-200 hover:text-white transition-colors min-h-[44px]"
+                  >
+                    Cambiar de sesión
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-2xl bg-neutral-900 border border-neutral-800">
+                  <span className="flex items-center gap-2 text-xs font-bold text-neutral-300">
+                    <Dumbbell className="w-3.5 h-3.5 text-cyan-400" />
+                    Hoy entreno en
+                  </span>
+                  <div className="flex gap-1" role="radiogroup" aria-label="Lugar de entrenamiento de hoy">
+                    {EQUIPMENT_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        role="radio"
+                        aria-checked={currentEquipment === opt.value}
+                        onClick={() => changeTodayEquipment(opt.value)}
+                        className={`px-3 min-h-[44px] rounded-lg text-xs font-bold transition-all ${
+                          currentEquipment === opt.value
+                            ? "bg-cyan-600 text-white shadow-lg shadow-cyan-600/25"
+                            : "bg-neutral-950 text-neutral-300 hover:text-white border border-neutral-800"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

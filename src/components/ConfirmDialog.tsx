@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { FocusTrap } from "./FocusTrap";
+import { useBackHandler } from "../context/BackNavContext";
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -22,6 +23,9 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   onConfirm,
   onCancel,
 }) => {
+  // Atrás cierra el diálogo (equivale a cancelar), sin tocar el resto.
+  useBackHandler("confirm-dialog", open ? () => { onCancel(); return true; } : null, 200);
+
   // Escape cancela: FocusTrap solo atrapa Tab, no cierra el diálogo.
   useEffect(() => {
     if (!open) return;

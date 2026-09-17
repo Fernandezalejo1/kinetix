@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import { X, Play, Pause, RotateCcw, Volume2, VolumeX, Activity, Minimize2, Maximize2 } from "lucide-react";
 import { playTickSound, unlockAudio } from "../../utils/scienceCalculators";
 import { useWorkout } from "../../context/WorkoutContext";
+import { useBackHandler } from "../../context/BackNavContext";
 import { FocusTrap } from "../FocusTrap";
 
 interface TempoMetronomeModalProps {
@@ -25,6 +26,9 @@ export const TempoMetronomeModal: React.FC<TempoMetronomeModalProps> = ({
   const [soundActive, setSoundActive] = useState(true);
   const [minimized, setMinimized] = useState(false);
   const { soundEnabled } = useWorkout();
+
+  // Atrás cierra el metrónomo de tempo.
+  useBackHandler("tempo-metronome", isOpen ? () => { onClose(); return true; } : null, isRunning ? 200 : 0);
 
   // Parse tempo: e.g. "3-1-0-1" => [3, 1, 0, 1]
   const parsedPhases = tempoString.split("-").map((v) => parseInt(v, 10) || 0);

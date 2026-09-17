@@ -20,7 +20,7 @@ import { RoutineEditorModal } from "./RoutineEditorModal";
 import { resolveCurrentEquipment } from "../../utils/userProfile";
 import { adaptRoutineToEquipment } from "../../utils/equipmentAdapter";
 import { applyDupDay } from "../../utils/dup";
-import { previewExerciseCount } from "../../utils/sessionPreview";
+import { injectedCardioCount } from "../../utils/sessionPreview";
 import { CardioToggle } from "../workout/CardioToggle";
 
 const EQUIPMENT_LEVEL_LABEL: Record<string, string> = {
@@ -125,18 +125,22 @@ export const ProgramsExplorer: React.FC = () => {
       {/* Custom Routines Tab */}
       {activeTab === "custom" && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-3">
             <div>
               <h2 className="text-xl font-black text-white tracking-tight">Mis Rutinas Personalizadas</h2>
-              <p className="text-xs text-neutral-400">Crea y edita rutinas completamente a tu medida</p>
+              <p className="text-xs text-neutral-300">Crea y edita rutinas a tu medida</p>
             </div>
-            <button
-              onClick={() => { setEditingRoutine(undefined); setIsEditorOpen(true); }}
-              className="px-4 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-cyan-600/20 transition-all flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Crear Rutina
-            </button>
+            {/* Una sola puerta de creación por estado: si no hay rutinas, la
+                acción vive en el estado vacío (y aquí no se repite). */}
+            {customRoutines.length > 0 && (
+              <button
+                onClick={() => { setEditingRoutine(undefined); setIsEditorOpen(true); }}
+                className="shrink-0 min-h-[48px] px-4 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-cyan-600/20 transition-all flex items-center gap-2 press-scale"
+              >
+                <Plus className="w-4 h-4" aria-hidden="true" />
+                Crear rutina
+              </button>
+            )}
           </div>
 
           {customRoutines.length === 0 ? (
@@ -148,17 +152,17 @@ export const ProgramsExplorer: React.FC = () => {
                 </span>
               </div>
               <div>
-                <h3 className="text-xl font-black text-white">No tienes rutinas personalizadas</h3>
-                <p className="text-[13px] text-neutral-400 max-w-sm mx-auto mt-2 leading-relaxed">
-                  Crea tu primera rutina con ejercicios, series, repeticiones, tempo y superseries. Tus rutinas aparecerán aquí.
+                <h3 className="text-xl font-black text-white">Todavía no creaste ninguna rutina</h3>
+                <p className="text-[13px] text-neutral-300 max-w-sm mx-auto mt-2 leading-relaxed">
+                  Una rutina guarda tus ejercicios, series, repeticiones, tempo y superseries. Cuando crees una, aparece acá y podés iniciarla en un toque.
                 </p>
               </div>
               <button
                 onClick={() => { setEditingRoutine(undefined); setIsEditorOpen(true); }}
-                className="min-h-[48px] px-6 py-3 bg-gradient-to-br from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white text-[13px] font-black rounded-xl shadow-lg shadow-cyan-600/20 transition-all inline-flex items-center gap-2"
+                className="min-h-[48px] px-6 py-3 bg-gradient-to-br from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white text-[13px] font-black rounded-xl shadow-lg shadow-cyan-600/20 transition-all inline-flex items-center gap-2 press-scale"
               >
-                <Plus className="w-4 h-4" />
-                + Crear Mi Primera Rutina
+                <Plus className="w-4 h-4" aria-hidden="true" />
+                Crear mi primera rutina
               </button>
             </div>
           ) : (
@@ -178,8 +182,11 @@ export const ProgramsExplorer: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="text-[11px] text-neutral-400 font-mono">
-                    {previewExerciseCount(routine, includeCardio)} ejercicios · {routine.estimatedDurationMin} min
+                  <div className="text-xs text-neutral-300 tabular-nums">
+                    {/* Conteo explícito: lo guardado + el cardio que se inyecta
+                        al iniciar (antes parecía un número inconsistente). */}
+                    {routine.exercises.length} {routine.exercises.length === 1 ? "ejercicio" : "ejercicios"}
+                    {injectedCardioCount(routine, includeCardio) > 0 ? " + cardio" : ""} · {routine.estimatedDurationMin} min
                   </div>
 
                   <div className="flex items-center gap-2 pt-2 border-t border-neutral-800">
@@ -207,13 +214,6 @@ export const ProgramsExplorer: React.FC = () => {
                 </div>
               ))}
 
-              <button
-                onClick={() => { setEditingRoutine(undefined); setIsEditorOpen(true); }}
-                className="p-5 rounded-3xl border-2 border-dashed border-neutral-800 hover:border-cyan-500 text-neutral-400 hover:text-cyan-400 font-bold text-sm flex items-center justify-center gap-2 transition-all min-h-[160px]"
-              >
-                <Plus className="w-5 h-5" />
-                Crear Nueva Rutina
-              </button>
             </div>
           )}
         </div>

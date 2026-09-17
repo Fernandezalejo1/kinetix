@@ -17,6 +17,7 @@ import {
   Clock,
   Copy,
   History,
+  ChevronDown,
 } from "lucide-react";
 import { useWorkout } from "../../context/WorkoutContext";
 import { useToast } from "../../context/ToastContext";
@@ -46,20 +47,187 @@ import {
   QuickMealCategory,
 } from "../../data/nutritionData";
 
+/** Bloque desplegable: las explicaciones largas no ocupan la pantalla hasta
+ *  que el usuario las pide. Cerrado por defecto. */
+const Disclosure: React.FC<{ label: string; hint?: string; children: React.ReactNode }> = ({ label, hint, children }) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="rounded-2xl bg-neutral-900 border border-neutral-800">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="w-full min-h-[48px] px-3 flex items-center justify-between gap-2 text-left"
+      >
+        <span className="text-[11px] font-black uppercase tracking-wider text-neutral-300">
+          {label}
+          {hint && <span className="ml-1 font-bold normal-case tracking-normal text-neutral-400">· {hint}</span>}
+        </span>
+        <ChevronDown className={`w-4 h-4 text-neutral-400 transition-transform shrink-0 ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && <div className="px-3 pb-3 space-y-3">{children}</div>}
+    </div>
+  );
+};
+
+/** Registro de comidas del día: la acción principal de Nutrición. Vive aparte
+ *  para poder mostrarlo arriba (después del resumen) sin duplicar marcado. */
+const MealsLogSection: React.FC = () => {
+  const { nutritionLog, nutritionHistory, addMeal, removeMeal, copyMealsFromYesterday } = useWorkout();
+  const { showToast } = useToast();
+
+  // Últimas comidas distintas (hoy primero) para volver a registrarlas de un toque.
+  const recentMeals = useMemo(() => {
+    const seen = new Map<string, MealItem>();
+    const order = [nutritionLog, ...[...(Array.isArray(nutritionHistory) ? nutritionHistory : [])].reverse()];
+    for (const day of order) {
+      if (!day || !Array.isArray(day.meals)) continue;
+      for (const m of day.meals) {
+        if (!m || !m.dishName) continue;
+        if (!seen.has(m.dishName)) seen.set(m.dishName, m);
+      }
+    }
+    return Array.from(seen.values()).slice(0, 6);
+  }, [nutritionHistory, nutritionLog]);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <h3 className="text-lg font-black text-white tracking-tight">Comidas de hoy</h3>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-neutral-400 font-mono">{nutritionLog.meals.length} registradas</span>
+          <button
+            onClick={() => {
+              const copied = copyMealsFromYesterday();
+              showToast(
+                copied ? "Comidas de ayer copiadas a hoy" : "No hay comidas de ayer para copiar",
+                copied ? "success" : "info"
+              );
+            }}
+            className="min-h-[44px] px-3 py-2 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 text-[11px] font-bold border border-cyan-500/25 transition-all flex items-center gap-1.5"
+            title="Re-registra hoy lo que comiste ayer (log rápido)"
+          >
+            <Copy className="w-3.5 h-3.5" />
+            Copiar ayer
+          </button>
+        </div>
+      </div>
+
+      {/* P3: comidas recientes — log de un toque (las últimas distintas) */}
+      {recentMeals.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-1.5 text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
+            <History className="w-3.5 h-3.5" />
+            Recientes — tocá para volver a registrar
+          </div>
+          <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
+            {recentMeals.map((m) => (
+              <button
+                key={m.dishName}
+                onClick={() => {
+                  addMeal({
+                    ...m,
+                    id: `meal-recent-${Date.now()}-${m.id}`,
+                    time: new Date().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }),
+                  });
+                  showToast(`${m.dishName} registrado`, "success");
+                }}
+                className="min-h-[52px] px-3 py-2 rounded-xl bg-neutral-950 hover:bg-neutral-800 border border-neutral-800 text-left text-xs text-neutral-300 hover:text-white whitespace-nowrap shrink-0 transition-all space-y-0.5"
+              >
+                <div className="flex items-center gap-1.5 font-bold">
+                  <Plus className="w-3 h-3 text-cyan-400 shrink-0" />
+                  <span className="max-w-[180px] truncate">{m.dishName}</span>
+                </div>
+                <div className="font-mono text-[11px] text-neutral-400">
+                  {m.calories} kcal · P{m.protein} G{m.carbs} F{m.fats}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {nutritionLog.meals.length === 0 ? (
+        <div className="p-6 rounded-3xl bg-neutral-900/50 border border-neutral-800 text-neutral-300 text-xs space-y-2">
+          <p className="font-bold text-white">Hoy todavía no registraste comidas</p>
+          <p>
+            Cargá la primera con los <strong className="text-white">Platos Rápidos</strong> de abajo, el{" "}
+            <strong className="text-white">Plan de Comidas</strong>, o volviendo a registrar una comida reciente.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {nutritionLog.meals
+            .slice()
+            .sort((a, b) => (b.time || "").localeCompare(a.time || ""))
+            .map((meal) => (
+              <div
+                key={meal.id}
+                className="p-4 sm:p-5 rounded-2xl bg-neutral-900 border border-neutral-800 hover:border-neutral-700 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
+              >
+                <div className="flex items-start gap-4 min-w-0">
+                  {meal.imageUrl ? (
+                    <img
+                      src={meal.imageUrl}
+                      alt={meal.dishName}
+                      referrerPolicy="no-referrer"
+                      className="w-16 h-16 rounded-xl object-cover border border-neutral-700 shrink-0"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-xl bg-neutral-950 border border-neutral-800 flex items-center justify-center text-cyan-400 shrink-0 font-black text-sm">
+                      {meal.calories}k
+                    </div>
+                  )}
+
+                  <div className="space-y-1 min-w-0">
+                    <h4 className="text-base font-bold text-white break-words">{meal.dishName}</h4>
+                    <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-mono">
+                      <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold">{meal.calories} kcal</span>
+                      <span className="px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-bold">P:{meal.protein}g</span>
+                      <span className="px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20 font-bold">C:{meal.carbs}g</span>
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">G:{meal.fats}g</span>
+                      {meal.fiber !== undefined && meal.fiber > 0 && (
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-bold">{meal.fiber}g Fibra</span>
+                      )}
+                      {meal.mpsQuality && (
+                        <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 font-bold">{meal.mpsQuality}</span>
+                      )}
+                    </div>
+                    {meal.description && (
+                      <p className="text-[11px] text-neutral-400 mt-1 italic break-words">"{meal.description}"</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between md:justify-end gap-3 pt-2 md:pt-0 border-t md:border-t-0 border-neutral-800">
+                  <span className="text-[11px] text-neutral-400 font-mono">{meal.time}</span>
+                  <button
+                    onClick={() => { removeMeal(meal.id); showToast("Comida eliminada", "info"); }}
+                    className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-neutral-400 hover:text-red-300 hover:bg-red-500/10 transition-colors"
+                    title="Eliminar comida"
+                    aria-label={`Eliminar ${meal.dishName}`}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const NutritionVisionHub: React.FC = () => {
   const {
     nutritionLog,
     bodyMetrics,
     addMeal,
-    removeMeal,
-    copyMealsFromYesterday,
     updateMacroTargets,
     addBodyMetric,
     nutritionGoal,
     setNutritionGoal,
     nutritionProfile,
     setNutritionProfile,
-    nutritionHistory,
   } = useWorkout();
   const { showToast } = useToast();
 
@@ -197,20 +365,6 @@ const goalDirectionMain =
   const goalMeals = quickMealsFor(nutritionGoal);
   const filteredQuickMeals = quickCategory === "todos" ? goalMeals : goalMeals.filter((m) => m.category === quickCategory);
 
-  // P3: comidas recientes (últimas distintas, hoy primero) para log de un toque.
-  const recentMeals = useMemo(() => {
-    const seen = new Map<string, MealItem>();
-    const order = [nutritionLog, ...[...(Array.isArray(nutritionHistory) ? nutritionHistory : [])].reverse()];
-    for (const day of order) {
-      if (!day || !Array.isArray(day.meals)) continue;
-      for (const m of day.meals) {
-        if (!m || !m.dishName) continue;
-        if (!seen.has(m.dishName)) seen.set(m.dishName, m);
-      }
-    }
-    return Array.from(seen.values()).slice(0, 6);
-  }, [nutritionHistory, nutritionLog]);
-
   const macroCards: {
     label: string;
     value: number;
@@ -275,7 +429,7 @@ const goalDirectionMain =
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => { setNewWeight(currentWeight ?? 80); setWeightEditorOpen(true); }}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-cyan-600/10 border border-cyan-500/30 text-xs font-bold text-cyan-300 hover:bg-cyan-600/20 transition-colors"
+            className="min-h-[44px] flex items-center gap-1.5 px-3 py-2 rounded-xl bg-cyan-600/10 border border-cyan-500/30 text-xs font-bold text-cyan-300 hover:bg-cyan-600/20 transition-colors"
           >
             <Scale className="w-3.5 h-3.5" />
             Registrar peso
@@ -288,7 +442,7 @@ const goalDirectionMain =
               setEditFats(targetFats);
               setEditingTargets(true);
             }}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-neutral-800/60 border border-neutral-700 text-xs font-bold text-neutral-300 hover:text-white transition-colors"
+            className="min-h-[44px] flex items-center gap-1.5 px-3 py-2 rounded-xl bg-neutral-800/60 border border-neutral-700 text-xs font-bold text-neutral-300 hover:text-white transition-colors"
           >
             <Edit3 className="w-3.5 h-3.5" />
             Ajustar objetivos
@@ -310,13 +464,19 @@ const goalDirectionMain =
           </div>
           <button
             onClick={openProfile}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-cyan-600/10 border border-cyan-500/30 text-xs font-bold text-cyan-300 hover:bg-cyan-600/20 transition-colors shrink-0"
+            className="min-h-[44px] flex items-center gap-1.5 px-3 py-2 rounded-xl bg-cyan-600/10 border border-cyan-500/30 text-xs font-bold text-cyan-300 hover:bg-cyan-600/20 transition-colors shrink-0"
           >
             <Edit3 className="w-3.5 h-3.5" />
             Editar
           </button>
         </div>
 
+        {/* Resumen primero; el cálculo detallado se despliega si hace falta. */}
+        <p className="text-sm font-bold text-neutral-100">
+          Objetivo hoy {targetCalories} kcal · <span className={goalInDeficit ? "text-amber-300" : nutritionGoal === "maintenance" ? "text-neutral-300" : "text-emerald-300"}>{goalDirection}</span> · turno {nutritionProfile.workStart}–{nutritionProfile.workEnd}
+        </p>
+
+        <Disclosure label="Cálculo del metabolismo" hint={currentWeight ? `${bmr} basal · ${tdee} gasto` : "falta tu peso"}>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           <div className="p-3 rounded-2xl bg-neutral-950 border border-neutral-800">
             <div className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-1">BMR <span title="Tasa Metabólica Basal · Mifflin-St Jeor · calorías en reposo absoluto" className="cursor-help text-cyan-400">ⓘ</span></div>
@@ -348,6 +508,7 @@ const goalDirectionMain =
           {goalInDeficit ? "para no perder músculo con el déficit" : "para progresar sin acumular grasa innecesaria"},
           y evitá cafeína en las horas previas a tu descanso para proteger el sueño.
         </p>
+        </Disclosure>
       </div>
 
       {/* Goal selector */}
@@ -362,6 +523,11 @@ const goalDirectionMain =
           </div>
         </div>
 
+        <p className="text-sm font-bold text-neutral-100">
+          Estrategia activa: <span className={NUTRITION_GOALS[nutritionGoal].accent}>{NUTRITION_GOALS[nutritionGoal].label}</span> · {targetCalories.toLocaleString("es-ES")} kcal · proteína {NUTRITION_GOALS[nutritionGoal].proteinPerKg} g/kg
+        </p>
+
+        <Disclosure label="Cambiar estrategia nutricional" hint="keto · déficit · mantenimiento · volumen">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {NUTRITION_GOAL_KEYS.map((g) => {
             const cfg = NUTRITION_GOALS[g];
@@ -389,6 +555,7 @@ const goalDirectionMain =
           <strong>En {NUTRITION_GOALS[nutritionGoal].label}:</strong>{" "}
           <span className="text-neutral-300">{NUTRITION_GOALS[nutritionGoal].description}</span>
         </div>
+        </Disclosure>
       </div>
 
       {/* Guía KETO / Cetogénica (solo se muestra si la meta activa es keto) */}
@@ -411,6 +578,7 @@ const goalDirectionMain =
           </div>
         </div>
 
+        <Disclosure label="Cómo funciona la cetosis (y cómo arrancar)" hint={`carbos ≈ ${nutritionLog.carbsTarget} g · grasa 65–70%`}>
         <p className="text-[11px] text-neutral-300 leading-relaxed">
           En keto reducís los carbos a <strong className="text-white">&lt;30 g/día</strong> (la app los fija en ~{nutritionLog.carbsTarget} g) y subís
           la grasa (~65–70% de las calorías): el hígado produce <strong className="text-white">cuerpos cetónicos</strong> que el cuerpo y el cerebro usan
@@ -444,6 +612,7 @@ const goalDirectionMain =
           plan de comidas — todo es alto en grasa y sin carbos — y aplicá tus macros con "Aplicar a objetivos".
           Tu perfil {currentWeight ? `(${currentWeight} kg, definición −${nutritionProfile.deficitPercent}%)` : ""} ya quedó calculado.
         </div>
+        </Disclosure>
       </div>)}
 
       {/* Macro overview */}
@@ -540,6 +709,9 @@ const goalDirectionMain =
           </div>
         )}
       </div>
+
+      {/* Registro de comidas: la acción principal del día. */}
+      <MealsLogSection />
 
       <NutritionAdherencePanel />
 
@@ -812,7 +984,7 @@ const goalDirectionMain =
             <button
               key={cat.id}
               onClick={() => setQuickCategory(cat.id)}
-              className={`px-3 py-1.5 rounded-xl whitespace-nowrap transition-all shrink-0 ${
+              className={`min-h-[44px] px-3 py-1.5 rounded-xl whitespace-nowrap transition-all shrink-0 ${
                 quickCategory === cat.id
                   ? "bg-cyan-600 text-white shadow-md shadow-cyan-600/20"
                   : "bg-neutral-950 border border-neutral-800 text-neutral-400 hover:text-white"
@@ -860,127 +1032,6 @@ const goalDirectionMain =
             </button>
           ))}
         </div>
-      </div>
-
-      {/* Meals log */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <h3 className="text-lg font-black text-white tracking-tight">Comidas de hoy</h3>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-neutral-400 font-mono">{nutritionLog.meals.length} registradas</span>
-            <button
-              onClick={() => {
-                const copied = copyMealsFromYesterday();
-                showToast(
-                  copied ? "Comidas de ayer copiadas a hoy" : "No hay comidas de ayer para copiar",
-                  copied ? "success" : "info"
-                );
-              }}
-              className="px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 text-[11px] font-bold border border-cyan-500/25 transition-all touch-target flex items-center gap-1.5"
-              title="Re-registra hoy lo que comiste ayer (log rápido)"
-            >
-              <Copy className="w-3.5 h-3.5" />
-              Copiar ayer
-            </button>
-          </div>
-        </div>
-
-        {/* P3: comidas recientes — log de un toque (las últimas distintas) */}
-        {recentMeals.length > 0 && (
-          <div className="space-y-2">
-            <div className="flex items-center gap-1.5 text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
-              <History className="w-3.5 h-3.5" />
-              Recientes — tocá para volver a registrar
-            </div>
-            <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
-              {recentMeals.map((m) => (
-                <button
-                  key={m.dishName}
-                  onClick={() => {
-                    addMeal({
-                      ...m,
-                      id: `meal-recent-${Date.now()}-${m.id}`,
-                      time: new Date().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }),
-                    });
-                    showToast(`${m.dishName} registrado`, "success");
-                  }}
-                  className="px-3 py-2 rounded-xl bg-neutral-950 hover:bg-neutral-800 border border-neutral-800 text-left text-xs text-neutral-300 hover:text-white whitespace-nowrap shrink-0 transition-all space-y-0.5"
-                >
-                  <div className="flex items-center gap-1.5 font-bold">
-                    <Plus className="w-3 h-3 text-cyan-400 shrink-0" />
-                    <span className="max-w-[180px] truncate">{m.dishName}</span>
-                  </div>
-                  <div className="font-mono text-[11px] text-neutral-400">
-                    {m.calories} kcal · P{m.protein} G{m.carbs} F{m.fats}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {nutritionLog.meals.length === 0 ? (
-          <div className="p-8 text-center bg-neutral-900/50 rounded-3xl border border-neutral-800 text-neutral-400 text-xs">
-            No registraste comidas hoy. Agregá una usando los platos rápidos o el Plan de Comidas.
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {nutritionLog.meals
-              .slice()
-              .sort((a, b) => (b.time || "").localeCompare(a.time || ""))
-              .map((meal) => (
-                <div
-                  key={meal.id}
-                  className="p-5 rounded-2xl bg-neutral-900 border border-neutral-800 hover:border-neutral-700 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
-                >
-                  <div className="flex items-start gap-4 min-w-0">
-                    {meal.imageUrl ? (
-                      <img
-                        src={meal.imageUrl}
-                        alt={meal.dishName}
-                        referrerPolicy="no-referrer"
-                        className="w-16 h-16 rounded-xl object-cover border border-neutral-700 shrink-0"
-                      />
-                    ) : (
-                      <div className="w-16 h-16 rounded-xl bg-neutral-950 border border-neutral-800 flex items-center justify-center text-cyan-400 shrink-0 font-black text-sm">
-                        {meal.calories}k
-                      </div>
-                    )}
-
-                    <div className="space-y-1 min-w-0">
-                      <h4 className="text-base font-bold text-white break-words">{meal.dishName}</h4>
-                      <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-mono">
-                        <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold">{meal.calories} kcal</span>
-                        <span className="px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-bold">P:{meal.protein}g</span>
-                        <span className="px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20 font-bold">C:{meal.carbs}g</span>
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">G:{meal.fats}g</span>
-                        {meal.fiber !== undefined && meal.fiber > 0 && (
-                          <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-bold">{meal.fiber}g Fibra</span>
-                        )}
-                        {meal.mpsQuality && (
-                          <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 font-bold">{meal.mpsQuality}</span>
-                        )}
-                      </div>
-                      {meal.description && (
-                        <p className="text-[11px] text-neutral-400 mt-1 italic break-words">"{meal.description}"</p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between md:justify-end gap-3 pt-2 md:pt-0 border-t md:border-t-0 border-neutral-800">
-                    <span className="text-[11px] text-neutral-400 font-mono">{meal.time}</span>
-                    <button
-                      onClick={() => { removeMeal(meal.id); showToast("Comida eliminada", "info"); }}
-                      className="p-2 rounded-lg text-neutral-400 hover:text-red-400 hover:bg-neutral-800 transition-colors touch-target"
-                      title="Eliminar comida"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-          </div>
-        )}
       </div>
 
       {/* Manual add form - REMOVED (ya no se usa la entrada manual rápida) */}

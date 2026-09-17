@@ -173,6 +173,26 @@ input[type="number"] {
   min-width: 44px;
 }
 
+/* Altura de la barra de navegación inferior (md:hidden). */
+:root {
+  --bottom-nav-h: 60px;
+}
+
+/* Barra de acciones fija al pie de un formulario largo: se mantiene visible
+   mientras el formulario está en pantalla, pero por ENCIMA de la navegación
+   inferior y de la barra de gestos del sistema, para no quedar tapada. */
+.sticky-above-nav {
+  position: sticky;
+  bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px));
+  z-index: 10;
+}
+
+@media (min-width: 768px) {
+  .sticky-above-nav {
+    bottom: 0px;
+  }
+}
+
 /* Focus visible global: los controles muestran un anillo visible al navegar
    con teclado / lector de pantalla (los focus:outline-none de la app no dejan
    sin indicador de foco). Solo aplica a interacción por teclado, no al toque. */
