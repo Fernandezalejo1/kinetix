@@ -20,15 +20,32 @@ export const LONG_TERM_KIND = {
 } as const;
 
 /** Merge by identity, prefer current edits, and keep newest records first.
- * Archive size is not a validity check: even a small archive can hold unique older records. */
+ * Archive size is not a validity check: even a small archive can hold unique older records.
+ * Defensivo: el archivo (IndexedDB) no pasa por validadores; una entrada
+ * corrupta (null, sin clave) se salta en vez de romper la hidratación. */
 export function mergeArchived<T>(
   prev: T[],
   archived: T[] | null | undefined,
   keyOf: (entry: T) => string
 ): T[] {
   const entries = new Map<string, T>();
-  for (const entry of archived ?? []) entries.set(keyOf(entry), entry);
-  for (const entry of prev) entries.set(keyOf(entry), entry);
+  const safeKeyOf = (entry: T): string | null => {
+    try {
+      if (entry === null || entry === undefined) return null;
+      const key = keyOf(entry);
+      return typeof key === "string" && key !== "" ? key : null;
+    } catch {
+      return null;
+    }
+  };
+  for (const entry of archived ?? []) {
+    const key = safeKeyOf(entry);
+    if (key !== null) entries.set(key, entry);
+  }
+  for (const entry of prev ?? []) {
+    const key = safeKeyOf(entry);
+    if (key !== null) entries.set(key, entry);
+  }
   return [...entries.values()].sort((a, b) => Date.parse((b as { date?: string }).date ?? "") - Date.parse((a as { date?: string }).date ?? "") || 0);
 
 }

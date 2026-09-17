@@ -31,6 +31,7 @@ import { WaterTracker } from "./WaterTracker";
 import { ElectrolytesTracker } from "./ElectrolytesTracker";
 import { SupplementGuide } from "./SupplementGuide";
 import { FocusTrap } from "../FocusTrap";
+import { useBackHandler } from "../../context/BackNavContext";
 import {
   NUTRITION_GOALS,
   NUTRITION_GOAL_KEYS,
@@ -249,6 +250,11 @@ export const NutritionVisionHub: React.FC = () => {
   const [weightEditorOpen, setWeightEditorOpen] = useState(false);
   // FIX (bloqueante 2): inicializa con la medición más reciente por fecha.
   const [newWeight, setNewWeight] = useState(() => latestBodyMetric(bodyMetrics)?.weightKg ?? 80);
+
+  // Atrás/Escape cierra los formularios antes de navegar (misma regla que el resto de capas).
+  useBackHandler("nutrition-targets", editingTargets ? () => { setEditingTargets(false); return true; } : null);
+  useBackHandler("nutrition-profile", profileOpen ? () => { setProfileOpen(false); return true; } : null);
+  useBackHandler("nutrition-weight", weightEditorOpen ? () => { setWeightEditorOpen(false); return true; } : null);
 
   const [quickCategory, setQuickCategory] = useState<QuickMealCategory | "todos">("todos");
 

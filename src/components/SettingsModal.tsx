@@ -17,6 +17,7 @@ import {
 import { StepsPanel } from "./nutrition/StepsPanel";
 import { useToast } from "../context/ToastContext";
 import { useWorkout } from "../context/WorkoutContext";
+import { useBackHandler } from "../context/BackNavContext";
 import { parseWorkoutCsv, ImportResult } from "../utils/csvImporter";
 import { localDateKey } from "../utils/dateUtils";
 import {
@@ -80,7 +81,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
   const [reminder, setReminder] = useState<ReminderConfig>(() => {
     try {
       const raw = localStorage.getItem(REMINDER_KEY);
-      if (raw) return JSON.parse(raw);
+      if (raw) {
+        const parsed = JSON.parse(raw) as Partial<ReminderConfig>;
+        // Sanea la forma: un recordatorio corrupto dejaba el scheduler mudo.
+        return {
+          enabled: parsed.enabled === true,
+          hour: Number.isInteger(parsed.hour) && (parsed.hour as number) >= 0 && (parsed.hour as number) <= 23 ? (parsed.hour as number) : 18,
+          minute: Number.isInteger(parsed.minute) && (parsed.minute as number) >= 0 && (parsed.minute as number) <= 59 ? (parsed.minute as number) : 0,
+          dayIndex: Number.isInteger(parsed.dayIndex) && (parsed.dayIndex as number) >= 0 && (parsed.dayIndex as number) <= 6 ? (parsed.dayIndex as number) : 0,
+        };
+      }
     } catch {}
     return { enabled: false, hour: 18, minute: 0, dayIndex: 0 };
   });
@@ -91,6 +101,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
   const [encryptedPending, setEncryptedPending] = useState<EncryptedBackup | null>(null);
   const [passDialog, setPassDialog] = useState<"encrypt" | "decrypt" | null>(null);
   const [passValue, setPassValue] = useState("");
+
+  // Atrás/Escape cierra primero el diálogo de contraseña (no todo Ajustes).
+  useBackHandler(
+    "settings-pass-dialog",
+    passDialog ? () => { setPassDialog(null); return true; } : null,
+    150
+  );
   const [confirmWipe, setConfirmWipe] = useState(false);
   const [wipeTyped, setWipeTyped] = useState("");
   const [autoBackups, setAutoBackups] = useState<AutoBackupMeta[]>([]);

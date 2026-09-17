@@ -27,8 +27,8 @@ import { FocusTrap } from "../FocusTrap";
 import { GoalPhase, NutritionGoal } from "../../types";
 import {
   isNutritionGoalCustomized,
+  localStorageReader,
   phaseToNutritionGoal,
-  type StorageReader,
 } from "../../utils/nutritionGoalSync";
 import { localDateKey } from "../../utils/dateUtils";
 import {
@@ -45,14 +45,6 @@ import {
 } from "../../utils/goalEngine";
 import { computeAbsEstimate } from "../../utils/absEstimator";
 import { computePersonalTargets, DEFAULT_WEIGHT_KG, NUTRITION_GOALS } from "../../data/nutritionData";
-
-const localStorageReader: StorageReader = (key) => {
-  try {
-    return typeof localStorage !== "undefined" ? localStorage.getItem(key) : null;
-  } catch {
-    return null;
-  }
-};
 import { latestBodyMetric } from "../../utils/absEstimator";
 import { isNativePlatform, requestHealthSyncNow } from "../../utils/healthConnect";
 import { BASIC_LIFT_IDS } from "../../data/basicLifts";

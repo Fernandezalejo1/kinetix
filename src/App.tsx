@@ -232,11 +232,8 @@ const AppContent: React.FC = () => {
     isSettingsOpen ? () => { setIsSettingsOpen(false); return true; } : null,
     100
   );
-  useBackHandler(
-    "exercise-detail",
-    selectedExerciseForDetail ? () => { setSelectedExerciseForDetail(null); return true; } : null,
-    100
-  );
+  // La ficha del ejercicio se auto-registra (ExerciseDetailModal): no se
+  // duplica acá para no contar dos capas por un solo overlay.
 
   // Web/PWA: el botón Atrás del navegador se traduce a la misma navegación.
   // Mientras haya overlays registrados mantenemos una entrada de historial para

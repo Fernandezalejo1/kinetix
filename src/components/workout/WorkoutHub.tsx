@@ -28,6 +28,7 @@ import { useToast } from "../../context/ToastContext";
 import { useGoal } from "../../context/GoalContext";
 import { ConfirmDialog } from "../ConfirmDialog";
 import { FocusTrap } from "../FocusTrap";
+import { useBackHandler } from "../../context/BackNavContext";
 import { EXERCISES_DATABASE } from "../../data/exercisesData";
 const PlateCalculatorModal = React.lazy(() =>
   import("./PlateCalculatorModal").then((m) => ({ default: m.PlateCalculatorModal }))
@@ -112,6 +113,10 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [selectedSession, setSelectedSession] = useState<CompletedWorkout | null>(null);
   const [selectedExHistory, setSelectedExHistory] = useState<{ id: string; name: string } | null>(null);
+
+  // Atrás/Escape cierra los modales de detalle antes de navegar.
+  useBackHandler("hub-session-detail", selectedSession ? () => { setSelectedSession(null); return true; } : null);
+  useBackHandler("hub-ex-history", selectedExHistory ? () => { setSelectedExHistory(null); return true; } : null);
   const [confirmAction, setConfirmAction] = useState<null | {
     type: "ghost" | "clearAll" | "deleteOne";
     id?: string;

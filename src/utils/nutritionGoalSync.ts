@@ -14,6 +14,15 @@ import type { GoalPhase, NutritionGoal } from "../types";
 
 export type StorageReader = (key: string) => string | null;
 
+/** Lector defensivo de localStorage para los helpers de sincronía. */
+export const localStorageReader: StorageReader = (key) => {
+  try {
+    return typeof localStorage !== "undefined" ? localStorage.getItem(key) : null;
+  } catch {
+    return null;
+  }
+};
+
 const CUSTOM_FLAG_KEY = "kinetix_nutrition_goal_custom";
 const PHASE_KEY = "kinetix_goal_phase";
 

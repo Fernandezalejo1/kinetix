@@ -219,7 +219,15 @@ export function defaultStepsConfig(): StepsConfig {
 export function readStepsConfig(): StepsConfig {
   try {
     const raw = localStorage.getItem(CONFIG_KEY);
-    if (raw) return { ...defaultStepsConfig(), ...JSON.parse(raw) };
+    if (raw) {
+      const parsed = { ...defaultStepsConfig(), ...JSON.parse(raw) };
+      // Sanea tipos: un stepGoal corrupto propagaba NaN al ajuste de pasos.
+      if (!Number.isFinite(parsed.stepGoal) || parsed.stepGoal <= 0) parsed.stepGoal = 10000;
+      parsed.enabled = parsed.enabled === true;
+      parsed.autoApply = parsed.autoApply !== false;
+      parsed.trainedToday = parsed.trainedToday === true;
+      return parsed;
+    }
   } catch {
     /* ignore */
   }

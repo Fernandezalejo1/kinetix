@@ -109,6 +109,16 @@ export function readChallenge(): ChallengeState {
       const parsed = { ...defaultState(), ...JSON.parse(raw) };
       // Back-compat: estados viejos sin dailyGoal → 15000.
       if (!parsed.dailyGoal || parsed.dailyGoal <= 0) parsed.dailyGoal = DAILY_GOAL;
+      // Sanea la forma: un estado corrupto (fechas no-string, rachas NaN,
+      // completedDates no-array) rompía el calendario del reto más tarde.
+      if (!Array.isArray(parsed.completedDates)) parsed.completedDates = [];
+      else parsed.completedDates = (parsed.completedDates as unknown[]).filter((d: unknown): d is string => typeof d === "string");
+      if (typeof parsed.startDate !== "string") parsed.startDate = "";
+      if (typeof parsed.lastCheckedDate !== "string") parsed.lastCheckedDate = "";
+      if (!Number.isFinite(parsed.currentStreak)) parsed.currentStreak = 0;
+      if (!Number.isFinite(parsed.bestStreak)) parsed.bestStreak = 0;
+      if (typeof parsed.active !== "boolean") parsed.active = false;
+      if (typeof parsed.expired !== "boolean") parsed.expired = false;
       return parsed;
     }
   } catch { /* ignore */ }

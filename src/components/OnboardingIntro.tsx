@@ -12,7 +12,17 @@ import {
   Wrench,
 } from "lucide-react";
 import { useGoal } from "../context/GoalContext";
+import { useWorkout } from "../context/WorkoutContext";
 import { useToast } from "../context/ToastContext";
+import { useBackHandler } from "../context/BackNavContext";
+import {
+  isNutritionGoalCustomized,
+  localStorageReader,
+  phaseToNutritionGoal,
+} from "../utils/nutritionGoalSync";
+import { computePersonalTargets, DEFAULT_WEIGHT_KG } from "../data/nutritionData";
+import { latestBodyMetric } from "../utils/absEstimator";
+import { NutritionGoal } from "../types";
 import {
   saveUserProfile,
   recommendProgram,
@@ -130,6 +140,13 @@ export const OnboardingIntro: React.FC = () => {
   const [show, setShow] = useState(false);
   const { setPhase } = useGoal();
   const { showToast } = useToast();
+  const {
+    bodyMetrics,
+    nutritionProfile,
+    nutritionGoal,
+    syncNutritionGoalFromPhase,
+    updateMacroTargets,
+  } = useWorkout();
   const [profile, setProfile] = useState<UserProfile>(DEFAULT_USER_PROFILE);
 
   useEffect(() => {
@@ -151,6 +168,15 @@ export const OnboardingIntro: React.FC = () => {
     const withDate: UserProfile = { ...profile, completedAt: new Date().toISOString() };
     saveUserProfile(withDate);
     setPhase(profile.goal);
+    // La fase manda en nutrición salvo elección explícita previa (igual que Perfil).
+    const customized = isNutritionGoalCustomized(localStorageReader);
+    const effective: NutritionGoal = customized ? nutritionGoal : phaseToNutritionGoal(profile.goal);
+    if (!customized) syncNutritionGoalFromPhase(effective);
+    const weightKg = latestBodyMetric(bodyMetrics)?.weightKg ?? DEFAULT_WEIGHT_KG;
+    const deficit =
+      profile.goal === "cut" ? nutritionProfile.deficitPercent : profile.goal === "maintenance" ? 0 : -8;
+    const t = computePersonalTargets(weightKg, effective, { ...nutritionProfile, deficitPercent: deficit });
+    updateMacroTargets({ calories: t.calories, protein: t.protein, carbs: t.carbs, fats: t.fats });
     // No pisar una selección explícita previa del usuario.
     let explicit: string | null = null;
     try {
@@ -174,6 +200,20 @@ export const OnboardingIntro: React.FC = () => {
     }
     setShow(false);
   };
+
+  // Atrás retrocede de paso o descarta (Omitir) en el primero; nunca navega
+  // las pestañas por detrás del onboarding.
+  useBackHandler(
+    "onboarding",
+    show
+      ? () => {
+          if (step > 0) setStep((s) => s - 1);
+          else dismiss();
+          return true;
+        }
+      : null,
+    300
+  );
 
   const renderProfileStep = (): React.ReactNode => {
     switch (step) {
