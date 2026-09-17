@@ -124,13 +124,24 @@ async function migrateIdbExclusives(): Promise<void> {
     if (!key) continue;
     const raw = localStorage.getItem(key);
     if (raw && isVaultCiphertext(raw)) continue;
+    let archived: unknown;
     try {
-      const archived = await idbKvGet(kind);
-      if (!archived) continue;
-      const newer = raw ? mergeArraysByDate(raw, archived) : archived;
-      if (newer) localStorage.setItem(key, JSON.stringify(newer));
+      archived = await idbKvGet(kind);
     } catch {
-      /* sin IDB (tests/SSR): no hay nada que migrar */
+      continue; // sin IDB (tests/SSR): no hay nada que migrar
+    }
+    if (!archived) continue;
+    const newer = raw ? mergeArraysByDate(raw, archived) : archived;
+    if (!newer) continue;
+    try {
+      localStorage.setItem(key, JSON.stringify(newer));
+    } catch {
+      // CRÍTICO: acá el archivo IDB aún NO se vació. Si no hay espacio para
+      // migrar, abortamos la activación: vaciar el archivo perdería el
+      // historial archivado de forma irrecuperable.
+      throw new Error(
+        "No hay espacio para resguardar el historial archivado en el vault. Liberá espacio y volvé a intentarlo."
+      );
     }
   }
 }
@@ -151,6 +162,15 @@ function recordDate(r: DatedRecord): string {
   return String((r.date ?? r.startTime ?? r.ts ?? r.day) ?? "");
 }
 
+/** Identidad del registro: el ID real es único; la fecha SOLO es identidad para
+ *  registros diarios sin ID (ej.: nutrición). Usar la fecha como clave de todo
+ *  perdía ejercicios distintos entrenados el mismo instante/día. */
+function recordKey(r: DatedRecord): string {
+  const id = r.id ?? r.startTime ?? r.ts ?? r.day;
+  if (id !== undefined && id !== null && id !== "") return "#" + String(id);
+  return "D:" + recordDate(r);
+}
+
 function mergeArraysByDate(raw: string, archived: unknown): unknown {
   try {
     const local = JSON.parse(raw);
@@ -158,8 +178,21 @@ function mergeArraysByDate(raw: string, archived: unknown): unknown {
     const both = Array.isArray(local) && Array.isArray(arch);
     if (both) {
       const map = new Map<string, unknown>();
-      for (const item of arch) map.set(recordDate(item as DatedRecord), item);
-      for (const item of local) map.set(recordDate(item as DatedRecord), item);
+      let emptyN = 0;
+      for (const item of arch) {
+        const key = recordKey(item as DatedRecord);
+        map.set(key === "D:" ? `D:${emptyN++}` : key, item);
+      }
+      for (const item of local) {
+        const key = recordKey(item as DatedRecord);
+        if (key === "D:") {
+          // Sin ID ni fecha: se conserva siempre, sin pisar el del archivo.
+          map.set(`D:${emptyN++}`, item);
+        } else {
+          // Mismo ID => el registro local prevalece; distinto ID => se conserva.
+          map.set(key, item);
+        }
+      }
       return Array.from(map.values());
     }
     if (Array.isArray(arch) && arch.length && (Array.isArray(local) ? local.length === 0 : true)) return arch;

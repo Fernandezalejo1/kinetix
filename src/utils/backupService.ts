@@ -11,7 +11,7 @@ import { VALIDATORS } from "./storage";
  */
 
 import { idbBackupGetData, idbBackupList, idbBackupPrune, idbBackupSave, AutoBackupMeta } from "./indexedDb";
-import { isVaultEnabled } from "./storage";
+import { isVaultEnabled, isVaultUnlocked, getVaultMemory, VAULT_KEYS } from "./storage";
 
 export const AUTO_BACKUP_INTERVAL_MS = 6 * 60 * 60 * 1000; // 6 horas
 export const AUTO_BACKUP_LIMIT = 24;
@@ -102,12 +102,26 @@ export const ARCHIVE_KEYS: Record<string, string> = {
 export async function collectFullState(): Promise<Record<string, unknown>> {
   await flushHistoryWrites();
   const state = collectKinetixState();
+  // P4 Vault: con cifrado en reposo, localStorage guarda envelopes cifrados
+  // (no arrays). El respaldo manual (la única vía con vault activo) exporta el
+  // texto plano de la sesión DESBLOQUEADA; si está bloqueado no hay forma de
+  // leer los datos, así que se falla con un mensaje claro en lugar de tratar el
+  // cifrado como una lista y romper en el merge.
+  if (isVaultEnabled()) {
+    if (!isVaultUnlocked()) {
+      throw new Error("Desbloqueá el vault para poder exportar el respaldo.");
+    }
+    for (const key of VAULT_KEYS as readonly string[]) {
+      const plain = getVaultMemory(key);
+      if (plain !== undefined) state[key] = plain;
+    }
+  }
   const archive = await hydrateFromArchive(true);
   for (const [key, kind] of Object.entries(ARCHIVE_KEYS)) {
     // strict: kind es string; se acota a las claves reales del archivo.
     const archived = archive[kind as keyof typeof archive] as unknown[] | null;
     state[key] = mergeArchived(
-      (state[key] as unknown[] | undefined) ?? [],
+      Array.isArray(state[key]) ? (state[key] as unknown[]) : [],
       archived,
       (entry) =>
         (key === "kinetix_nutrition_history"

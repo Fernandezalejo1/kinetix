@@ -400,7 +400,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) =
   const exportData = async (cipherOpts?: { password?: string }) => {
     let data: Record<string, unknown>;
     try { data = await collectFullState(); }
-    catch { showToast("No se pudo leer el historial completo para exportar", "error"); return; }
+    catch (e) { showToast(e instanceof Error && e.message ? e.message : "No se pudo leer el historial completo para exportar", "error"); return; }
     const payload = {
       app: "KINETIX",
       version: 1,
