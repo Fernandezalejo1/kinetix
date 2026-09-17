@@ -72,6 +72,9 @@ export const ScienceDashboard: React.FC = () => {
   const { workoutHistory, exerciseHistory, personalRecords, weightUnit, setSelectedExerciseForDetail } = useWorkout();
   const [selectedMuscle, setSelectedMuscle] = useState<MuscleGroup>("chest");
   const [heatmapView, setHeatmapView] = useState<"front" | "back">("front");
+  // Sin sesiones no hay base para conclusiones de volumen/equilibrio: los
+  // mensajes deben pedir datos, no declarar "óptimo".
+  const hasSessions = workoutHistory.length > 0;
   
   // Auto-Progression section states
   const [progressionFilter, setProgressionFilter] = useState<"all" | "push" | "pull" | "legs" | "increase">("all");
@@ -867,14 +870,18 @@ export const ScienceDashboard: React.FC = () => {
               </div>
               <span
                 className={`px-3 py-1 rounded-full text-xs font-bold uppercase border ${
-                  selectedLandmark.status === "optimal"
+                  !hasSessions
+                    ? "bg-neutral-800 text-neutral-400 border-neutral-700"
+                    : selectedLandmark.status === "optimal"
                     ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
                     : selectedLandmark.status === "under"
                     ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
                     : "bg-amber-500/10 text-amber-400 border-amber-500/20"
                 }`}
               >
-                {selectedLandmark.status === "optimal"
+                {!hasSessions
+                  ? "Sin datos esta semana"
+                  : selectedLandmark.status === "optimal"
                   ? "Estímulo Óptimo (MAV)"
                   : selectedLandmark.status === "under"
                   ? "Sub-óptimo (< MEV)"
@@ -903,7 +910,15 @@ export const ScienceDashboard: React.FC = () => {
             </div>
 
             <p className="text-xs text-neutral-300 leading-relaxed pt-2 border-t border-neutral-900">
-              <strong>Recomendación del preparador:</strong> Para {selectedLandmark.nameEs.toLowerCase()}, tu volumen actual de {selectedLandmark.currentSets} series estimula adecuadamente la síntesis proteica miofibrilar. Mantén el RIR entre 0-2 en cada serie de trabajo.
+              {!hasSessions ? (
+                <><strong>Recomendación del preparador:</strong> Aún no tenés sesiones registradas: completá tu primer entrenamiento con peso, series y RIR y acá vas a ver la recomendación de volumen personalizada.</>
+              ) : selectedLandmark.status === "under" ? (
+                <><strong>Recomendación del preparador:</strong> Para {selectedLandmark.nameEs.toLowerCase()}, tu volumen actual de {selectedLandmark.currentSets} series todavía está por debajo del estímulo mínimo (MEV {selectedLandmark.mev}s). Sumá series efectivas hasta acercarte a {selectedLandmark.mav}s esta semana.</>
+              ) : selectedLandmark.status === "approaching_mrv" || selectedLandmark.status === "overreaching" ? (
+                <><strong>Recomendación del preparador:</strong> Para {selectedLandmark.nameEs.toLowerCase()}, tu volumen actual de {selectedLandmark.currentSets} series se acerca o supera el límite recuperable (MRV {selectedLandmark.mrv}s). Evitá sumar más volumen esta semana para no comprometer la recuperación.</>
+              ) : (
+                <><strong>Recomendación del preparador:</strong> Para {selectedLandmark.nameEs.toLowerCase()}, tu volumen actual de {selectedLandmark.currentSets} series estimula adecuadamente la síntesis proteica miofibrilar. Mantené el RIR entre 0-2 en cada serie de trabajo.</>
+              )}
             </p>
           </div>
         </div>
@@ -962,7 +977,11 @@ export const ScienceDashboard: React.FC = () => {
 
           <div className="p-3 rounded-xl bg-neutral-950 border border-neutral-800 text-xs text-neutral-300 flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-purple-400 shrink-0" />
-            <span>Balance simétrico óptimo: bajo riesgo de pinzamiento acromial o descompensación postural.</span>
+            {hasSessions ? (
+              <span>Balance simétrico óptimo: bajo riesgo de pinzamiento acromial o descompensación postural.</span>
+            ) : (
+              <span>Aún no hay datos de sesiones: registrá tu primer entrenamiento y acá se evaluará el equilibrio empuje/tracción y la cadena posterior.</span>
+            )}
           </div>
         </div>
       </div>

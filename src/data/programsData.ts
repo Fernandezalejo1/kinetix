@@ -121,100 +121,101 @@ export const PREBUILT_PROGRAMS: Program[] = [
   {
     id: "science-hypertrophy-ppl",
     title: "Hipertrofia PPL Científica (6 Días)",
-    subtitle: "Máxima Frecuencia 2x & Estimulación Óptima de MAV",
-    scienceBasis: "Diseñado según los principios de volumen de Israetel y Schoenfeld. Distribuye de 12 a 18 series semanales por grupo muscular divididas en 2 sesiones para optimizar la síntesis proteica muscular (MPS) continua.",
+    subtitle: "Frecuencia 2x con Volumen Productivo y RIR Controlado para Déficit",
+    scienceBasis: "Diseñado según los principios de volumen de Israetel y Schoenfeld (12-15 series productivas semanales por grupo en 2 sesiones). Adaptado a corte calórico con mucho NEAT (p. ej. 15.000 pasos/día + keto): sin perseguir el máximo volumen recuperable, RIR 2-3 en compuestos, 1-2 en accesorios y 0-1 solo en aisladores seguros. Mantener la fuerza es el objetivo; la fuerza es el sensor de que el déficit no es excesivo. Progresa con doble progresión: sube peso solo si completas el tope del rango en TODAS las series con el RIR objetivo y buena técnica.",
     level: "Avanzado",
     daysPerWeek: 6,
     durationWeeks: 8,
-    focus: "Hipertrofia Total, Énfasis en Estiramiento y Tensión Mecánica",
+    focus: "Mantener Músculo y Fuerza en Déficit, Prioridad en Zonas Limitantes",
     routines: [
       {
         id: "ppl-push-a",
-        name: "Push A (Enfoque Pectoral Clavicular & Tríceps)",
-        description: "Sobrecarga en estiramiento para pectoral superior y porción larga de tríceps.",
+        name: "Push A (Enfoque Pecho & Hombro Ligero)",
+        description: "Pecho pesado con 3 series de banca a 2-3 RIR, aisladores con 1 RIR. Volumen de pecho real ~12-15 series semanales.",
         targetSplit: "Push (Empuje)",
         estimatedDurationMin: 55,
         exercises: [
-          { exerciseId: "incline-dumbbell-press", targetSets: 3, targetReps: "8-10", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 150 },
-          { exerciseId: "barbell-bench-press", targetSets: 3, targetReps: "6-8", targetRir: 1, targetTempo: "3-1-0-1", restSeconds: 180 },
-          { exerciseId: "cable-lateral-raise", targetSets: 4, targetReps: "12-15", targetRir: 0, targetTempo: "3-0-1-1", restSeconds: 90 },
-          { exerciseId: "overhead-cable-triceps-extension", targetSets: 3, targetReps: "10-12", targetRir: 0, targetTempo: "3-1-1-0", restSeconds: 90 },
-          { exerciseId: "cable-crunch", targetSets: 4, targetReps: "12-15", targetRir: 0, targetTempo: "3-1-1-1", restSeconds: 45 },
-          { exerciseId: "front-plank", targetSets: 3, targetReps: "45-60s", targetRir: 1, targetTempo: "Sostén isométrico", restSeconds: 45 }
+          { exerciseId: "barbell-bench-press", targetSets: 3, targetReps: "6-10", targetRir: 2, targetTempo: "3-1-0-1", restSeconds: 180 },
+          { exerciseId: "incline-dumbbell-press", targetSets: 3, targetReps: "8-12", targetRir: 2, targetTempo: "3-1-1-0", restSeconds: 120 },
+          { exerciseId: "standing-military-press", targetSets: 2, targetReps: "6-10", targetRir: 2, targetTempo: "2-1-1-1", restSeconds: 120 },
+          { exerciseId: "lever-seated-fly", targetSets: 2, targetReps: "12-20", targetRir: 1, targetTempo: "2-1-1-1", restSeconds: 90 },
+          { exerciseId: "cable-lateral-raise", targetSets: 3, targetReps: "12-20", targetRir: 1, targetTempo: "3-0-1-1", restSeconds: 60 },
+          { exerciseId: "cable-pushdown", targetSets: 3, targetReps: "10-15", targetRir: 1, targetTempo: "2-0-1-1", restSeconds: 60 }
         ]
       },
       {
         id: "ppl-pull-a",
-        name: "Pull A (Enfoque Dorsal Ilíaco & Bíceps)",
-        description: "Tracciones verticales y unilaterales alineadas con el ángulo de penación del dorsal.",
+        name: "Pull A (Enfoque Dorsal & Bíceps)",
+        description: "Dominadas pesadas a 2 RIR, remo en polea y jalón neutro; cierra con face pull y curls. Bíceps ~5 series directas más tirones.",
         targetSplit: "Pull (Tracción)",
-        estimatedDurationMin: 50,
+        estimatedDurationMin: 55,
         exercises: [
-          { exerciseId: "neutral-grip-lat-pulldown", targetSets: 3, targetReps: "8-10", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 150 },
-          { exerciseId: "single-arm-cable-row", targetSets: 3, targetReps: "10-12", targetRir: 0, targetTempo: "3-1-1-0", restSeconds: 120 },
-          { exerciseId: "chest-supported-t-bar-row", targetSets: 3, targetReps: "10-12", targetRir: 1, targetTempo: "2-1-1-1", restSeconds: 120 },
-          { exerciseId: "incline-dumbbell-curl", targetSets: 3, targetReps: "10-12", targetRir: 0, targetTempo: "3-1-1-0", restSeconds: 90 },
-          { exerciseId: "air-bike", targetSets: 3, targetReps: "20/side", targetRir: 1, targetTempo: "2-0-1-0", restSeconds: 45 },
-          { exerciseId: "superman-hold", targetSets: 3, targetReps: "20-30s", targetRir: 1, targetTempo: "Sostén isométrico", restSeconds: 45 }
+          { exerciseId: "weighted-chin-up", targetSets: 3, targetReps: "6-10", targetRir: 2, targetTempo: "3-1-1-0", restSeconds: 150 },
+          { exerciseId: "seated-cable-row", targetSets: 3, targetReps: "8-12", targetRir: 2, targetTempo: "3-1-1-0", restSeconds: 120 },
+          { exerciseId: "neutral-grip-lat-pulldown", targetSets: 2, targetReps: "10-15", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 90 },
+          { exerciseId: "cable-face-pull-supinated", targetSets: 3, targetReps: "15-20", targetRir: 1, targetTempo: "2-1-1-1", restSeconds: 60 },
+          { exerciseId: "barbell-curl", targetSets: 3, targetReps: "8-12", targetRir: 1, targetTempo: "3-0-1-0", restSeconds: 90 },
+          { exerciseId: "dumbbell-hammer-curl", targetSets: 2, targetReps: "10-15", targetRir: 1, targetTempo: "3-0-1-0", restSeconds: 60 }
         ]
       },
       {
         id: "ppl-legs-a",
         name: "Legs A (Enfoque Cuádriceps & Gemelos)",
-        description: "Máxima flexión de rodilla bajo carga axial y estabilidad de soporte.",
+        description: "Sentadilla y RDL a 2 RIR, prensa y aislamientos de cuádriceps/isquios a 1 RIR. Observa la respuesta de piernas a los pasos diarios.",
         targetSplit: "Legs (Pierna)",
         estimatedDurationMin: 60,
         exercises: [
-          { exerciseId: "barbell-hack-or-squat", targetSets: 3, targetReps: "6-8", targetRir: 2, targetTempo: "3-1-0-1", restSeconds: 180 },
-          { exerciseId: "hack-squat-machine", targetSets: 3, targetReps: "8-10", targetRir: 0, targetTempo: "3-1-1-0", restSeconds: 150 },
-          { exerciseId: "seated-leg-curl", targetSets: 3, targetReps: "10-12", targetRir: 0, targetTempo: "3-0-1-1", restSeconds: 90 },
-          { exerciseId: "standing-calf-raise", targetSets: 4, targetReps: "10-12", targetRir: 0, targetTempo: "3-2-1-1", restSeconds: 90 },
-          { exerciseId: "medicine-ball-slam", targetSets: 3, targetReps: "12", targetRir: 1, targetTempo: "Explosivo", restSeconds: 45 },
-          { exerciseId: "front-plank", targetSets: 3, targetReps: "60s", targetRir: 1, targetTempo: "Sostén isométrico", restSeconds: 45 }
+          { exerciseId: "barbell-hack-or-squat", targetSets: 3, targetReps: "6-10", targetRir: 2, targetTempo: "3-1-0-1", restSeconds: 180 },
+          { exerciseId: "romanian-deadlift", targetSets: 3, targetReps: "8-12", targetRir: 2, targetTempo: "3-1-1-0", restSeconds: 150 },
+          { exerciseId: "sled-leg-press", targetSets: 3, targetReps: "10-15", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 120 },
+          { exerciseId: "leg-extension", targetSets: 2, targetReps: "12-20", targetRir: 1, targetTempo: "3-0-1-1", restSeconds: 60 },
+          { exerciseId: "seated-leg-curl", targetSets: 2, targetReps: "10-15", targetRir: 1, targetTempo: "3-0-1-1", restSeconds: 60 },
+          { exerciseId: "standing-calf-raise", targetSets: 3, targetReps: "8-15", targetRir: 1, targetTempo: "3-2-1-1", restSeconds: 60 }
         ]
       },
       {
         id: "ppl-push-b",
-        name: "Push B (Enfoque Pectoral Esferoidal & Deltoides)",
-        description: "Aperturas en polea y presses con tempo controlado.",
+        name: "Push B (Enfoque Hombro & Pecho Ligero)",
+        description: "Hombro pesado a 2 RIR con fondos lastrados; pecho pasa a un rol secundario para repartir mejor la recuperación semanal.",
         targetSplit: "Push (Empuje)",
-        estimatedDurationMin: 50,
+        estimatedDurationMin: 55,
         exercises: [
-          { exerciseId: "barbell-bench-press", targetSets: 3, targetReps: "8-10", targetRir: 1, targetTempo: "3-1-0-1", restSeconds: 150 },
-          { exerciseId: "cable-chest-flye", targetSets: 3, targetReps: "12-15", targetRir: 0, targetTempo: "3-0-1-1", restSeconds: 90 },
-          { exerciseId: "cable-lateral-raise", targetSets: 4, targetReps: "12-15", targetRir: 0, targetTempo: "3-0-1-1", restSeconds: 90 },
-          { exerciseId: "overhead-cable-triceps-extension", targetSets: 3, targetReps: "12-15", targetRir: 0, targetTempo: "3-1-1-0", restSeconds: 90 },
-          { exerciseId: "decline-crunch", targetSets: 3, targetReps: "12-15", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 45 },
-          { exerciseId: "weighted-russian-twist", targetSets: 3, targetReps: "12-15/side", targetRir: 1, targetTempo: "2-0-1-1", restSeconds: 45 }
+          { exerciseId: "standing-military-press", targetSets: 3, targetReps: "6-10", targetRir: 2, targetTempo: "2-1-1-1", restSeconds: 150 },
+          { exerciseId: "incline-dumbbell-press", targetSets: 3, targetReps: "8-12", targetRir: 2, targetTempo: "3-1-1-0", restSeconds: 120 },
+          { exerciseId: "chest-dip", targetSets: 3, targetReps: "8-12", targetRir: 2, targetTempo: "3-1-1-0", restSeconds: 120 },
+          { exerciseId: "cable-lateral-raise", targetSets: 3, targetReps: "12-20", targetRir: 1, targetTempo: "3-0-1-1", restSeconds: 60 },
+          { exerciseId: "cable-standing-crossover", targetSets: 2, targetReps: "12-20", targetRir: 1, targetTempo: "3-0-1-1", restSeconds: 90 },
+          { exerciseId: "overhead-cable-triceps-extension", targetSets: 3, targetReps: "10-15", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 90 }
         ]
       },
       {
         id: "ppl-pull-b",
-        name: "Pull B (Enfoque Espalda Alta & Trapecio Medio)",
-        description: "Remos abiertos con retracción escapular y curls con pausa.",
+        name: "Pull B (Enfoque Espalda Alta & Trapecio)",
+        description: "Remo apoyado a 2 RIR para proteger la lumbar, jalón, remo unilateral, encogimientos y curls de cierre. Sin remo con barra para no castigar la zona lumbar.",
         targetSplit: "Pull (Tracción)",
-        estimatedDurationMin: 50,
+        estimatedDurationMin: 55,
         exercises: [
-          { exerciseId: "chest-supported-t-bar-row", targetSets: 4, targetReps: "8-10", targetRir: 1, targetTempo: "2-1-1-1", restSeconds: 120 },
-          { exerciseId: "neutral-grip-lat-pulldown", targetSets: 3, targetReps: "10-12", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 120 },
-          { exerciseId: "incline-dumbbell-curl", targetSets: 3, targetReps: "12-15", targetRir: 0, targetTempo: "3-1-1-0", restSeconds: 90 },
-          { exerciseId: "cable-crunch", targetSets: 3, targetReps: "12-15", targetRir: 1, targetTempo: "3-0-1-2", restSeconds: 90 },
-          { exerciseId: "lying-scissors-cross", targetSets: 3, targetReps: "15/side", targetRir: 1, targetTempo: "2-1-1-0", restSeconds: 45 }
+          { exerciseId: "chest-supported-t-bar-row", targetSets: 3, targetReps: "6-10", targetRir: 2, targetTempo: "2-1-1-1", restSeconds: 150 },
+          { exerciseId: "neutral-grip-lat-pulldown", targetSets: 3, targetReps: "8-12", targetRir: 2, targetTempo: "3-1-1-0", restSeconds: 120 },
+          { exerciseId: "single-arm-cable-row", targetSets: 2, targetReps: "10-15", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 90 },
+          { exerciseId: "dumbbell-shrug", targetSets: 3, targetReps: "10-15", targetRir: 1, targetTempo: "2-1-1-1", restSeconds: 60 },
+          { exerciseId: "barbell-preacher-curl", targetSets: 3, targetReps: "10-15", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 90 },
+          { exerciseId: "barbell-reverse-curl", targetSets: 2, targetReps: "12-20", targetRir: 1, targetTempo: "2-0-1-1", restSeconds: 60 }
         ]
       },
       {
         id: "ppl-legs-b",
-        name: "Legs B (Enfoque Isquiotibiales & Cadena Posterior)",
-        description: "Bisagras de cadera profundas y contracción en acortamiento de glúteos, más cuádriceps para llegar a la frecuencia 2x semanal del grupo.",
+        name: "Legs B (Enfoque Isquios & Cadena Posterior)",
+        description: "RDL pesado a 2 RIR, hack/front squat, hip thrust y aislamientos de isquios/cuádriceps. Gemelos sentado para cubrir el sóleo.",
         targetSplit: "Legs (Pierna)",
         estimatedDurationMin: 60,
         exercises: [
-          { exerciseId: "romanian-deadlift", targetSets: 3, targetReps: "8-10", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 180 },
-          { exerciseId: "barbell-hip-thrust", targetSets: 3, targetReps: "10-12", targetRir: 1, targetTempo: "2-0-1-2", restSeconds: 150 },
-          { exerciseId: "hack-squat-machine", targetSets: 3, targetReps: "8-10", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 150 },
-          { exerciseId: "seated-leg-curl", targetSets: 3, targetReps: "12-15", targetRir: 0, targetTempo: "3-0-1-1", restSeconds: 90 },
-          { exerciseId: "standing-calf-raise", targetSets: 4, targetReps: "12-15", targetRir: 0, targetTempo: "3-2-1-1", restSeconds: 90 },
-          { exerciseId: "superman-hold", targetSets: 2, targetReps: "20-30s", targetRir: 1, targetTempo: "Sostén isométrico", restSeconds: 45 }
+          { exerciseId: "romanian-deadlift", targetSets: 3, targetReps: "6-10", targetRir: 2, targetTempo: "3-1-1-0", restSeconds: 180 },
+          { exerciseId: "hack-squat-machine", targetSets: 3, targetReps: "8-12", targetRir: 2, targetTempo: "3-1-1-0", restSeconds: 150 },
+          { exerciseId: "barbell-hip-thrust", targetSets: 3, targetReps: "8-12", targetRir: 2, targetTempo: "2-0-1-2", restSeconds: 120 },
+          { exerciseId: "seated-leg-curl", targetSets: 3, targetReps: "10-15", targetRir: 1, targetTempo: "3-0-1-1", restSeconds: 90 },
+          { exerciseId: "leg-extension", targetSets: 2, targetReps: "12-20", targetRir: 1, targetTempo: "3-0-1-1", restSeconds: 60 },
+          { exerciseId: "seated-calf-raise", targetSets: 3, targetReps: "10-15", targetRir: 1, targetTempo: "3-2-1-0", restSeconds: 60 }
         ]
       }
     ]
