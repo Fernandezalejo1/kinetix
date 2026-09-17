@@ -3082,5 +3082,63 @@ export const EXERCISES_DATABASE: Exercise[] = [
     defaultRir: 2,
 executionMode: "time",
     videoUrl: "/assets/exercises/superman-hold.mp4",
-}
+  },
+  {
+    id: "leg-extension",
+    name: "Leg Extension",
+    nameEs: "Extensión de Cuádriceps en Máquina",
+    category: "legs",
+    primaryMuscles: ["quads"],
+    secondaryMuscles: [],
+    equipment: "machine",
+    resistanceProfile: "lengthened",
+    lengthTensionDescription: "Aislamiento de los cuádriceps con rango completo y fatiga axial nula: volumen de calidad para el cut sin castigar la espalda.",
+    setupCues: [
+      "Alinea el eje de giro de la máquina con el cóndilo lateral de la rodilla.",
+      "Almohadilla del tobillo sobre el empeine, no sobre la espinilla.",
+      "Espalda y sacro pegados al respaldo con agarre firme de las manetas."
+    ],
+    executionCues: [
+      "Extiende las rodillas hasta el bloqueo contrayendo los cuádriceps.",
+      "Baja controlando la excéntrica en 3s sin dejar caer el peso.",
+      "No separes los glúteos del asiento para ganar rango arriba."
+    ],
+    commonMistakes: [
+      { mistake: "Peso excesivo que obliga a balancear", correction: "El estímulo está en el rango controlado; baja la carga y completa cada repetición." }
+    ],
+    preMobility: ["Movilidad de rodilla suave", "Activación de cuádriceps sin peso"],
+    postStretching: ["Estiramiento de cuádriceps de pie"],
+    progressions: ["Pausa de 2s en el bloqueo", "Repeticiones parciales finales al fallo"],
+    regressions: ["Extensión de cuádriceps con banda", "Sentadilla a una pierna asistida"],
+    defaultTempo: "3-0-1-1",
+    defaultRir: 1
+  },
+  {
+    id: "dumbbell-shrug",
+    name: "Dumbbell Shrug",
+    nameEs: "Encogimientos con Mancuernas",
+    category: "pull",
+    primaryMuscles: ["traps"],
+    secondaryMuscles: ["upper_back"],
+    equipment: "dumbbell",
+    resistanceProfile: "mid_range",
+    lengthTensionDescription: "Aislamiento del trapecio superior con elevación escapular completa: el estímulo directo de trapecio en el bloque de tracción.",
+    setupCues: [
+      "Mancuernas a los lados con agarre neutro y brazos extendidos.",
+      "Hombros relajados y columna neutra."
+    ],
+    executionCues: [
+      "Eleva los hombros hacia las orejas sin flexionar los codos.",
+      "Pausa 1s arriba y baja controlado sintiendo el estiramiento del trapecio."
+    ],
+    commonMistakes: [
+      { mistake: "Rotar las escápulas hacia atrás al subir", correction: "Mantén la elevación vertical pura; la rotación traslada tensión a otros músculos." }
+    ],
+    preMobility: ["Circunducciones de hombro"],
+    postStretching: ["Estiramiento lateral de trapecio"],
+    progressions: ["Pausa de 2s en la contracción máxima"],
+    regressions: ["Encogimientos con peso corporal"],
+    defaultTempo: "2-1-1-1",
+    defaultRir: 1
+  }
 ];
