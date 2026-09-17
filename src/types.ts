@@ -342,6 +342,11 @@ export interface BodyMetricEntry {
   estimatedBodyFat?: number;
   photoUrl?: string;
   notes?: string;
+  /** Medidas corporales genéricas (nombre -> valor en cm). No hay un set
+   *  fijo: el usuario define sus propias medidas (panza, cuello, bíceps,
+   *  pierna, torso, espalda, envergadura…). Se guardan con el resto de la
+   *  entrada para poder ver la evolución en el tiempo. */
+  measurements?: Record<string, number>;
 }
 
 export interface AutoProgressionRecommendation {

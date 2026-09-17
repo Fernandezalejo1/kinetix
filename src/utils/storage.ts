@@ -10,6 +10,7 @@ export const VAULT_KEYS = [
   "kinetix_exercise_history",
   "kinetix_body_metrics",
   "kinetix_prs",
+  "kinetix_pr_history",
   "kinetix_nutrition_log",
   "kinetix_nutrition_history",
   "kinetix_sleep_log",
@@ -868,6 +869,24 @@ const isTimestampEntry = (v: unknown): boolean => {
   return isDateStamp(o.date) || isNonNegativeNum(o.timestamp) || isId(o.id);
 };
 
+/** Nombres de medidas corporales definidos por el usuario (sin hardcodear). */
+const isMeasurementNames = (v: unknown): boolean =>
+  Array.isArray(v) &&
+  v.every(
+    (n) =>
+      typeof n === "string" && n.trim().length > 0 && n.trim().length <= 60
+  );
+
+const sanitizeMeasurementNames = (v: unknown): string[] | undefined => {
+  if (!Array.isArray(v)) return undefined;
+  const clean = v
+    .filter(
+      (n) => typeof n === "string" && n.trim().length > 0 && n.trim().length <= 60
+    )
+    .map((n) => n.trim());
+  return Array.from(new Set(clean));
+};
+
 /** Type guards por clave para los datos persistidos de KINETIX.
  *  Se usan en safeParse al cargar (W1) y al validar backups (M1).
  *  Validan CONTENIDO (fechas, números, referencias) y no solo el tipo
@@ -878,6 +897,8 @@ export const VALIDATORS: Record<string, (v: unknown) => boolean> = {
   kinetix_exercise_history: isArrayOf(isExerciseHistoryEntry),
   kinetix_body_metrics: isArrayOf(isBodyMetric),
   kinetix_prs: isArrayOf(isPersonalRecord),
+  kinetix_pr_history: isArrayOf(isPersonalRecord),
+  kinetix_body_measurement_names: isMeasurementNames,
   kinetix_custom_routines: isArrayOf(isRoutine),
   kinetix_nutrition_log: isNutritionLog,
   kinetix_nutrition_profile: isNutritionProfile,
@@ -908,6 +929,8 @@ export const SANITIZERS: Record<string, (v: unknown) => unknown[] | undefined> =
   kinetix_exercise_history: sanitizeArrayOf(isExerciseHistoryEntry),
   kinetix_body_metrics: sanitizeArrayOf(isBodyMetric),
   kinetix_prs: sanitizeArrayOf(isPersonalRecord),
+  kinetix_pr_history: sanitizeArrayOf(isPersonalRecord),
+  kinetix_body_measurement_names: sanitizeMeasurementNames,
   kinetix_custom_routines: sanitizeArrayOf(isRoutine),
   kinetix_nutrition_history: sanitizeArrayOf(isNutritionLog),
   kinetix_sleep_log: sanitizeArrayOf(isTimestampEntry),

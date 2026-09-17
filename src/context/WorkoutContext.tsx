@@ -34,6 +34,7 @@ import {
   INITIAL_NUTRITION,
   INITIAL_BODY_METRICS,
   INITIAL_PRS,
+  INITIAL_PR_HISTORY,
   INITIAL_EXERCISE_HISTORY,
   scrubSeedData,
   trimLargeColumns,
@@ -79,6 +80,11 @@ interface WorkoutContextType {
   nutritionHistory: NutritionLog[];
   bodyMetrics: BodyMetricEntry[];
   personalRecords: PersonalRecord[];
+  /** Historial completo de PRs (cada marca con su fecha) para ver evolución. */
+  personalRecordHistory: PersonalRecord[];
+  /** Nombres de medidas corporales definidos por el usuario. */
+  bodyMeasurementNames: string[];
+  setBodyMeasurementNames: (names: string[]) => void;
   exerciseHistory: ExerciseHistoryEntry[];
   customRoutines: CustomRoutine[];
   weightUnit: "kg" | "lbs";
@@ -115,6 +121,7 @@ interface WorkoutContextType {
   copyMealsFromYesterday: () => boolean;
   updateMacroTargets: (targets: { calories: number; protein: number; carbs: number; fats: number }) => void;
   addBodyMetric: (entry: BodyMetricEntry) => void;
+  deleteBodyMetric: (entryId: string) => void;
   nutritionGoal: NutritionGoal;
   setNutritionGoal: (goal: NutritionGoal) => void;
   nutritionProfile: NutritionProfile;
@@ -239,6 +246,21 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
     return safeParse("kinetix_prs", INITIAL_PRS, VALIDATORS["kinetix_prs"], SANITIZERS["kinetix_prs"]);
   });
 
+  // Historial completo de PRs (una entrada por cada marca registrada, con su
+  // fecha). Migración única: si aún está vacío pero existen PRs actuales, se
+  // sembra con esos como primer punto para que el timeline no nazca vacío.
+  const [prHistory, setPrHistory] = useState<PersonalRecord[]>(() => {
+    const loaded = safeParse("kinetix_pr_history", INITIAL_PR_HISTORY, VALIDATORS["kinetix_pr_history"], SANITIZERS["kinetix_pr_history"]);
+    if (loaded.length > 0) return loaded;
+    const current = safeParse("kinetix_prs", INITIAL_PRS, VALIDATORS["kinetix_prs"], SANITIZERS["kinetix_prs"]);
+    return current;
+  });
+
+  // Nombres de medidas corporales que el usuario define (no hardcodeados).
+  const [bodyMeasurementNames, setBodyMeasurementNames] = useState<string[]>(() => {
+    return safeParse("kinetix_body_measurement_names", [], VALIDATORS["kinetix_body_measurement_names"], SANITIZERS["kinetix_body_measurement_names"]);
+  });
+
   const [exerciseHistory, setExerciseHistory] = useState<ExerciseHistoryEntry[]>(() => {
     return safeParse("kinetix_exercise_history", INITIAL_EXERCISE_HISTORY, VALIDATORS["kinetix_exercise_history"], SANITIZERS["kinetix_exercise_history"]);
   });
@@ -297,6 +319,14 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
   useEffect(() => {
     safeSet("kinetix_prs", personalRecords);
   }, [personalRecords]);
+
+  useEffect(() => {
+    safeSet("kinetix_pr_history", capForStorage(prHistory, 1000));
+  }, [prHistory]);
+
+  useEffect(() => {
+    safeSet("kinetix_body_measurement_names", bodyMeasurementNames.slice(0, 100));
+  }, [bodyMeasurementNames]);
 
   useEffect(() => {
     safeSet("kinetix_exercise_history", capForStorage(exerciseHistory, 2000));
@@ -878,6 +908,17 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
     });
   }, []);
 
+  /** Anexa marcas al historial completo de PRs (sin duplicar por id). */
+  const appendPrHistory = useCallback((items: PersonalRecord[]) => {
+    if (!items.length) return;
+    setPrHistory((prev) => {
+      const seen = new Set(prev.map((p) => p.id));
+      const fresh = items.filter((p) => p.id && !seen.has(p.id));
+      if (!fresh.length) return prev;
+      return [...fresh, ...prev];
+    });
+  }, []);
+
   const finishWorkout = useCallback((srpe?: number, partialReason?: string) => {
     if (!activeSession) return { prsAchieved: [], totalVolumeKg: 0 };
 
@@ -1020,6 +1061,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
         const filtered = prev.filter((p) => !newPrs.some((np) => np.exerciseId === p.exerciseId && np.type === p.type));
         return [...newPrs, ...filtered];
       });
+      appendPrHistory(newPrs);
       try {
         confetti({
           particleCount: 120,
@@ -1035,7 +1077,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
     stopRestTimer();
 
     return { prsAchieved: newPrs, totalVolumeKg };
-  }, [activeSession, personalRecords, workoutHistory, stopRestTimer]);
+  }, [activeSession, personalRecords, workoutHistory, stopRestTimer, appendPrHistory]);
 
   const cancelWorkout = useCallback(() => {
     setActiveSession(null);
@@ -1054,7 +1096,8 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
       const filtered = prev.filter((p) => !(p.exerciseId === item.exerciseId && p.type === item.type));
       return [item, ...filtered];
     });
-  }, []);
+    appendPrHistory([item]);
+  }, [appendPrHistory]);
 
   const deletePersonalRecord = useCallback((prId: string) => {
     setPersonalRecords((prev) => prev.filter((p) => p.id !== prId));
@@ -1119,23 +1162,27 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
       setExerciseHistory((prev) => [entry, ...prev]);
 
       if (bestSet && bestE1rm > 0) {
-        setPersonalRecords((prev) => {
-          const existing = prev.find((p) => p.exerciseId === exercise.id && p.type === "1RM");
-          if (existing && existing.value >= Math.round(bestE1rm)) return prev;
-          const prItem: PersonalRecord = {
-            id: `imp-pr-${Date.now()}-${exercise.id}`,
-            exerciseId: exercise.id,
-            exerciseName: exercise.nameEs || exercise.name,
-            type: "1RM",
-            value: Math.round(bestE1rm),
-            reps: bestSet.reps,
-            date,
-          };
-          return [prItem, ...prev.filter((p) => p.exerciseId !== exercise.id || p.type !== "1RM")];
-        });
+        const prItem: PersonalRecord = {
+          id: `imp-pr-${Date.now()}-${exercise.id}`,
+          exerciseId: exercise.id,
+          exerciseName: exercise.nameEs || exercise.name,
+          type: "1RM",
+          value: Math.round(bestE1rm),
+          reps: bestSet.reps,
+          date,
+        };
+        const existing = personalRecords.find((p) => p.exerciseId === exercise.id && p.type === "1RM");
+        if (!existing || existing.value < prItem.value) {
+          appendPrHistory([prItem]);
+          setPersonalRecords((prev) => {
+            const cur = prev.find((p) => p.exerciseId === exercise.id && p.type === "1RM");
+            if (cur && cur.value >= prItem.value) return prev;
+            return [prItem, ...prev.filter((p) => p.exerciseId !== exercise.id || p.type !== "1RM")];
+          });
+        }
       }
     },
-    []
+    [personalRecords, appendPrHistory]
   );
 
   const importBulkData = useCallback(
@@ -1144,6 +1191,13 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
         setExerciseHistory((prev) => [...newEntries, ...prev]);
       }
       if (incomingPrs.length > 0) {
+        const improvements = incomingPrs.filter((np) => {
+          const cur = personalRecords.find(
+            (p) => p.exerciseId === np.exerciseId && p.type === np.type
+          );
+          return !cur || np.value > cur.value;
+        });
+        appendPrHistory(improvements);
         setPersonalRecords((prev) => {
           let updated = [...prev];
           incomingPrs.forEach((np) => {
@@ -1162,7 +1216,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
         });
       }
     },
-    []
+    [personalRecords, appendPrHistory]
   );
 
   const ensureTodayLogic = useCallback((): { today: string; targets: { calories: number; protein: number; carbs: number; fats: number } } => {
@@ -1274,6 +1328,10 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const addBodyMetric = useCallback((entry: BodyMetricEntry) => {
     setBodyMetrics((prev) => [entry, ...prev]);
+  }, []);
+
+  const deleteBodyMetric = useCallback((entryId: string) => {
+    setBodyMetrics((prev) => prev.filter((m) => m.id !== entryId));
   }, []);
 
   const setNutritionGoal = useCallback((goal: NutritionGoal) => {
@@ -1431,6 +1489,9 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
         nutritionHistory,
         bodyMetrics,
         personalRecords,
+        personalRecordHistory: prHistory,
+        bodyMeasurementNames,
+        setBodyMeasurementNames,
         exerciseHistory,
         customRoutines,
         weightUnit,
@@ -1465,6 +1526,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
         copyMealsFromYesterday,
         updateMacroTargets,
         addBodyMetric,
+        deleteBodyMetric,
         nutritionGoal,
         setNutritionGoal,
         nutritionProfile,

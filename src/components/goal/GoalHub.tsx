@@ -35,6 +35,8 @@ import { computeAbsEstimate } from "../../utils/absEstimator";
 import { computePersonalTargets, DEFAULT_WEIGHT_KG } from "../../data/nutritionData";
 import { latestBodyMetric } from "../../utils/absEstimator";
 import { isNativePlatform, requestHealthSyncNow } from "../../utils/healthConnect";
+import { BodyMeasurementsPanel } from "../profile/BodyMeasurementsPanel";
+import { PrBasicsPanel } from "../profile/PrBasicsPanel";
 
 interface GoalHubProps {
   onGoToPrograms?: () => void;
@@ -301,6 +303,10 @@ export const GoalHub: React.FC<GoalHubProps> = ({ onGoToPrograms }) => {
           )}
         </div>
       </div>
+
+      {/* ================= PERFIL: MEDIDAS CORPORALES + 1RM BÁSICOS ================= */}
+      <BodyMeasurementsPanel />
+      <PrBasicsPanel />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* ================= SUEÑO ================= */}

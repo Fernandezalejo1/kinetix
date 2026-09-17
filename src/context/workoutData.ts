@@ -31,6 +31,11 @@ export const INITIAL_BODY_METRICS: BodyMetricEntry[] = [];
 
 export const INITIAL_PRS: PersonalRecord[] = [];
 
+/** Historial completo de PRs (cada vez que se bate/marca un récord queda la
+ *  entrada con su fecha). A diferencia de kinetix_prs (solo el actual por
+ *  ejercicio+tipo), esto permite ver cuánto tardó en subir cada marca. */
+export const INITIAL_PR_HISTORY: PersonalRecord[] = [];
+
 export const INITIAL_EXERCISE_HISTORY: ExerciseHistoryEntry[] = [];
 
 // Migración única: elimina SOLO los datos semilla exactos de versiones
@@ -87,6 +92,7 @@ export const RETENTION_POLICY = {
   workoutHistory: 1500, // sesiones completadas
   exerciseHistory: 8000, // registros por ejercicio
   bodyMetrics: 4000, // mediciones corporales
+  prHistory: 3000, // entradas de historial de PRs
   nutritionDays: 365, // días de nutrición archivados
 } as const;
 
@@ -115,6 +121,7 @@ export function trimLargeColumns(): void {
       ["kinetix_workout_history", RETENTION_POLICY.workoutHistory],
       ["kinetix_exercise_history", RETENTION_POLICY.exerciseHistory],
       ["kinetix_body_metrics", RETENTION_POLICY.bodyMetrics],
+      ["kinetix_pr_history", RETENTION_POLICY.prHistory],
     ] as const) {
       // Con vault activo el recorte lo hace el propio pipeline (memoria), y
       // tocar el envelope aquí sería reescribir ciphertext sobre ciphertext.
