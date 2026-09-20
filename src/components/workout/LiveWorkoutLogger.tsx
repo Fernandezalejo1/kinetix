@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { nativeRemindersAvailable, requestNativeReminderPermission } from "../../utils/reminderNotifications";
+import { safeParse, safeSet } from "../../utils/storage";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Plus,
   Trash2,
@@ -18,8 +20,6 @@ import {
   Meh,
   Smile,
   Zap,
-  Target,
-  TrendingUp,
   AlertCircle,
   Repeat,
   ChevronDown,
@@ -53,7 +53,7 @@ const SET_TYPE_LABELS: Record<SetType, string> = {
 /** Qué significa cada tipo, en una línea (evita etiquetas técnicas sin contexto). */
 const SET_TYPE_HELP: Record<SetType, string> = {
   normal: "Serie efectiva estándar, contada para el volumen del ejercicio.",
-  warmup: "Aproximación: no cuenta como volumen efectivo.",
+  warmup: "Aproximación para preparar el ejercicio; queda identificada en el registro.",
   dropset: "Bajás el peso sin descansar y seguís con la misma serie.",
   myorep: "Serie base al fallo + mini-series con pocas respiraciones de pausa.",
   restpause: "Pausas cortas dentro de la serie para sumar repeticiones, sin cambiar el peso.",
@@ -76,11 +76,14 @@ const ExerciseLibraryModal = React.lazy(() =>
 );
 import { WorkoutSummaryModal } from "./WorkoutSummaryModal";
 import { FocusTrap } from "../FocusTrap";
+import { ExerciseInlineVisual, ExerciseThumb } from "./ExerciseInlineVisual";
+import { ProgressionRecommendation } from "./ProgressionRecommendation";
+import { RestTimerBar } from "./RestTimerBar";
 import { useBackHandler } from "../../context/BackNavContext";
-import { analyzeDoubleProgression } from "../../utils/doubleProgression";
-import { resolveLiveProgression } from "../../utils/progressionEngine";
+import { useElapsedSeconds } from "../../hooks/useElapsedSeconds";
 import { isTimeBased } from "../../utils/exerciseMode";
 import { CardioTimer, IsometricTimer } from "./timers";
+import { formatDuration, formatStopwatch } from "../../utils/duration";
 import { kgToDisplay, displayToKg, formatWeight } from "../../utils/weightUnits";
 import { e1rmFromSet } from "../../utils/startingLoads";
 import { velocityZoneForSet } from "../../utils/velocity";
@@ -108,77 +111,24 @@ const VelocityChip: React.FC<{ wEx: WorkoutExercise; set: WorkoutSet }> = ({ wEx
   return (
     <span className="group relative inline-flex items-center gap-1">
       <span className={`font-mono font-bold ${info.color}`}>≈ {info.label}</span>
-      <span className="hidden group-hover:inline text-[11px] text-neutral-400 cursor-help" title="Estimación sin encoder (proxy carga-velocidad, ±0.05 m/s) — no es una medición real de velocidad">ⓘ</span>
+      <span className="text-xs text-neutral-400">Estimación, no medición</span>
     </span>
   );
 };
 
-/** Double Progression Banner — live guidance per exercise.
- *  Regla: primero progresar reps dentro del rango objetivo y SOLO al llegar al
- *  tope con el RIR objetivo ejecutado (o más duro), autorizar subir el peso. */
-const DoubleProgressionBanner: React.FC<{ wEx: WorkoutExercise }> = ({ wEx }) => {
-  const { updateSet } = useWorkout();
-  const { showToast } = useToast();
-  // La explicación larga se despliega a demanda: el objetivo de la sesión ya se
-  // ve de un vistazo en la fila compacta.
-  const [showHelp, setShowHelp] = useState(false);
-  const a = useMemo(() => resolveLiveProgression(wEx) as ReturnType<typeof analyzeDoubleProgression>, [wEx]);
+/** Palabras sin peso léxico: se omiten al abreviar el nombre del ejercicio. */
+const SHORT_NAME_STOP = new Set(["de", "del", "con", "en", "al", "a", "y", "e", "el", "la", "los", "las", "por"]);
 
-  const applyIncrease = useCallback(() => {
-    const delta = a.deltaWeight;
-    let applied = 0;
-    wEx.sets.forEach((s) => {
-      if (!s.completed && s.type !== "warmup") {
-        updateSet(wEx.id, s.id, { weight: Math.round((s.weight + delta) * 4) / 4 });
-        applied += 1;
-      }
-    });
-    showToast(applied > 0 ? `Sobrecarga +${delta} kg aplicada a ${applied} serie(s) restantes` : "No hay series restantes para sobrecargar");
-  }, [wEx, a.deltaWeight, updateSet, showToast]);
-
-  if (!a.range) return null;
-
-  if (a.status === "target_reached") {
-    return (
-      <div className="px-4 sm:px-5 pt-3">
-        <div className="flex items-center gap-2 flex-wrap text-[11px] bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-3 py-2.5 text-emerald-300">
-          <TrendingUp className="w-4 h-4 text-emerald-400 shrink-0" />
-          <span className="min-w-0 flex-1"><strong className="font-black">{a.message}</strong></span>
-          <button
-            onClick={applyIncrease}
-            className="min-h-[44px] px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black shadow-lg shadow-emerald-600/20 transition-colors"
-          >
-            Aplicar +{a.deltaWeight} kg a las series restantes
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="px-4 sm:px-5 pt-3">
-      <div className="bg-neutral-950/50 border border-neutral-800 rounded-xl px-3 py-2">
-        <div className="flex items-center gap-2 flex-wrap text-xs text-neutral-300">
-          <Target className="w-4 h-4 text-cyan-400 shrink-0" aria-hidden="true" />
-          <span className="min-w-0 flex-1">
-            <strong className="text-white">{a.targetSets ? `${a.targetSets}×` : ""}{a.range.min}–{a.range.max} reps</strong>
-            <span className="text-neutral-300"> · RIR {a.targetRir ?? "—"} · hoy {a.maxReps}/{a.range.max}</span>
-          </span>
-          <button
-            type="button"
-            onClick={() => setShowHelp((v) => !v)}
-            aria-expanded={showHelp}
-            className="min-h-[44px] px-1 text-xs font-bold text-neutral-300 hover:text-white flex items-center gap-1"
-          >
-            ¿Cómo progreso?
-            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showHelp ? "rotate-180" : ""}`} aria-hidden="true" />
-          </button>
-        </div>
-        {showHelp && <p className="text-xs text-neutral-300 mt-1.5 leading-relaxed">{a.message}</p>}
-      </div>
-    </div>
-  );
-};
+/** Nombre corto para el carrusel: hasta 2 palabras significativas (sin
+ *  artículos/preposiciones) para que las miniatura queden legibles en 360px. */
+function shortExerciseName(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return name;
+  const significant = words.filter((w) => !SHORT_NAME_STOP.has(w.toLowerCase()));
+  const picked = (significant.length >= 2 ? significant : words).slice(0, 2);
+  const short = picked.join(" ");
+  return short.length > 18 ? picked[0] : short;
+}
 
 export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ onGoToAnalytics }) => {
   const {
@@ -186,7 +136,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
     isWorkoutModalOpen,
     setIsWorkoutModalOpen,
     restTimer,
-    startRestTimer: _startRestTimer,
+    startRestTimer,
     stopRestTimer,
     adjustRestTimer,
     soundEnabled,
@@ -212,17 +162,28 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
   // los botones y chips operan en la unidad visible.
   const weightDisplay = (kg: number) => kgToDisplay(kg, weightUnit);
   const weightKgFromDisplay = (disp: number) => displayToKg(disp, weightUnit);
-  const weightStep = weightUnit === "lbs" ? 5 : 2.5;
+  const [weightSteps, setWeightSteps] = useState<Record<string, number>>(() => safeParse("kinetix_weight_steps", {}));
   const weightChips = weightUnit === "lbs" ? [-11, -5.5, -2.5, 2.5, 5.5, 11] : [-5, -2.5, 1.25, 2.5, 5, 10];
   const fmtW = (kg: number) => formatWeight(kg, weightUnit);
 
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  // ── Reloj de sesión (workoutElapsedTime) ────────────────────────────────
+  // Fuente única de verdad: `activeSession.startTime` (timestamp persistido).
+  // No es el descanso: completar una serie, cambiar de ejercicio o minimizar
+  // NO lo reinician ni lo alteran.
+  const elapsedSeconds = useElapsedSeconds(activeSession?.startTime);
   const [selectedExForPlate, setSelectedExForPlate] = useState<{ name: string; weight: number } | null>(null);
   const [selectedExForWarmup, setSelectedExForWarmup] = useState<{ name: string; weight: number } | null>(null);
   const [selectedExForTempo, setSelectedExForTempo] = useState<{ name: string; tempo: string } | null>(null);
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [replacingWExId, setReplacingWExId] = useState<string | null>(null);
-  const [difficultySurvey, setDifficultySurvey] = useState<{ exerciseId: string; exerciseName: string } | null>(null);
+  const [finishMinutes, setFinishMinutes] = useState("");
+  const [oldSessionAcknowledged, setOldSessionAcknowledged] = useState(false);
+  const [difficultySurvey, setDifficultySurvey] = useState<{ exerciseId: string; exerciseName: string; targetRir?: number } | null>(null);
+  // Encuestas de esfuerzo que el usuario ya omitió en ESTA sesión: no se vuelven
+  // a ofrecer hasta la próxima sesión (antes "Omitir" reabría la encuesta).
+  const [dismissedSurveys, setDismissedSurveys] = useState<Record<string, boolean>>({});
+  // Transición al resumen: se descarta al tocar "Seguir con la sesión".
+  const [completionDismissed, setCompletionDismissed] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
   // P2: encuesta sRPE post-sesión (Foster 1-10) antes de cerrar.
   const [srpeSurvey, setSrpeSurvey] = useState(false);
@@ -250,25 +211,35 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
 
   // Screen Wake Lock API — evita que la pantalla se apague mientras entrenas
   useEffect(() => {
+    if (!isWorkoutModalOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = previous; };
+  }, [isWorkoutModalOpen]);
+
+  const sessionId = activeSession?.id;
+  useEffect(() => {
     let wakeLockSentinel: WakeLockSentinel | null = null;
     let isReleased = false;
 
     const requestWakeLock = async () => {
-      if (typeof navigator !== "undefined" && "wakeLock" in navigator && activeSession) {
+      if (typeof navigator !== "undefined" && "wakeLock" in navigator && sessionId) {
         try {
-          wakeLockSentinel = await navigator.wakeLock.request("screen");
+          const lock = await navigator.wakeLock.request("screen");
+          if (isReleased) await lock.release();
+          else wakeLockSentinel = lock;
         } catch {
           // Ignorar si el usuario denegó o el sistema no lo permite
         }
       }
     };
 
-    if (activeSession) {
+    if (sessionId) {
       requestWakeLock();
     }
 
     const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible" && activeSession && !isReleased) {
+      if (document.visibilityState === "visible" && sessionId && !isReleased) {
         requestWakeLock();
       }
     };
@@ -282,7 +253,18 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
         wakeLockSentinel.release().catch(() => {});
       }
     };
-  }, [activeSession]);
+  }, [sessionId]);
+
+  useEffect(() => {
+    setOverrideExId(null);
+    setCollapsedExIds({});
+    setOpenSetIds({});
+    setCompletedOpenIds({});
+    setOldSessionAcknowledged(false);
+    setDifficultySurvey(null);
+    setDismissedSurveys({});
+    setCompletionDismissed(false);
+  }, [activeSession?.id]);
 
   const handleCancelConfirmed = () => {
     cancelWorkout();
@@ -313,37 +295,53 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
     150
   );
 
-  // Auto-trigger difficulty survey when all working sets of an exercise are completed
+  // Transición suave entre ejercicios: al completar la última serie del activo,
+  // el siguiente se expande y se desplaza a la vista. Se omite el montaje
+  // inicial (no saltar el scroll al abrir/restaurar la sesión) y solo actúa
+  // cuando el ejercicio activo CAMBIA (no en cada update de series).
+  const initialActiveMounted = useRef(false);
+  const prevActiveExerciseId = useRef<string | null>(null);
   useEffect(() => {
-    if (!activeSession || difficultySurvey) return;
-    for (const wEx of activeSession.exercises) {
-      const workingSets = wEx.sets.filter(s => s.type !== "warmup");
-      if (workingSets.length === 0) continue;
-      const allCompleted = workingSets.every(s => s.completed);
-      const alreadyHasDifficulty = wEx.notes?.startsWith("difficulty:");
-      if (allCompleted && !alreadyHasDifficulty) {
-        setDifficultySurvey({ exerciseId: wEx.id, exerciseName: wEx.exercise.nameEs });
-        break;
-      }
+    if (!activeSession) return;
+    const nextId =
+      activeSession.exercises.find((e) => e.sets.some((s) => !s.completed))?.id ??
+      activeSession.exercises[activeSession.exercises.length - 1]?.id ??
+      null;
+    if (!nextId) return;
+    if (!initialActiveMounted.current) {
+      initialActiveMounted.current = true;
+      prevActiveExerciseId.current = nextId;
+      return;
     }
-  }, [activeSession, difficultySurvey]);
+    if (prevActiveExerciseId.current === nextId) return;
+    prevActiveExerciseId.current = nextId;
+    setOverrideExId(null);
+    setCollapsedExIds(prev => ({ ...prev, [nextId]: false }));
+    const el = document.getElementById(`live-ex-${nextId}`);
+    if (el) {
+      requestAnimationFrame(() => {
+        el.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSession?.exercises]);
+
+  // ¿Está TODO el trabajo de la sesión marcado? Con una serie pendiente NO lo
+  // está. Es una TRANSICIÓN, no otra pausa: la banda inferior ofrece el resumen
+  // y se puede seguir sumando series.
+  // Se calcula acá arriba (y no junto a los contadores) porque el efecto de
+  // reinicio tiene que correr SIEMPRE, antes del return temprano sin sesión.
+  const sessionComplete = Boolean(
+    activeSession &&
+      activeSession.exercises.length > 0 &&
+      activeSession.exercises.every((ex) => ex.sets.length > 0 && ex.sets.every((s) => s.completed))
+  );
+
+  useEffect(() => {
+    if (!sessionComplete) setCompletionDismissed(false);
+  }, [sessionComplete]);
 
   // Live session stopwatch timer
-  useEffect(() => {
-    let interval: ReturnType<typeof setInterval> | null = null;
-    if (activeSession) {
-      interval = setInterval(() => {
-        const secs = Math.floor((Date.now() - activeSession.startTime) / 1000);
-        setElapsedSeconds(secs);
-      }, 1000);
-    } else {
-      setElapsedSeconds(0);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [activeSession]);
-
   if (!activeSession || !isWorkoutModalOpen) {
     if (summaryModal.isOpen && summaryModal.workout) {
       return (
@@ -362,15 +360,10 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
     return null;
   }
 
-  const formatStopwatch = (totalSec: number) => {
-    const mins = Math.floor(totalSec / 60);
-    const secs = totalSec % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-  };
-
   // P2: "Finalizar" abre la encuesta sRPE; el cierre real va en doFinish.
   const handleFinish = () => {
     if (!activeSession) return;
+    setFinishMinutes("");
     setSrpeValue(null);
     setPartialReason(null);
     setSrpeSurvey(true);
@@ -378,34 +371,16 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
 
   const doFinish = (srpe: number | undefined, reason?: string | null) => {
     if (!activeSession) return;
-    const durSecs = Math.max(60, Math.floor((Date.now() - activeSession.startTime) / 1000));
-    const effectiveSets = activeSession.exercises.reduce(
-      (acc, ex) => acc + ex.sets.filter((s) => s.completed).length,
-      0
-    );
-    const routineTitle = activeSession.routineName;
-    const exercisesSnapshot = [...activeSession.exercises];
-
-    const { prsAchieved, totalVolumeKg } = finishWorkout(srpe, reason ?? undefined);
-
-    const completedObj: CompletedWorkout = {
-      id: `completed-${Date.now()}`,
-      routineName: routineTitle,
-      date: new Date().toISOString(),
-      durationSeconds: durSecs,
-      totalVolumeKg,
-      totalSets: effectiveSets,
-      exercises: exercisesSnapshot,
-      prCount: prsAchieved.length,
-      averageRir: null,
-      srpe,
-      sessionLoad: srpe != null ? Math.round(srpe * (durSecs / 60)) : undefined,
-    };
-
+    if (finishMinutes && (!Number.isFinite(Number(finishMinutes)) || Number(finishMinutes) < 1 || Number(finishMinutes) > 1440)) {
+      showToast("Ingresá una duración entre 1 y 1440 minutos", "info");
+      return;
+    }
+    const { prsAchieved, completed } = finishWorkout(srpe, reason ?? undefined, finishMinutes ? Number(finishMinutes) * 60 : undefined);
+    if (!completed) return;
     setSrpeSurvey(false);
     setSummaryModal({
       isOpen: true,
-      workout: completedObj,
+      workout: completed,
       prs: prsAchieved,
     });
   };
@@ -423,7 +398,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
 
   const difficultyOptions: { level: DifficultyLevel; label: string; emoji: React.ReactNode; color: string; description: string }[] = [
     { level: "very_hard", label: "Muy difícil", emoji: <Frown className="w-6 h-6" />, color: "border-red-500/40 bg-red-500/10 text-red-400 hover:bg-red-500/20", description: "No pude completar todas las reps" },
-    { level: "just_right", label: "Justo", emoji: <Meh className="w-6 h-6" />, color: "border-yellow-500/40 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20", description: "RIR 1-2, esfuerzo ideal" },
+    { level: "just_right", label: "Justo", emoji: <Meh className="w-6 h-6" />, color: "border-yellow-500/40 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20", description: "El esfuerzo coincidió con mi objetivo" },
     { level: "good", label: "Bien", emoji: <Smile className="w-6 h-6" />, color: "border-emerald-500/40 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20", description: "Completé todo con buena técnica" },
     { level: "had_more", label: "Me sobraron reps", emoji: <Zap className="w-6 h-6" />, color: "border-cyan-500/40 bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20", description: "Pude hacer más repeticiones" },
   ];
@@ -461,78 +436,78 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
         className="fixed inset-0 z-50 text-neutral-100 flex flex-col overflow-hidden"
         style={{ backgroundColor: '#0a0a0a' }}
       >
-      {/* Floating Session Timer Header — a lightweight stopwatch that stays fixed
-          at the top so it never takes over the center of the screen. Uses
-          responsive (vw/clamp) sizing to stay legible from 4" to 7" screens. */}
-      <div className="sticky top-0 z-20 shrink-0 px-3 sm:px-6 pt-[calc(env(safe-area-inset-top)+0.6rem)] pb-2.5 border-b border-neutral-700"
-           style={{ backgroundColor: '#1a1a1a' }}>
-        <div className="flex items-center justify-between gap-3">
-          {/* Rutina + progreso (compacto) */}
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981] shrink-0" />
-            <div className="min-w-0">
-              <h2 className="text-sm sm:text-base font-black text-white tracking-tight truncate">
+      {/* Header compacto: rutina + progreso + reloj en una fila; las acciones
+          quedan en una fila fina con "Finalizar" como secundario (ghost). La
+          acción primaria de la sesión es "Completar serie" en cada ejercicio. */}
+      <div className="sticky top-0 z-20 shrink-0 px-3 sm:px-6 pt-[calc(env(safe-area-inset-top)+0.5rem)] pb-2 border-b border-neutral-800/70"
+           style={{ backgroundColor: '#161616' }}>
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          {/* Rutina + progreso + volumen en una sola línea (compacta) */}
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_6px_#10b981] shrink-0" aria-hidden="true" />
+            <div className="min-w-0 flex-1 leading-tight">
+              <h2 className="text-[13px] sm:text-sm font-black text-white tracking-tight truncate">
                 {activeSession.routineName}
               </h2>
-              <div className="flex items-center gap-2 text-xs text-neutral-300 font-mono tabular-nums">
-                <span>{completedSetsCount}/{totalSetsCount} series</span>
-                <span aria-hidden="true">•</span>
-                <span className="text-purple-300 font-bold">{kgToDisplay(currentVolume, weightUnit).toLocaleString("es-AR")} {weightUnit}</span>
-              </div>
+              <p className="text-[11px] text-neutral-400 font-mono tabular-nums truncate">
+                <span className="text-neutral-300">{completedSetsCount}/{totalSetsCount} series</span>
+                <span aria-hidden="true"> · </span>
+                <span className="text-purple-300 font-bold">
+                  {kgToDisplay(currentVolume, weightUnit).toLocaleString("es-AR")} {weightUnit}
+                </span>
+              </p>
             </div>
           </div>
 
-          {/* Cronómetro de sesión */}
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-neutral-950/80 border border-cyan-500/40 shrink-0">
-            <Clock className="w-4 h-4 text-cyan-400" aria-hidden="true" />
-            <span className="font-black text-white font-mono tabular-nums text-lg sm:text-xl leading-none">
+          {/* Reloj de sesión: DURACIÓN total (no es el descanso). Compacto,
+              con ancho mínimo reservado para que no salte cada segundo. */}
+          <div
+            className="shrink-0 flex items-center gap-1 pl-2 pr-2.5 py-1 rounded-full bg-neutral-950/80 border border-cyan-500/40"
+            role="timer"
+            aria-label={`Duración del entrenamiento: ${formatStopwatch(elapsedSeconds)}`}
+            title="Duración total del entrenamiento"
+          >
+            <Clock className="w-3.5 h-3.5 text-cyan-400 shrink-0" aria-hidden="true" />
+            <span className="font-black text-white font-mono tabular-nums text-sm leading-none min-w-[3.2rem] text-right">
               {formatStopwatch(elapsedSeconds)}
             </span>
           </div>
         </div>
 
-        {/* Progreso de la sesión: se ve de un vistazo cuánto falta */}
-        <div
-          className="mt-2 h-1.5 bg-neutral-800 rounded-full overflow-hidden"
-          role="progressbar"
-          aria-valuemin={0}
-          aria-valuemax={Math.max(1, totalSetsCount)}
-          aria-valuenow={completedSetsCount}
-          aria-label="Series completadas de la sesión"
-        >
+        {/* Barra fina de progreso + acciones compactas en la misma fila.
+            "Finalizar" es secundario (ghost); Minimizar/Ajustes solo-icono.
+            El alto es ~2/3 del anterior: nada de filas de 48px en el header. */}
+        <div className="flex items-center gap-2 pt-2 pb-1 min-w-0">
           <div
-            className="h-full bg-cyan-400 rounded-full transition-all duration-500"
-            style={{ width: `${totalSetsCount > 0 ? Math.min(100, (completedSetsCount / totalSetsCount) * 100) : 0}%` }}
-          />
-        </div>
+            className="flex-1 min-w-0 h-1 bg-neutral-800 rounded-full overflow-hidden"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={Math.max(1, totalSetsCount)}
+            aria-valuenow={completedSetsCount}
+            aria-label="Series completadas de la sesión"
+          >
+            <div
+              className="h-full bg-cyan-400 rounded-full transition-all duration-500"
+              style={{ width: `${totalSetsCount > 0 ? Math.min(100, (completedSetsCount / totalSetsCount) * 100) : 0}%` }}
+            />
+          </div>
 
-        {/* P1: autoregulación aplicada (visible, porque cambia los pesos) */}
-        {activeSession.notes?.startsWith("readiness:") && (
-          <p className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-full px-2 py-0.5">
-            {activeSession.notes.includes("descanso")
-              ? "Energía baja hoy: −10% carga · +1 RIR"
-              : "Energía media hoy: +1 RIR"}
-          </p>
-        )}
-
-        {/* Acciones: finalizar y minimizar siempre accesibles; los ajustes de
-            sesión (sonido / descanso automático) quedan en un menú etiquetado. */}
-        <div className="flex items-center gap-1.5 mt-2.5">
           <button
             onClick={handleFinish}
-            className="flex-1 min-h-[48px] px-4 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-black rounded-xl shadow-lg shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 press-scale"
+            aria-label="Finalizar entrenamiento"
+            className="shrink-0 min-h-[38px] px-3 rounded-full border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/10 text-[11px] sm:text-xs font-black flex items-center gap-1.5 press-scale"
           >
-            <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
-            Finalizar
+            <CheckCircle2 className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+            <span>Finalizar</span>
           </button>
 
           <button
             onClick={() => setIsWorkoutModalOpen(false)}
-            className="min-h-[48px] px-4 rounded-xl bg-neutral-800 text-neutral-200 hover:text-white border border-neutral-700 text-xs font-bold flex items-center justify-center gap-1.5 press-scale"
+            aria-label="Minimizar (la sesión sigue activa)"
             title="Minimizar (la sesión sigue activa)"
+            className="shrink-0 min-h-[38px] min-w-[38px] rounded-lg bg-neutral-800 text-neutral-200 hover:text-white border border-neutral-700 flex items-center justify-center press-scale"
           >
-            <Minimize2 className="w-4 h-4" aria-hidden="true" />
-            <span>Minimizar</span>
+            <Minimize2 className="w-4 h-4 shrink-0" aria-hidden="true" />
           </button>
 
           <button
@@ -540,12 +515,20 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
             aria-expanded={headerSettingsOpen}
             aria-label="Ajustes de la sesión"
             title="Ajustes de la sesión"
-            className="min-h-[48px] min-w-[48px] px-3 rounded-xl bg-neutral-800 text-neutral-200 hover:text-white border border-neutral-700 flex items-center justify-center gap-1.5 press-scale"
+            className="shrink-0 min-h-[38px] min-w-[38px] rounded-lg bg-neutral-800 text-neutral-200 hover:text-white border border-neutral-700 flex items-center justify-center press-scale"
           >
             <Repeat className={`w-4 h-4 ${autoStartTimer ? "text-cyan-400" : "text-neutral-300"} shrink-0`} aria-hidden="true" />
-            <span className="text-xs font-bold">Ajustes</span>
           </button>
         </div>
+
+        {/* P1: autoregulación aplicada (visible, porque cambia los pesos) */}
+        {activeSession.notes?.startsWith("readiness:") && (
+          <p className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-bold text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-full px-2 py-0.5">
+            {activeSession.notes.includes("descanso")
+              ? "Energía baja hoy: −10% carga · +1 RIR"
+              : "Energía media hoy: +1 RIR"}
+          </p>
+        )}
 
         {headerSettingsOpen && (
           <div className="mt-2 p-2 rounded-2xl bg-neutral-950 border border-neutral-800 space-y-1.5 animate-fadeIn">
@@ -556,14 +539,15 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
               onClick={() => setSoundEnabled(!soundEnabled)}
               className="w-full min-h-[48px] px-3 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-between gap-3 text-left"
             >
-              <span className="flex items-center gap-2 text-xs font-bold text-neutral-200">
-                {soundEnabled ? <Volume2 className="w-4 h-4 text-cyan-400" /> : <VolumeX className="w-4 h-4 text-neutral-400" />}
-                Sonido del temporizador
+              <span className="flex items-center gap-2 min-w-0 text-xs font-bold text-neutral-200">
+                {soundEnabled ? <Volume2 className="w-4 h-4 text-cyan-400 shrink-0" /> : <VolumeX className="w-4 h-4 text-neutral-400 shrink-0" />}
+                <span className="min-w-0">Sonido del temporizador</span>
               </span>
-              <span className={`text-[11px] font-black px-2 py-0.5 rounded-full border ${soundEnabled ? "text-cyan-300 border-cyan-500/40 bg-cyan-500/10" : "text-neutral-400 border-neutral-700"}`}>
+              <span className={`shrink-0 whitespace-nowrap text-[11px] font-black px-2 py-0.5 rounded-full border ${soundEnabled ? "text-cyan-300 border-cyan-500/40 bg-cyan-500/10" : "text-neutral-400 border-neutral-700"}`}>
                 {soundEnabled ? "Activado" : "Desactivado"}
               </span>
             </button>
+            {nativeRemindersAvailable() && <button className="w-full min-h-[48px] rounded-xl border border-neutral-700 text-sm text-cyan-200" onClick={async () => { const granted = await requestNativeReminderPermission(); showToast(granted ? "Avisos de descanso habilitados" : "Podés habilitar las notificaciones desde los ajustes del teléfono", granted ? "success" : "info"); }}>Habilitar avisos con pantalla bloqueada</button>}
             <button
               type="button"
               role="switch"
@@ -571,11 +555,11 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
               onClick={() => setAutoStartTimer(!autoStartTimer)}
               className="w-full min-h-[48px] px-3 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-between gap-3 text-left"
             >
-              <span className="flex items-center gap-2 text-xs font-bold text-neutral-200">
-                <Repeat className={`w-4 h-4 ${autoStartTimer ? "text-cyan-400" : "text-neutral-400"}`} />
-                Iniciar descanso al completar la serie
+              <span className="flex items-center gap-2 min-w-0 text-xs font-bold text-neutral-200">
+                <Repeat className={`w-4 h-4 shrink-0 ${autoStartTimer ? "text-cyan-400" : "text-neutral-400"}`} />
+                <span className="min-w-0">Iniciar descanso al completar la serie</span>
               </span>
-              <span className={`text-[11px] font-black px-2 py-0.5 rounded-full border ${autoStartTimer ? "text-cyan-300 border-cyan-500/40 bg-cyan-500/10" : "text-neutral-400 border-neutral-700"}`}>
+              <span className={`shrink-0 whitespace-nowrap text-[11px] font-black px-2 py-0.5 rounded-full border ${autoStartTimer ? "text-cyan-300 border-cyan-500/40 bg-cyan-500/10" : "text-neutral-400 border-neutral-700"}`}>
                 {autoStartTimer ? "Activado" : "Desactivado"}
               </span>
             </button>
@@ -583,68 +567,106 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
         )}
       </div>
 
-      {/* Floating Smart Rest Timer Widget if Active */}
+      {/* Descanso activo: cápsula FLOTANTE fija abajo a la derecha (position:fixed,
+          z-40). No empuja el scroll ni el contenido; sube por encima del teclado
+          (visualViewport) y de la zona segura. El resto corre en useRestTimer. */}
       {restTimer.active && (
-        <div className="bg-neutral-900 border-b border-cyan-500/30 px-3 sm:px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 shadow-lg animate-fadeIn z-20">
-          <div className="flex items-center gap-3">
-            <div className="relative w-9 h-9 flex items-center justify-center">
-              <svg className="w-full h-full -rotate-90">
-                <circle
-                  cx="18"
-                  cy="18"
-                  r="15"
-                  className="stroke-neutral-800 stroke-2 fill-none"
-                />
-                <circle
-                  cx="18"
-                  cy="18"
-                  r="15"
-                  className="stroke-cyan-400 stroke-2 fill-none transition-all duration-1000"
-                  strokeDasharray={2 * Math.PI * 15}
-                  strokeDashoffset={
-                    2 * Math.PI * 15 * (1 - restTimer.remainingSeconds / Math.max(1, restTimer.totalSeconds))
-                  }
-                />
-              </svg>
-              <span className="absolute text-[11px] font-black font-mono text-cyan-400">
-                {restTimer.remainingSeconds}
+        <RestTimerBar
+          remainingSeconds={restTimer.remainingSeconds}
+          totalSeconds={restTimer.totalSeconds}
+          exerciseName={restTimer.exerciseName}
+          onAdjust={adjustRestTimer}
+          onSkip={stopRestTimer}
+        />
+      )}
+
+      {/* Última serie de la sesión: transición al resumen (en vez de otra
+          pausa). La banda es fija abajo, así que no hay que desplazarse
+          hasta el final de la lista para cerrar el entrenamiento. */}
+      {sessionComplete && !completionDismissed && !restTimer.active && (
+        <div
+          role="status"
+          className="fixed inset-x-0 bottom-0 z-40 px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] pt-3 bg-neutral-950/95 backdrop-blur border-t border-emerald-500/40 animate-fadeIn"
+        >
+          <div className="max-w-4xl w-full mx-auto flex items-center gap-2 sm:gap-3">
+            <span className="min-w-0 flex-1 text-xs sm:text-sm font-black text-emerald-200 leading-tight">
+              Sesión completada
+              <span className="block text-[11px] font-medium text-neutral-300">
+                {completedSetsCount} de {totalSetsCount} series registradas
               </span>
-            </div>
-
-            <div>
-              <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-cyan-400" />
-                Descanso: {restTimer.remainingSeconds}s restantes
-              </div>
-              <p className="text-[11px] text-neutral-400 truncate max-w-xs">{restTimer.exerciseName || "Siguiente serie"}</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1.5">
+            </span>
             <button
-              onClick={() => adjustRestTimer(-15)}
-              className="px-3 min-h-[44px] bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-xl text-xs font-mono font-bold"
+              type="button"
+              onClick={() => setCompletionDismissed(true)}
+              className="shrink-0 min-h-[48px] px-3 rounded-xl bg-neutral-800 border border-neutral-700 text-neutral-200 text-xs font-bold press-scale"
             >
-              -15s
+              Seguir
             </button>
             <button
-              onClick={() => adjustRestTimer(30)}
-              className="px-3 min-h-[44px] bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-xl text-xs font-mono font-bold"
+              type="button"
+              onClick={handleFinish}
+              className="shrink-0 min-h-[48px] px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black press-scale"
             >
-              +30s
-            </button>
-            <button
-              onClick={stopRestTimer}
-              className="px-3 min-h-[44px] bg-cyan-600/20 text-cyan-400 hover:bg-cyan-600/30 border border-cyan-500/30 rounded-xl text-xs font-bold"
-            >
-              Saltar
+              Ver resumen
             </button>
           </div>
         </div>
       )}
 
-      {/* Main Exercises Workout Area */}
-      <div className="flex-1 min-h-0 overscroll-contain overflow-y-auto p-3 sm:p-6 space-y-6 max-w-4xl w-full mx-auto pb-[calc(7rem+env(safe-area-inset-bottom))]" style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
+      {!oldSessionAcknowledged && Date.now() - activeSession.startTime > 4 * 60 * 60 * 1000 && <div className="shrink-0 px-3 py-2 bg-amber-950 text-sm text-amber-100">Esta sesión lleva varias horas abierta.
+        <button className="min-h-[44px] px-3 underline" onClick={() => setOldSessionAcknowledged(true)}>Continuar</button>
+        <button className="min-h-[44px] px-3 underline" onClick={handleFinish}>Finalizar y ajustar duración</button>
+      </div>}
+      {/* Carrusel de ejercicios estilo referencia: miniaturas circulares
+          con estado, para saltar sin abrir nada. Solo si hay 2+ ejercicios.
+          El scroll horizontal está CONTENIDO acá (overscroll-x-contain +
+          overflow-y-hidden): la página nunca se desplaza en horizontal. */}
+      {activeSession.exercises.length > 1 && (
+        <div className="shrink-0 min-w-0 px-3 sm:px-6 py-2 border-b border-neutral-800 bg-neutral-950/60">
+          <div
+            className="flex items-center gap-3 overflow-x-auto overflow-y-hidden overscroll-x-contain scrollbar-thin py-1 max-w-4xl w-full mx-auto min-w-0"
+            style={{ touchAction: "pan-x" } as React.CSSProperties}
+          >
+            {activeSession.exercises.map((wEx, i) => {
+              const done = wEx.sets.length > 0 && wEx.sets.every((s) => s.completed);
+              const isActive = wEx.id === (overrideExId ?? activeExerciseId);
+              return (
+                <ExerciseThumb
+                  key={wEx.id}
+                  exercise={wEx.exercise}
+                  size={isActive ? 60 : 52}
+                  active={isActive}
+                  done={done}
+                  showLabel
+                  label={`${i + 1}. ${shortExerciseName(wEx.exercise.nameEs)}`}
+                  onClick={() => {
+                    setOverrideExId(wEx.id);
+                    setCollapsedExIds((prev) => ({ ...prev, [wEx.id]: false }));
+                    requestAnimationFrame(() => {
+                      document.getElementById(`live-ex-${wEx.id}`)?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+                    });
+                  }}
+                />
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Main Exercises Workout Area. `overflow-x-hidden`: el scroll horizontal
+          vive SOLO en el carrusel, nunca en la página. El padding inferior deja
+          la última card/botón por encima de la navegación inferior y de la
+          barra de gestos (safe-area). */}
+      <div
+        className="flex-1 min-h-0 overscroll-contain overflow-y-auto overflow-x-hidden p-3 sm:p-6 space-y-6 max-w-4xl w-full mx-auto"
+        style={{
+          WebkitOverflowScrolling: 'touch',
+          // Solo se reserva espacio inferior cuando algo FLOTA encima del scroll
+          // (cápsula de descanso o banda de sesión completada). Sin descanso ni
+          // banda, el contenido recupera esos ~76px que antes quedaban vacíos.
+          paddingBottom: `calc(env(safe-area-inset-bottom, 0px) + ${restTimer.active ? 88 : sessionComplete && !completionDismissed ? 104 : 12}px)`,
+        } as React.CSSProperties}
+      >
         {activeSession.exercises.length === 0 ? (
           <div className="text-center py-16 bg-neutral-900/50 rounded-3xl border border-neutral-800 p-8 space-y-4">
             <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 flex items-center justify-center mx-auto">
@@ -665,6 +687,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
           </div>
         ) : (
           activeSession.exercises.map((wEx, exIndex) => {
+            const weightStep = weightSteps[wEx.exerciseId] ?? (weightUnit === "lbs" ? 5 : 2.5);
             const firstWorkingSet = wEx.sets.find((s) => s.type !== "warmup") || wEx.sets[0];
             const currentWorkingWeight = firstWorkingSet ? firstWorkingSet.weight : 40;
 
@@ -675,11 +698,10 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
             const pendingSetsMobile = wEx.sets.filter((s) => !s.completed);
             const isActiveExercise = wEx.id === activeExerciseId;
             const isExpanded =
-              isTimedEx || overrideExId === wEx.id || (isActiveExercise && !collapsedExIds[wEx.id]);
+              (overrideExId ? overrideExId === wEx.id : isActiveExercise && !collapsedExIds[wEx.id]);
             const nextPending = pendingSetsMobile[0] ?? null;
 
             const toggleExercise = () => {
-              if (isTimedEx) return;
               if (isExpanded) {
                 setOverrideExId(null);
                 setCollapsedExIds((prev) => ({ ...prev, [wEx.id]: true }));
@@ -697,13 +719,15 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
               // Estilo Hevy: la fila cerrada siempre muestra el contexto
               // (anterior real o estimación), sin obligar a abrir el editor.
               const ghostShort = set.previousIsEstimate
-                ? `Estimación ${fmtW(set.weight)} ${weightUnit}`
+                ? "Sin historial · elegí tu carga"
                 : set.previousWeight
                   ? `Anterior ${fmtW(set.previousWeight)} ${weightUnit} × ${set.previousReps}`
                   : null;
               return (
                 <div
                   key={set.id}
+                  id={`live-set-${set.id}`}
+                  tabIndex={-1}
                   className={`rounded-2xl border overflow-hidden ${
                     set.completed
                       ? "bg-emerald-950/20 border-emerald-500/30"
@@ -755,7 +779,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                     <div className="px-3 pb-3 space-y-3">
                       {set.previousIsEstimate && !set.completed && (
                         <p className="text-xs text-cyan-300">
-                          Estimación inicial (todavía sin historial): {fmtW(set.weight)} {weightUnit} · ajustala en tu primera serie
+                          Sin historial: elegí la carga de esta serie. Usá 0 si no lleva peso externo.
                         </p>
                       )}
                       {!set.previousIsEstimate && set.previousWeight ? (
@@ -790,23 +814,16 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                             </button>
                             <input
                               type="number"
+                              onFocus={e => e.currentTarget.scrollIntoView({ block: "center", behavior: "auto" })}
                               inputMode="decimal"
                               min="0"
-                              step={weightStep}
+                              step="any"
                               value={weightDisplay(set.weight)}
                               onChange={(e) =>
                                 updateSet(target.id, set.id, {
                                   weight: weightKgFromDisplay(parseFloat(e.target.value) || 0),
                                 })
                               }
-                              onBlur={(e) => {
-                                const raw = parseFloat(e.target.value);
-                                if (!Number.isFinite(raw)) return;
-                                const snapped = Math.max(0, Math.round(raw / weightStep) * weightStep);
-                                if (Math.abs(snapped - raw) > 0.001) {
-                                  updateSet(target.id, set.id, { weight: weightKgFromDisplay(snapped) });
-                                }
-                              }}
                               aria-label={`Peso de la serie ${set.setNumber} en ${weightUnit}`}
                               className="flex-1 min-w-0 h-12 text-center rounded-xl bg-neutral-900 border border-neutral-700 font-black text-white text-lg tabular-nums focus:outline-none focus:border-cyan-500"
                             />
@@ -841,6 +858,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                             </button>
                             <input
                               type="number"
+                              onFocus={e => e.currentTarget.scrollIntoView({ block: "center", behavior: "auto" })}
                               inputMode="numeric"
                               min="1"
                               max="99"
@@ -855,7 +873,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                             />
                             <button
                               type="button"
-                              onClick={() => updateSet(target.id, set.id, { reps: set.reps + 1 })}
+                              onClick={() => updateSet(target.id, set.id, { reps: Math.min(99, set.reps + 1) })}
                               className="w-12 h-12 shrink-0 rounded-xl bg-cyan-600/20 text-cyan-200 text-2xl font-bold flex items-center justify-center active:bg-cyan-600/40"
                               aria-label={`Subir repeticiones de la serie ${set.setNumber}`}
                             >
@@ -901,6 +919,12 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                             navigator.vibrate(35);
                           }
                           completeSetAndTriggerTimer(target.id, set.id);
+                          const nextSet = target.sets.find((candidate) => !candidate.completed && candidate.id !== set.id);
+                          if (!set.completed && nextSet) requestAnimationFrame(() => {
+                            document.getElementById(`live-set-${nextSet.id}`)?.scrollIntoView({
+                              block: "nearest", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+                            });
+                          });
                         }}
                         className={`w-full h-12 rounded-xl flex items-center justify-center gap-2 text-sm font-black transition-all press-scale ${
                           set.completed
@@ -909,7 +933,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                         }`}
                       >
                         <Check className="w-4 h-4 stroke-[3]" aria-hidden="true" />
-                        {set.completed ? "Serie completada" : "Completar serie"}
+                        {set.completed ? "Desmarcar serie" : "Completar serie"}
                       </button>
 
                       {set.completed && <VelocityChip wEx={target} set={set} />}
@@ -931,6 +955,11 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
 
                       {setTypeOpenIds[set.id] && (
                         <div className="p-3 rounded-2xl bg-neutral-900 border border-neutral-800 space-y-3">
+                          <label className="block text-xs text-neutral-200">Incremento de peso ({weightUnit})
+                            <select className="ml-2 min-h-[44px] bg-neutral-950 rounded-lg" value={weightStep} onChange={e => setWeightSteps(prev => { const next = { ...prev, [wEx.exerciseId]: Number(e.target.value) }; safeSet("kinetix_weight_steps", next); return next; })}>
+                              {[0.25, 0.5, 1, 2.5, 5, 10].map(step => <option key={step} value={step}>{step}</option>)}
+                            </select>
+                          </label>
                           <div>
                             <span className="block text-xs font-bold text-neutral-200 mb-1.5">Tipo de serie</span>
                             <div className="flex flex-wrap gap-1.5">
@@ -1025,7 +1054,8 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
             return (
               <div
                 key={wEx.id}
-                className={`bg-neutral-900 rounded-3xl overflow-hidden shadow-xl transition-all ${
+                id={`live-ex-${wEx.id}`}
+                className={`bg-neutral-900 rounded-3xl overflow-hidden shadow-xl transition-all scroll-mt-24 ${
                   hasSuperset
                     ? "border-2 border-purple-500/50 shadow-[0_0_20px_rgba(168,85,247,0.15)]"
                     : "border border-neutral-800"
@@ -1051,7 +1081,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                     type="button"
                     onClick={toggleExercise}
                     aria-expanded={isExpanded}
-                    className="w-full text-left px-3.5 sm:px-4 py-2.5 min-h-[64px] flex items-center gap-3"
+                    className="w-full min-w-0 text-left px-3.5 sm:px-4 py-2.5 min-h-[64px] flex items-center gap-3"
                   >
                     <span
                       className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black shrink-0 ${
@@ -1065,28 +1095,29 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                       {exIndex + 1}
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="flex items-center gap-2 flex-wrap">
+                      <span className="flex items-center gap-2 flex-wrap min-w-0">
                         <span
-                          className={`font-black tracking-tight line-clamp-2 leading-tight ${
+                          className={`min-w-0 font-black tracking-tight line-clamp-2 leading-tight ${
                             isActiveExercise ? "text-lg text-white" : "text-sm text-neutral-100"
                           }`}
                         >
                           {wEx.exercise.nameEs}
                         </span>
                         {isActiveExercise && pendingSetsMobile.length > 0 && (
-                          <span className="px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-200 border border-cyan-500/30">
-                            En curso
+                          <span className="shrink-0 whitespace-nowrap px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-200 border border-cyan-500/30">
+                            Próximo pendiente
                           </span>
                         )}
                         {doneCount === wEx.sets.length && wEx.sets.length > 0 && (
-                          <span className="px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-200 border border-emerald-500/30">
+                          <span className="shrink-0 whitespace-nowrap px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-200 border border-emerald-500/30">
                             Completado
                           </span>
                         )}
                       </span>
                       <span className="block text-xs text-neutral-300 mt-0.5 tabular-nums">
-                        {doneCount}/{wEx.sets.length} series · descanso {wEx.targetRestSeconds}s
-                        {!isExpanded && nextPending ? ` · siguiente: ${fmtW(nextPending.weight)} ${weightUnit} × ${nextPending.reps}` : ""}
+                        {doneCount}/{wEx.sets.length} series
+                        {wEx.targetRestSeconds > 0 ? ` · descanso ${formatDuration(wEx.targetRestSeconds)}` : ""}
+                        {!isExpanded && nextPending && !isTimedEx ? ` · siguiente: ${fmtW(nextPending.weight)} ${weightUnit} × ${nextPending.reps}` : ""}
                       </span>
                     </span>
                     {!isTimedEx && (
@@ -1210,10 +1241,16 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                     cabecera. Los de tiempo/cardio siempre están expandidos. */}
                 {isExpanded && (
                 <>
-                {/* Double Progression — live objective guidance */}
-                {!isTimeBased(wEx.exercise, wEx.targetReps) && (
-                  <DoubleProgressionBanner wEx={wEx} />
-                )}
+                {/* La demostración permanece visible al abrir el ejercicio. */}
+                <ExerciseInlineVisual
+                  exercise={wEx.exercise}
+                  onGoToSets={!isTimedEx && nextPending ? () => {
+                    document.getElementById(`live-set-${nextPending.id}`)?.focus({ preventScroll: true });
+                    document.getElementById(`live-set-${nextPending.id}`)?.scrollIntoView({ block: "start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+                  } : undefined}
+                  onTutorial={() => setSelectedExerciseForDetail(wEx.exercise)}
+                  onReplace={() => { setReplacingWExId(wEx.id); setIsLibraryOpen(true); }}
+                />
 
                 {/* Cardio Timer — special rendering for cardio:20min */}
                 {wEx.notes?.startsWith("cardio:") && (
@@ -1274,9 +1311,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                             {/* Ghost Rep Previous Performance */}
                             <td className="py-2.5 text-neutral-400 font-mono text-[11px]">
                               {set.previousIsEstimate ? (
-                                <span className="text-cyan-400/90 font-bold">
-                                  Estimación inicial · {fmtW(set.weight)}
-                                </span>
+                                <span className="text-cyan-400/90 font-bold">Sin historial</span>
                               ) : set.previousWeight ? (
                                 <span>{fmtW(set.previousWeight)} × {set.previousReps} @RIR{set.previousRir ?? 1}
                                   {set.weight !== set.previousWeight && !set.completed && (
@@ -1306,8 +1341,9 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                                 </button>
                                 <input
                                   type="number"
-                                  inputMode="decimal"
-                                  step={weightStep}
+                                  onFocus={e => e.currentTarget.scrollIntoView({ block: "center", behavior: "auto" })}
+                              inputMode="decimal"
+                                  step="any"
                                   value={weightDisplay(set.weight)}
                                   onChange={(e) =>
                                     updateSet(wEx.id, set.id, {
@@ -1346,7 +1382,8 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                                 </button>
                                 <input
                                   type="number"
-                                  inputMode="numeric"
+                                  onFocus={e => e.currentTarget.scrollIntoView({ block: "center", behavior: "auto" })}
+                              inputMode="numeric"
                                   value={set.reps}
                                   onChange={(e) =>
                                     updateSet(wEx.id, set.id, {
@@ -1359,7 +1396,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                                   type="button"
                                   onClick={() =>
                                     updateSet(wEx.id, set.id, {
-                                      reps: set.reps + 1,
+                                      reps: Math.min(99, set.reps + 1),
                                     })
                                   }
                                   className="w-8 h-8 flex items-center justify-center text-neutral-400 hover:text-white rounded hover:bg-neutral-800"
@@ -1395,6 +1432,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                             <td className="py-2.5 text-center">
                               <button
                                 type="button"
+                                aria-label={`${set.completed ? "Desmarcar" : "Completar"} serie ${set.setNumber} de ${wEx.exercise.nameEs}`}
                                 onClick={() => completeSetAndTriggerTimer(wEx.id, set.id)}
                                 className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all shadow-md ${
                                   set.completed
@@ -1410,8 +1448,9 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                             <td className="py-2.5 text-right">
                               <button
                                 type="button"
+                                aria-label={`Eliminar serie ${set.setNumber} de ${wEx.exercise.nameEs}`}
                                 onClick={() => removeSet(wEx.id, set.id)}
-                                className="text-neutral-400 hover:text-red-400 transition-colors p-1"
+                                className="text-neutral-400 hover:text-red-400 transition-colors min-w-[44px] min-h-[44px] p-2"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
@@ -1434,13 +1473,18 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                         type="button"
                         onClick={() => setCompletedOpenIds((prev) => ({ ...prev, [wEx.id]: !prev[wEx.id] }))}
                         aria-expanded={Boolean(completedOpenIds[wEx.id])}
-                        className="w-full min-h-[48px] px-3 flex items-center justify-between gap-2 text-left"
+                        className="w-full min-w-0 min-h-[48px] px-3 flex items-center justify-between gap-2 text-left"
                       >
-                        <span className="flex items-center gap-2 text-xs font-bold text-emerald-300">
-                          <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
-                          {completedSetsMobile.length} {completedSetsMobile.length === 1 ? "serie completada" : "series completadas"}
+                        <span className="flex items-center gap-2 min-w-0 text-xs font-bold text-emerald-300">
+                          <CheckCircle2 className="w-4 h-4 shrink-0" aria-hidden="true" />
+                          <span className="truncate">
+                            {completedSetsMobile.length} {completedSetsMobile.length === 1 ? "serie completada" : "series completadas"}
+                          </span>
                         </span>
-                        <span className="text-[11px] text-neutral-300 font-mono truncate hidden xs:inline">
+                        {/* El resumen de la última serie usa `shrink-0`; el rótulo de la
+                            izquierda trunca antes que comprimirse (antes usaba un
+                            breakpoint `xs:` inexistente y quedaba siempre oculto). */}
+                        <span className="text-[11px] text-neutral-300 font-mono whitespace-nowrap shrink-0 tabular-nums">
                           {fmtW(completedSetsMobile[completedSetsMobile.length - 1].weight)} {weightUnit} × {completedSetsMobile[completedSetsMobile.length - 1].reps}
                         </span>
                         <ChevronDown className={`w-4 h-4 text-neutral-300 shrink-0 transition-transform ${completedOpenIds[wEx.id] ? "rotate-180" : ""}`} aria-hidden="true" />
@@ -1456,22 +1500,48 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
                   {pendingSetsMobile.map((set, i) => renderSetEditor(wEx, set, i === 0))}
 
                   {pendingSetsMobile.length === 0 && wEx.sets.length > 0 && (
-                    <p className="text-xs text-emerald-300 font-bold px-1 py-2 flex items-center gap-2">
-                      <Check className="w-4 h-4 stroke-[3]" aria-hidden="true" />
-                      Ejercicio completado · sumá una serie extra si querés seguir
+                    <p className="text-xs text-emerald-300 font-bold px-1 py-2 flex items-center gap-2 min-w-0">
+                      <Check className="w-4 h-4 stroke-[3] shrink-0" aria-hidden="true" />
+                      <span className="min-w-0">Ejercicio completado · sumá una serie extra si querés seguir</span>
                     </p>
                   )}
                 </div>
+                )}
+
+
+                {!isTimedEx && <details className="mx-4 mb-3 rounded-xl border border-neutral-700">
+                  <summary className="min-h-[48px] cursor-pointer px-3 py-3 text-sm font-bold text-neutral-200">Objetivo y progresión</summary>
+                  <ProgressionRecommendation wEx={wEx} weightUnit={weightUnit} />
+                </details>}
+                {doneCount === wEx.sets.length && doneCount > 0 && !isTimedEx && !dismissedSurveys[wEx.id] && (
+                  <button
+                    className="mx-4 mb-3 min-h-[44px] text-sm font-bold text-cyan-200 text-left"
+                    onClick={() => setDifficultySurvey({ exerciseId: wEx.id, exerciseName: wEx.exercise.nameEs, targetRir: wEx.targetRir ?? wEx.exercise.defaultRir })}
+                  >
+                    ¿Cómo se sintió? · valorar esfuerzo (opcional)
+                  </button>
                 )}
 
                 {/* Barra de series: la acción rápida es una serie normal; Drop Set,
                     Myo-Reps y el resto viven en "Opciones de serie". */}
                 {!wEx.notes?.startsWith("cardio:") && (
                 <div className="px-4 pb-4 sm:px-5 sm:pb-5 flex items-center gap-2 pt-3 flex-wrap">
-                  <button type="button" onClick={() => addSet(wEx.id, "normal")} className="px-3.5 min-h-[48px] rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-100 text-sm font-bold border border-neutral-700 flex items-center gap-1.5 transition-colors press-scale">
+                  <button type="button" onClick={() => addSet(wEx.id, "normal")} className="shrink-0 whitespace-nowrap px-3.5 min-h-[48px] rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-100 text-sm font-bold border border-neutral-700 flex items-center gap-1.5 transition-colors press-scale">
                     <Plus className="w-4 h-4 text-cyan-400" aria-hidden="true" />Añadir serie
                   </button>
-                  <button type="button" onClick={() => addSet(wEx.id, "dropset")} className="px-3.5 min-h-[48px] rounded-xl bg-neutral-900 hover:bg-neutral-800 text-purple-300 text-xs font-bold border border-purple-500/30 flex items-center gap-1.5 transition-colors press-scale">
+                  {/* Descanso manual: con el automático apagado (ajustes del
+                      header) esta es la vía clara para arrancarlo. */}
+                  {!restTimer.active && (
+                    <button
+                      type="button"
+                      onClick={() => startRestTimer(wEx.targetRestSeconds || 90, wEx.exercise.nameEs || wEx.exercise.name)}
+                      className="shrink-0 whitespace-nowrap px-3.5 min-h-[48px] rounded-xl bg-neutral-900 hover:bg-neutral-800 text-cyan-200 text-xs font-bold border border-cyan-500/40 flex items-center gap-1.5 transition-colors press-scale"
+                    >
+                      <Clock className="w-3.5 h-3.5 text-cyan-400" aria-hidden="true" />
+                      Iniciar descanso {formatDuration(wEx.targetRestSeconds || 90)}
+                    </button>
+                  )}
+                  <button type="button" onClick={() => addSet(wEx.id, "dropset")} className="shrink-0 whitespace-nowrap px-3.5 min-h-[48px] rounded-xl bg-neutral-900 hover:bg-neutral-800 text-purple-300 text-xs font-bold border border-purple-500/30 flex items-center gap-1.5 transition-colors press-scale">
                     <Sparkles className="w-3.5 h-3.5 text-purple-400" aria-hidden="true" />Añadir Drop Set
                   </button>
                 </div>
@@ -1536,7 +1606,7 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
       {/* P2: Encuesta sRPE post-sesión (Foster 1-10, carga interna = sRPE × min) */}
       {srpeSurvey && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-          <div role="dialog" aria-modal="true" aria-label="Esfuerzo percibido de la sesión" className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-md shadow-2xl p-6 space-y-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+          <div role="dialog" aria-modal="true" aria-label="Esfuerzo percibido de la sesión" className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-md max-h-[90dvh] overflow-y-auto shadow-2xl p-6 space-y-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
             <div className="text-center space-y-2">
               <div className="w-14 h-14 rounded-2xl bg-purple-500/10 text-purple-400 border border-purple-500/20 flex items-center justify-center mx-auto">
                 <Activity className="w-7 h-7" />
@@ -1547,6 +1617,9 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
               </p>
             </div>
 
+            <label className="block text-sm text-neutral-300">Duración real (minutos, opcional)
+              <input type="number" min="1" max="1440" inputMode="numeric" value={finishMinutes} onChange={e => setFinishMinutes(e.target.value)} className="mt-2 w-full min-h-[44px] rounded-xl bg-neutral-950 px-3" placeholder="Usar el tiempo transcurrido" />
+            </label>
             <div className="grid grid-cols-5 gap-2" role="radiogroup" aria-label="sRPE 1 a 10">
               {Array.from({ length: 10 }, (_, i) => i + 1).map((v) => (
                 <button
@@ -1604,12 +1677,13 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
               );
             })()}
 
+            <button className="w-full min-h-[44px] text-sm text-neutral-300" onClick={() => setSrpeSurvey(false)}>Volver al entrenamiento</button>
             <div className="flex gap-2">
               <button
                 onClick={() => doFinish(undefined, partialReason)}
                 className="flex-1 py-3 text-xs text-neutral-400 hover:text-neutral-300 font-medium transition-colors min-h-[48px]"
               >
-                Omitir
+                Guardar sin valorar
               </button>
               <button
                 onClick={() => doFinish(srpeValue ?? undefined, partialReason)}
@@ -1626,14 +1700,17 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
       {/* Difficulty Survey Modal */}
       {difficultySurvey && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-          <div role="dialog" aria-modal="true" aria-label="Encuesta de dificultad" className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-md shadow-2xl p-6 space-y-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+          <div role="dialog" aria-modal="true" aria-label="Encuesta de dificultad" className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-md max-h-[90dvh] overflow-y-auto shadow-2xl p-6 space-y-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
             <div className="text-center space-y-2">
               <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 flex items-center justify-center mx-auto">
                 <Activity className="w-7 h-7" />
               </div>
               <h3 className="text-lg font-black text-white">¿Cómo te fue?</h3>
               <p className="text-xs text-neutral-400">
-                <strong className="text-white">{difficultySurvey.exerciseName}</strong> — Selecciona cómo se sintió
+                <strong className="text-white">{difficultySurvey.exerciseName}</strong>
+                {difficultySurvey.targetRir != null
+                  ? ` — objetivo RIR ${difficultySurvey.targetRir}. ¿Qué tan cerca quedaste?`
+                  : " — Selecciona cómo se sintió"}
               </p>
             </div>
 
@@ -1651,11 +1728,16 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
               ))}
             </div>
 
+            {/* Omitir vale para TODA la sesión: el ejercicio no vuelve a pedir
+                valoración hasta el próximo entrenamiento. */}
             <button
-              onClick={() => setDifficultySurvey(null)}
-              className="w-full py-2.5 text-xs text-neutral-400 hover:text-neutral-300 font-medium transition-colors"
+              onClick={() => {
+                setDismissedSurveys((prev) => ({ ...prev, [difficultySurvey.exerciseId]: true }));
+                setDifficultySurvey(null);
+              }}
+              className="w-full min-h-[44px] text-xs text-neutral-400 hover:text-neutral-300 font-medium transition-colors"
             >
-              Omitir por ahora
+              Ahora no (no volver a preguntar hoy)
             </button>
           </div>
         </div>
@@ -1719,3 +1801,4 @@ export const LiveWorkoutLogger: React.FC<{ onGoToAnalytics?: () => void }> = ({ 
     </FocusTrap>
   );
 };
+

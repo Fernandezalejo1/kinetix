@@ -350,7 +350,10 @@ const AppContent: React.FC = () => {
         onOpenSettings={() => setIsSettingsOpen(true)}
       />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 pt-3 sm:pt-6 pb-20 md:pb-6">
+      {/* Padding inferior = navegación inferior + safe-area del teléfono + aire:
+          la última card/botón scrollea COMPLETA por encima de la barra. En
+          desktop (md) la nav es horizontal arriba, así que no reserva alto. */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 pt-3 sm:pt-6 pb-[calc(var(--bottom-nav-h)+env(safe-area-inset-bottom)+1rem)] md:pb-6">
         <div className={panelClass("hoy")}>
           <TodayHub
             onGoToWorkout={() => navigateToTab("workout")}

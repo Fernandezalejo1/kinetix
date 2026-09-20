@@ -429,5 +429,122 @@ export const PREBUILT_PROGRAMS: Program[] = [
         ]
       }
     ]
+  },
+  {
+    id: "consenso-keto-ppl-6x",
+    title: "MI PLAN · Keto PPL x2 (Consenso Final)",
+    subtitle: "Tu plan personal 18/09/2026 · 2.700 kcal · 220 g P · 15k pasos · trap bar en vez de peso muerto",
+    scienceBasis: "PPL x2 (6 días) + domingo activo. Compuestos RIR 2-3 nunca al fallo, aislamientos RIR 0-1, doble progresión, deload cada 5-6 semanas (mitad de volumen, RIR 4-5). Sin peso muerto convencional por dolor lumbar: trap bar moderada + hip thrust + remo pecho-apoyado. Abs 3x/sem pesado al final. Descanso 3-4 min en banca/militar/sentadilla.",
+    level: "Avanzado",
+    daysPerWeek: 6,
+    durationWeeks: 12,
+    focus: "Keto 2.700 kcal · Fuerza + Abs 6-10 meses · Cintura manda",
+    routines: [
+      {
+        id: "consenso-lunes-push-a",
+        name: "Lunes · Push A (Fuerza)",
+        description: "Press plano 4×5-6 RIR2 (última RIR1) · descanso 3-4 min en básicos. Abs: plancha al final.",
+        targetSplit: "Push A",
+        estimatedDurationMin: 75,
+        exercises: [
+          { exerciseId: "barbell-bench-press", targetSets: 4, targetReps: "5-6", targetRir: 2, targetTempo: "3-1-0-1", restSeconds: 210 },
+          { exerciseId: "incline-dumbbell-press", targetSets: 3, targetReps: "8-10", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 120 },
+          { exerciseId: "dumbbell-seated-shoulder-press", targetSets: 3, targetReps: "6-8", targetRir: 2, targetTempo: "3-1-0-1", restSeconds: 180 },
+          { exerciseId: "dumbbell-lateral-raise", targetSets: 4, targetReps: "12-15", targetRir: 1, targetTempo: "2-0-1-1", restSeconds: 60 },
+          { exerciseId: "cable-pushdown", targetSets: 3, targetReps: "10-12", targetRir: 1, targetTempo: "2-1-1-1", restSeconds: 60 },
+          { exerciseId: "front-plank", targetSets: 3, targetReps: "30-40s", targetRir: 1, targetTempo: "Sostén isométrico", restSeconds: 60 }
+        ]
+      },
+      {
+        id: "consenso-martes-pull-a",
+        name: "Martes · Pull A (Trap bar)",
+        description: "Trap bar 4×6-8 RIR2 en vez de peso muerto (lumbar). Progresión S1-2: 3×8@60 · S3-4: 4×8@70 · S5-6: 4×6@80 · S7-8: 4×6@90.",
+        targetSplit: "Pull A",
+        estimatedDurationMin: 75,
+        exercises: [
+          { exerciseId: "trap-bar-deadlift", targetSets: 4, targetReps: "6-8", targetRir: 2, targetTempo: "2-0-1-0", restSeconds: 180 },
+          { exerciseId: "cable-bar-lateral-pulldown", targetSets: 4, targetReps: "8", targetRir: 2, targetTempo: "3-1-1-0", restSeconds: 120 },
+          { exerciseId: "chest-supported-t-bar-row", targetSets: 4, targetReps: "8-10", targetRir: 2, targetTempo: "3-1-1-0", restSeconds: 120 },
+          { exerciseId: "cable-face-pull-supinated", targetSets: 3, targetReps: "15", targetRir: 1, targetTempo: "2-0-1-1", restSeconds: 60 },
+          { exerciseId: "ez-bar-curl", targetSets: 3, targetReps: "8-10", targetRir: 1, targetTempo: "2-0-1-0", restSeconds: 90 },
+          { exerciseId: "dumbbell-hammer-curl", targetSets: 2, targetReps: "10-12", targetRir: 1, targetTempo: "2-0-1-0", restSeconds: 60 }
+        ]
+      },
+      {
+        id: "consenso-miercoles-legs-a",
+        name: "Miércoles · Legs A + Abs",
+        description: "ÚNICO día de sentadilla libre del bloque (3×5-6 RIR2-3). Abs pesado al final: cable crunch + colgado.",
+        targetSplit: "Legs A",
+        estimatedDurationMin: 80,
+        exercises: [
+          { exerciseId: "barbell-hack-or-squat", targetSets: 3, targetReps: "5-6", targetRir: 2, targetTempo: "3-1-0-1", restSeconds: 210 },
+          { exerciseId: "sled-leg-press", targetSets: 3, targetReps: "10-12", targetRir: 2, targetTempo: "3-1-1-0", restSeconds: 150 },
+          { exerciseId: "seated-leg-curl", targetSets: 3, targetReps: "10-12", targetRir: 1, targetTempo: "3-0-1-1", restSeconds: 90 },
+          { exerciseId: "leg-extension", targetSets: 3, targetReps: "12-15", targetRir: 1, targetTempo: "2-0-1-1", restSeconds: 60 },
+          { exerciseId: "standing-calf-raise", targetSets: 4, targetReps: "12-15", targetRir: 1, targetTempo: "3-2-1-1", restSeconds: 60 },
+          { exerciseId: "cable-crunch", targetSets: 3, targetReps: "10-15", targetRir: 1, targetTempo: "2-1-1-1", restSeconds: 60 },
+          { exerciseId: "windshield-wipers", targetSets: 2, targetReps: "max-1", targetRir: 1, targetTempo: "2-0-1-0", restSeconds: 90 }
+        ]
+      },
+      {
+        id: "consenso-jueves-push-b",
+        name: "Jueves · Push B (Volumen)",
+        description: "Inclinado máquina como base 4×8-10. Rueda abdominal: usa Dragon Flag como proxy hasta tener rueda.",
+        targetSplit: "Push B",
+        estimatedDurationMin: 75,
+        exercises: [
+          { exerciseId: "lever-incline-chest-press", targetSets: 4, targetReps: "8-10", targetRir: 2, targetTempo: "3-1-1-0", restSeconds: 150 },
+          { exerciseId: "barbell-bench-press", targetSets: 3, targetReps: "8", targetRir: 2, targetTempo: "3-1-0-1", restSeconds: 180 },
+          { exerciseId: "lever-military-press", targetSets: 3, targetReps: "8-12", targetRir: 2, targetTempo: "3-1-0-1", restSeconds: 120 },
+          { exerciseId: "cable-lateral-raise", targetSets: 4, targetReps: "12-15", targetRir: 1, targetTempo: "2-0-1-1", restSeconds: 60 },
+          { exerciseId: "overhead-cable-triceps-extension", targetSets: 3, targetReps: "10-15", targetRir: 1, targetTempo: "2-1-1-1", restSeconds: 60 },
+          { exerciseId: "dragon-flag", targetSets: 3, targetReps: "8-12", targetRir: 1, targetTempo: "3-0-1-0", restSeconds: 90 },
+          { exerciseId: "cable-crunch", targetSets: 2, targetReps: "12", targetRir: 1, targetTempo: "2-1-1-1", restSeconds: 60 }
+        ]
+      },
+      {
+        id: "consenso-viernes-pull-b",
+        name: "Viernes · Pull B (Ancho)",
+        description: "Énfasis ancho: jalón neutro + pullover + posterior. Plancha lateral: usa plancha frontal como proxy por lado.",
+        targetSplit: "Pull B",
+        estimatedDurationMin: 75,
+        exercises: [
+          { exerciseId: "neutral-grip-lat-pulldown", targetSets: 4, targetReps: "10", targetRir: 2, targetTempo: "3-1-1-0", restSeconds: 120 },
+          { exerciseId: "seated-cable-row", targetSets: 3, targetReps: "10-12", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 120 },
+          { exerciseId: "cable-pullover", targetSets: 3, targetReps: "12-15", targetRir: 1, targetTempo: "3-1-1-0", restSeconds: 60 },
+          { exerciseId: "rear-delt-fly-machine", targetSets: 3, targetReps: "12-20", targetRir: 1, targetTempo: "2-0-1-1", restSeconds: 60 },
+          { exerciseId: "incline-dumbbell-curl", targetSets: 3, targetReps: "10-12", targetRir: 1, targetTempo: "2-0-1-0", restSeconds: 60 },
+          { exerciseId: "barbell-preacher-curl", targetSets: 2, targetReps: "12-15", targetRir: 1, targetTempo: "2-0-1-0", restSeconds: 60 },
+          { exerciseId: "front-plank", targetSets: 3, targetReps: "30-60s lado", targetRir: 1, targetTempo: "Sostén isométrico", restSeconds: 45 }
+        ]
+      },
+      {
+        id: "consenso-sabado-legs-b",
+        name: "Sábado · Legs B (Posterior, sin sentadilla)",
+        description: "SIN sentadilla libre: hack/prensa pies altos + búlgara + hip thrust (glúteo sin carga axial). Silla romana: sit-up como proxy.",
+        targetSplit: "Legs B",
+        estimatedDurationMin: 80,
+        exercises: [
+          { exerciseId: "hack-squat-machine", targetSets: 4, targetReps: "6-8", targetRir: 2, targetTempo: "3-1-0-1", restSeconds: 180 },
+          { exerciseId: "bulgarian-split-squat", targetSets: 2, targetReps: "8-12", targetRir: 2, targetTempo: "3-1-1-0", restSeconds: 120 },
+          { exerciseId: "barbell-hip-thrust", targetSets: 3, targetReps: "8-12", targetRir: 1, targetTempo: "2-1-1-1", restSeconds: 120 },
+          { exerciseId: "seated-leg-curl", targetSets: 3, targetReps: "10-15", targetRir: 1, targetTempo: "3-0-1-1", restSeconds: 90 },
+          { exerciseId: "seated-calf-raise", targetSets: 3, targetReps: "15", targetRir: 1, targetTempo: "3-2-1-1", restSeconds: 60 },
+          { exerciseId: "sit-up", targetSets: 3, targetReps: "10-15", targetRir: 1, targetTempo: "2-0-1-1", restSeconds: 60 }
+        ]
+      },
+      {
+        id: "consenso-domingo-activo",
+        name: "Domingo · Activo (McGill + Movilidad)",
+        description: "Caminata larga + McGill Big 3 (bird-dog=superman, plancha, curl-up) + batch cooking. Sin carga axial.",
+        targetSplit: "Activo",
+        estimatedDurationMin: 25,
+        exercises: [
+          { exerciseId: "superman-hold", targetSets: 2, targetReps: "30s", targetRir: 2, targetTempo: "Sostén isométrico", restSeconds: 45 },
+          { exerciseId: "front-plank", targetSets: 2, targetReps: "60s", targetRir: 1, targetTempo: "Sostén isométrico", restSeconds: 45 },
+          { exerciseId: "hyperextension", targetSets: 2, targetReps: "12", targetRir: 2, targetTempo: "3-0-2-0", restSeconds: 60 }
+        ]
+      }
+    ]
   }
 ];

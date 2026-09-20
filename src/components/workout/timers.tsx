@@ -3,7 +3,7 @@
 // CardioTimer (20 min) e IsometricTimer (isométricos por tiempo).
 // Ambos usan timestamp END para sobrevivir al bloqueo de pantalla.
 // =============================================================
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Play, Pause, RotateCcw, CheckCircle2 } from "lucide-react";
 import { useWorkout } from "../../context/WorkoutContext";
 import { WorkoutExercise } from "../../types";
@@ -21,25 +21,45 @@ export const CardioTimer: React.FC<{ exercise: WorkoutExercise }> = ({ exercise 
   const [endAt, setEndAt] = useState<number | null>(null);
   const { completeSetAndTriggerTimer } = useWorkout();
 
+  // El callback del contexto cambia de identidad con cada edición de la sesión:
+  // se lee por ref para que el intervalo NO se recree serie a serie (un solo
+  // setInterval por corrida) y para no depender de la identidad de `exercise`.
+  const completeRef = useRef(completeSetAndTriggerTimer);
+  useEffect(() => {
+    completeRef.current = completeSetAndTriggerTimer;
+  }, [completeSetAndTriggerTimer]);
+  const exerciseRef = useRef(exercise);
+  useEffect(() => {
+    exerciseRef.current = exercise;
+  }, [exercise]);
+
+  // El tick puede llegar a correr otra vez en left<=0 (el cleanup del intervalo
+  // se aplica recién en el commit siguiente): la serie se completa UNA vez.
+  const firedRef = useRef(false);
+
   useEffect(() => {
     if (!isRunning || endAt === null) return;
     const tick = () => {
       const left = Math.max(0, Math.ceil((endAt - Date.now()) / 1000));
       setRemaining(left);
-      if (left <= 0) {
+      if (left <= 0 && !firedRef.current) {
+        firedRef.current = true;
         setIsRunning(false);
-        completeSetAndTriggerTimer(exercise.id, exercise.sets[0]?.id);
+        const current = exerciseRef.current;
+        const firstSetId = current.sets[0]?.id;
+        if (firstSetId) completeRef.current(current.id, firstSetId);
         if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200]);
       }
     };
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [isRunning, endAt, exercise.id, exercise.sets, completeSetAndTriggerTimer]);
+  }, [isRunning, endAt, exercise.id]);
 
   const toggle = () => {
     if (!started || remaining <= 0) {
       setEndAt(Date.now() + CARDIO_SECONDS * 1000);
+      firedRef.current = false;
     } else if (isRunning) {
       setEndAt(null);
     } else {
@@ -54,6 +74,7 @@ export const CardioTimer: React.FC<{ exercise: WorkoutExercise }> = ({ exercise 
     setIsRunning(false);
     setStarted(false);
     setEndAt(null);
+    firedRef.current = false;
   };
 
   const mins = Math.floor(remaining / 60);
@@ -126,6 +147,23 @@ export const IsometricTimer: React.FC<{ exercise: WorkoutExercise }> = ({ exerci
   const [started, setStarted] = useState(false);
   const [endAt, setEndAt] = useState<number | null>(null);
 
+  // Igual que en CardioTimer: callback y serie actual se leen por ref para que
+  // el intervalo no se recree con cada edición de la sesión, y un guard evita
+  // completar la serie dos veces si el tick alcanza a repetirse.
+  const completeRef = useRef(completeSetAndTriggerTimer);
+  useEffect(() => {
+    completeRef.current = completeSetAndTriggerTimer;
+  }, [completeSetAndTriggerTimer]);
+  const setRef = useRef(currentSet);
+  useEffect(() => {
+    setRef.current = currentSet;
+  }, [currentSet]);
+  const targetRef = useRef(targetSeconds);
+  useEffect(() => {
+    targetRef.current = targetSeconds;
+  }, [targetSeconds]);
+  const firedRef = useRef(false);
+
   // Reset timer when moving to next set
   useEffect(() => {
     if (currentSet) {
@@ -133,6 +171,7 @@ export const IsometricTimer: React.FC<{ exercise: WorkoutExercise }> = ({ exerci
       setIsRunning(false);
       setStarted(false);
       setEndAt(null);
+      firedRef.current = false;
     }
   }, [currentSet?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -141,21 +180,28 @@ export const IsometricTimer: React.FC<{ exercise: WorkoutExercise }> = ({ exerci
     const tick = () => {
       const left = Math.max(0, Math.ceil((endAt - Date.now()) / 1000));
       setRemaining(left);
-      if (left <= 0) {
+      if (left <= 0 && !firedRef.current) {
+        firedRef.current = true;
         setIsRunning(false);
-        if (currentSet) completeSetAndTriggerTimer(exercise.id, currentSet.id, { durationSeconds: currentSet.durationSeconds ?? targetSeconds });
+        const target = setRef.current;
+        if (target) {
+          completeRef.current(exercise.id, target.id, {
+            durationSeconds: target.durationSeconds ?? targetRef.current,
+          });
+        }
         if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200]);
       }
     };
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [isRunning, endAt, exercise.id, currentSet, completeSetAndTriggerTimer, targetSeconds]);
+  }, [isRunning, endAt, exercise.id]);
 
   const toggle = () => {
     const dur = currentSet?.durationSeconds ?? targetSeconds;
     if (!started || remaining <= 0) {
       setEndAt(Date.now() + dur * 1000);
+      firedRef.current = false;
     } else if (isRunning) {
       setEndAt(null);
     } else {
@@ -170,6 +216,7 @@ export const IsometricTimer: React.FC<{ exercise: WorkoutExercise }> = ({ exerci
     setIsRunning(false);
     setStarted(false);
     setEndAt(null);
+    firedRef.current = false;
   };
 
   const mins = Math.floor(remaining / 60);

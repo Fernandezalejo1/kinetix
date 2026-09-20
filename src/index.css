@@ -129,6 +129,11 @@ body {
 body {
   /* Prevent accidental zoom/long-press side effects on Android webviews */
   -webkit-touch-callout: none;
+  /* Protección general de texto: una palabra larga se corta SOLO si no cabe
+     (nunca `break-all`, que parte palabras normales en cualquier letra).
+     Es la red de seguridad para cards/filas flex en 320px. */
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 
 button,
@@ -153,12 +158,11 @@ input[type="number"] {
   appearance: textfield;
 }
 
-@media (max-width: 380px) {
-  .text-responsive-xs {
-    font-size: 0.6875rem; /* 11px: suelo legible, antes 10px */
-    line-height: 0.875rem;
-  }
-}
+/* NOTA: acá vivía `.text-responsive-xs` (media query <=380px). Era CSS muerto
+   — ninguna clase la usaba — y bajaba el font-size global en pantallas chicas
+   en vez de arreglar el ancho de los contenedores. El suelo tipográfico de
+   11px y la legibilidad en 320px se resuelven con clases explícitas por
+   componente (text-[11px]) y con `min-w-0` en las filas flex. */
 
 .safe-area-top {
   padding-top: env(safe-area-inset-top, 0px);
@@ -173,7 +177,10 @@ input[type="number"] {
   min-width: 44px;
 }
 
-/* Altura de la barra de navegación inferior (md:hidden). */
+/* Alto real de la barra de navegación inferior (md:hidden): sus botones usan
+   `min-h-[56px]` + 1px de borde superior, con un pequeño margen de seguridad.
+   Lo consumen el padding inferior de <main>, el del logger en vivo y la
+   utilidad `.sticky-above-nav` (barras de acción fijas). */
 :root {
   --bottom-nav-h: 60px;
 }
@@ -277,3 +284,15 @@ input[type="number"] {
    `hover:text-white` / `group-hover:` (¡!important gana sobre el estado hover
    sin importar la especificidad!) y además arruinaba el contraste del
    reproductor de ejercicios, que dibuja esos grises sobre fondo BLANCO. */
+
+/* Training: focus and text scaling remain usable on touch screens and keyboards. */
+#live-workout-logger :is(button, input, select, summary):focus-visible {
+  outline: 2px solid #67e8f9;
+  outline-offset: 3px;
+}
+#live-workout-logger input { scroll-margin-block: 5rem; }
+#live-workout-logger [role="dialog"] { overscroll-behavior: contain; }
+
+@media (prefers-reduced-motion: reduce) {
+  #live-workout-logger { scroll-behavior: auto; }
+}

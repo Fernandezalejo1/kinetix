@@ -611,7 +611,8 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
 
       {/* Pendientes de la última sesión (ejercicios no completados) */}
       {pendingCarryover && pendingCarryover.undone.length > 0 && (
-        <div className="p-5 rounded-3xl bg-gradient-to-br from-amber-500/10 via-neutral-900 to-neutral-950 border border-amber-500/40 space-y-3">
+        <details className="p-5 rounded-3xl bg-gradient-to-br from-amber-500/10 via-neutral-900 to-neutral-950 border border-amber-500/40 space-y-3">
+          <summary className="cursor-pointer min-h-[44px] text-sm font-bold text-amber-200">Tenés ejercicios pendientes · Revisar</summary>
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-3">
               <div className="p-3 rounded-2xl bg-amber-500/15 text-amber-300 border border-amber-500/30 shrink-0">
@@ -669,7 +670,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
               </div>
             ))}
           </div>
-        </div>
+        </details>
       )}
 
       {/* IDEA 2: Deload automático por acumulación real */}
@@ -830,7 +831,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
             <h4 className="text-[13px] sm:text-sm font-bold text-white group-hover:text-amber-300 transition-colors line-clamp-2">
               Pirámide de Calentamiento
             </h4>
-            <p className="text-[11px] sm:text-[11px] text-neutral-400 line-clamp-2">Potenciación SNC sin fatiga metabólica</p>
+            <p className="text-[11px] sm:text-[11px] text-neutral-400 line-clamp-2">Prepará tus series de calentamiento</p>
           </div>
         </button>
 
@@ -845,7 +846,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
             <h4 className="text-[13px] sm:text-sm font-bold text-white group-hover:text-purple-300 transition-colors line-clamp-2">
               Metrónomo de Tempo
             </h4>
-            <p className="text-[11px] sm:text-[11px] text-neutral-400 line-clamp-2">Control excéntrico de tensión mecánica</p>
+            <p className="text-[11px] sm:text-[11px] text-neutral-400 line-clamp-2">Marcá el ritmo de tus repeticiones</p>
           </div>
         </button>
 
@@ -861,7 +862,7 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
             <h4 className="text-[13px] sm:text-sm font-bold text-white group-hover:text-emerald-300 transition-colors line-clamp-2">
               Importar Sesión
             </h4>
-            <p className="text-[11px] sm:text-[11px] text-neutral-400 line-clamp-2">Carga sesiones reales previas (SBS v28)</p>
+            <p className="text-[11px] sm:text-[11px] text-neutral-400 line-clamp-2">Agregá un entrenamiento anterior</p>
           </div>
         </button>
       </div>
@@ -929,14 +930,6 @@ export const WorkoutHub: React.FC<WorkoutHubProps> = ({
             <p className="text-xs text-neutral-400">{workoutHistory.length} sesiones registradas</p>
           </div>
           <div className="flex items-center gap-1.5 sm:gap-2">
-            {activeSession && (
-              <button
-                onClick={() => setConfirmAction({ type: "ghost" })}
-                className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-amber-950/40 hover:bg-amber-900/60 text-amber-300 text-[11px] sm:text-[11px] font-bold border border-amber-500/30 transition-all touch-target press-scale"
-              >
-                Limpiar activa
-              </button>
-            )}
             {workoutHistory.length > 0 && (
               <button
                 onClick={() => setConfirmAction({ type: "clearAll" })}

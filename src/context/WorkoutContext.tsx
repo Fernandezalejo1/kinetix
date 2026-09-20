@@ -1,3 +1,4 @@
+import { replacePendingExercise } from "../utils/workoutEditing";
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, ReactNode } from "react";
 import {
   ActiveWorkoutSession,
@@ -115,7 +116,7 @@ interface WorkoutContextType {
   completeSetAndTriggerTimer: (workoutExerciseId: string, setId: string, opts?: { durationSeconds?: number }) => void;
   recordExerciseDifficulty: (workoutExerciseId: string, difficulty: DifficultyLevel) => void;
   /** P2: acepta el sRPE sesión (Foster 1-10) y guarda carga interna. */
-  finishWorkout: (srpe?: number, partialReason?: string) => { prsAchieved: PersonalRecord[]; totalVolumeKg: number };
+  finishWorkout: (srpe?: number, partialReason?: string, durationOverride?: number) => { prsAchieved: PersonalRecord[]; totalVolumeKg: number; completed?: CompletedWorkout };
   cancelWorkout: () => void;
   startRestTimer: (seconds: number, exerciseName?: string) => void;
   stopRestTimer: () => void;
@@ -306,13 +307,19 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [selectedExerciseForDetail, setSelectedExerciseForDetail] = useState<Exercise | null>(null);
   const [isWorkoutModalOpen, setIsWorkoutModalOpen] = useState(false);
 
-  // Sync to LocalStorage
+  // Persist immediately after edits and again before the OS backgrounds the app.
   useEffect(() => {
-    if (activeSession) {
-      safeSet("kinetix_active_workout", activeSession);
-    } else {
-      safeRemove("kinetix_active_workout");
-    }
+    const persist = () => {
+      if (activeSession) safeSet("kinetix_active_workout", activeSession);
+      else safeRemove("kinetix_active_workout");
+    };
+    persist();
+    window.addEventListener("pagehide", persist);
+    document.addEventListener("visibilitychange", persist);
+    return () => {
+      window.removeEventListener("pagehide", persist);
+      document.removeEventListener("visibilitychange", persist);
+    };
   }, [activeSession]);
 
   useEffect(() => {
@@ -478,7 +485,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
 
         // Medicine ball = 3kg default; legs = 80kg; else = 40kg
         const isMedicineBall = item.exerciseId === "medicine-ball-slam";
-        const defaultWeight = isMedicineBall ? 3 : (exDef.category === "legs" ? 80 : 40);
+        const defaultWeight = isMedicineBall ? 3 : 0;
         // Peso inicial inteligente vía motor unificado (P1: score engine +
         // fallback e1RM/genérico) o cae a estimación e1RM / genérico.
         let prevWeight = isTime ? 0 : resolveStartingWeight(
@@ -619,7 +626,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     // Peso inicial inteligente vía motor unificado (P1).
     const isMedicineBall = exercise.id === "medicine-ball-slam";
-    const defaultWeight = isMedicineBall ? 3 : (exercise.category === "legs" ? 80 : 40);
+    const defaultWeight = isMedicineBall ? 3 : 0;
     const prevWeight = resolveStartingWeight(
       exercise,
       lastHistory?.targetReps,
@@ -706,7 +713,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
         .filter((h) => h.exerciseId === exercise.id)
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
       const isMedicineBallCarry = exercise.id === "medicine-ball-slam";
-      const defaultCarryWeight = isMedicineBallCarry ? 3 : exercise.category === "legs" ? 80 : 40;
+      const defaultCarryWeight = isMedicineBallCarry ? 3 : 0;
       const prevWeight = resolveStartingWeight(
         exercise,
         pending?.targetReps,
@@ -789,21 +796,11 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
         if (!prev) return prev;
         return {
           ...prev,
-          exercises: prev.exercises.map((wEx) => {
-            if (wEx.id === workoutExerciseId) {
-              return {
-                ...wEx,
-                exerciseId: newExercise.id,
-                exercise: newExercise,
-                sets: wEx.sets.map((s) => ({ ...s, tempo: newExercise.defaultTempo })),
-              };
-            }
-            return wEx;
-          }),
+          exercises: replacePendingExercise(prev.exercises, workoutExerciseId, newExercise, exerciseHistory),
         };
       });
     },
-    []
+    [exerciseHistory]
   );
 
   const updateSet = useCallback(
@@ -875,41 +872,56 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const completeSetAndTriggerTimer = useCallback(
     (workoutExerciseId: string, setId: string, opts?: { durationSeconds?: number }) => {
+      // El updater queda PURO (React puede invocarlo dos veces en StrictMode):
+      // el toggle es lo único que cambia estado y el descanso se dispara acá
+      // afuera, leyendo la sesión YA confirmada. Antes `startRestTimer` vivía
+      // dentro del updater (efecto secundario dentro de setState).
+      const wEx = activeSession?.exercises.find((e) => e.id === workoutExerciseId);
+      const targetSet = wEx?.sets.find((s) => s.id === setId);
+      const willBeCompleted = targetSet ? !targetSet.completed : false;
+
       setActiveSession((prev) => {
         if (!prev) return prev;
-        let restTarget = 90;
-        let exName = "";
-
-        const nextExercises = prev.exercises.map((wEx) => {
-          if (wEx.id === workoutExerciseId) {
-            restTarget = wEx.targetRestSeconds || 90;
-            exName = wEx.exercise.nameEs || wEx.exercise.name;
+        return {
+          ...prev,
+          exercises: prev.exercises.map((wEx) => {
+            if (wEx.id !== workoutExerciseId) return wEx;
             return {
               ...wEx,
               sets: wEx.sets.map((s) => {
-                if (s.id === setId) {
-                  const isNowCompleted = !s.completed;
-                  if (isNowCompleted && autoStartTimer) {
-                    startRestTimer(restTarget, exName);
-                  }
-                  return {
-                    ...s,
-                    completed: isNowCompleted,
-                    completedAt: isNowCompleted ? Date.now() : undefined,
-                    durationSeconds: opts?.durationSeconds ?? s.durationSeconds,
-                  };
-                }
-                return s;
+                if (s.id !== setId) return s;
+                const isNowCompleted = !s.completed;
+                return {
+                  ...s,
+                  completed: isNowCompleted,
+                  completedAt: isNowCompleted ? Date.now() : undefined,
+                  durationSeconds: opts?.durationSeconds ?? s.durationSeconds,
+                };
               }),
             };
-          }
-          return wEx;
-        });
-
-        return { ...prev, exercises: nextExercises };
+          }),
+        };
       });
+
+      if (!activeSession || !willBeCompleted) return;
+      // La última serie de la SESIÓN no abre descanso: el trabajo terminó, así
+      // que la transición es al resumen (el logger muestra "Sesión completada")
+      // y no una pausa más entre series. Si queda trabajo pendiente (en este
+      // ejercicio o en otro), el descanso arranca normal.
+      const sessionHasPendingWork = activeSession.exercises.some((ex) =>
+        ex.sets.some((s) => !s.completed && s.id !== setId)
+      );
+      // Solo hay descanso cuando la serie PASA a completada. Des-completar una
+      // serie no toca el descanso en curso (mismo comportamiento de siempre).
+      if (!sessionHasPendingWork) stopRestTimer();
+      if (autoStartTimer && sessionHasPendingWork) {
+        startRestTimer(
+          wEx?.targetRestSeconds || 90,
+          wEx?.exercise.nameEs || wEx?.exercise.name || ""
+        );
+      }
     },
-    [autoStartTimer, startRestTimer]
+    [activeSession, autoStartTimer, startRestTimer, stopRestTimer]
   );
 
   const recordExerciseDifficulty = useCallback((workoutExerciseId: string, difficulty: DifficultyLevel) => {
@@ -938,10 +950,10 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
     });
   }, []);
 
-  const finishWorkout = useCallback((srpe?: number, partialReason?: string) => {
+  const finishWorkout = useCallback((srpe?: number, partialReason?: string, durationOverride?: number) => {
     if (!activeSession) return { prsAchieved: [], totalVolumeKg: 0 };
 
-    const durationSeconds = Math.max(60, Math.floor((Date.now() - activeSession.startTime) / 1000));
+    const durationSeconds = durationOverride != null && Number.isFinite(durationOverride) ? Math.min(86400, Math.max(60, Math.round(durationOverride))) : Math.max(60, Math.floor((Date.now() - activeSession.startTime) / 1000));
     let totalVolumeKg = 0;
     let totalSeconds = 0;
     let totalSets = 0;
@@ -1095,7 +1107,7 @@ export const WorkoutProvider: React.FC<{ children: ReactNode }> = ({ children })
     setIsWorkoutModalOpen(false);
     stopRestTimer();
 
-    return { prsAchieved: newPrs, totalVolumeKg };
+    return { prsAchieved: newPrs, totalVolumeKg, completed };
   }, [activeSession, personalRecords, workoutHistory, stopRestTimer, appendPrHistory]);
 
   const cancelWorkout = useCallback(() => {

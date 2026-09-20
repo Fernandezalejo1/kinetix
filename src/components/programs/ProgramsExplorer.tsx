@@ -22,6 +22,7 @@ import { adaptRoutineToEquipment } from "../../utils/equipmentAdapter";
 import { applyDupDay } from "../../utils/dup";
 import { injectedCardioCount } from "../../utils/sessionPreview";
 import { CardioToggle } from "../workout/CardioToggle";
+import { ExerciseInlineVisual } from "../workout/ExerciseInlineVisual";
 
 const EQUIPMENT_LEVEL_LABEL: Record<string, string> = {
   home: "Casa (peso corporal)",
@@ -57,6 +58,8 @@ export const ProgramsExplorer: React.FC = () => {
   const [editingRoutine, setEditingRoutine] = useState<CustomRoutine | undefined>(undefined);
   const [activeTab, setActiveTab] = useState<"programs" | "custom">("programs");
   const [routineToDelete, setRoutineToDelete] = useState<CustomRoutine | null>(null);
+  // Vista previa directa estilo referencia: qué ejercicio muestra su video sin abrir ficha.
+  const [previewExId, setPreviewExId] = useState<string | null>(null);
 
   // PDF: la lista muestra SIEMPRE la rutina adaptada al equipamiento vigente
   // (override de hoy → perfil → gym). Si hoy entrenás en casa, verás los
@@ -347,12 +350,28 @@ export const ProgramsExplorer: React.FC = () => {
               return (
                 <div
                   key={idx}
-                  className="p-4 sm:p-5 rounded-2xl bg-neutral-950 border border-neutral-800 hover:border-neutral-700 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                  className="p-4 sm:p-5 rounded-2xl bg-neutral-950 border border-neutral-800 hover:border-neutral-700 transition-all flex flex-col gap-3"
                 >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-start gap-3 min-w-0">
-                    <span className="w-8 h-8 rounded-xl bg-neutral-900 text-neutral-300 font-black text-[13px] flex items-center justify-center border border-neutral-800 shrink-0">
-                      {idx + 1}
-                    </span>
+                    {/* Miniatura circular estilo referencia (poster del video real) */}
+                    <button
+                      type="button"
+                      onClick={() => setPreviewExId(previewExId === `${ex.id}-${idx}` ? null : `${ex.id}-${idx}`)}
+                      aria-expanded={previewExId === `${ex.id}-${idx}`}
+                      aria-label={`Ver demostración de ${ex.nameEs}`}
+                      title={ex.nameEs}
+                      className="relative w-14 h-14 rounded-full overflow-hidden bg-neutral-800 border border-neutral-700 shrink-0"
+                    >
+                      {ex.videoPosterUrl ? (
+                        <img src={ex.videoPosterUrl} alt="" loading="lazy" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="w-full h-full flex items-center justify-center text-sm font-black text-neutral-300">{idx + 1}</span>
+                      )}
+                      <span className="absolute inset-0 flex items-center justify-center bg-black/25">
+                        <Play className="w-4 h-4 text-white fill-white/80" />
+                      </span>
+                    </button>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                         <h4 className="text-[15px] font-bold text-white leading-tight">{ex.nameEs}</h4>
@@ -364,7 +383,7 @@ export const ProgramsExplorer: React.FC = () => {
                         </span>
                       </div>
                       <p className="text-[13px] text-neutral-300 leading-snug">
-                        {primaryStr}
+                        {re.targetSets} series × {re.targetReps} · {primaryStr}
                       </p>
                       <p className="text-[13px] text-neutral-400 flex items-center gap-1.5 mt-1">
                         <span className="text-cyan-400">⏱</span> Tempo: <strong className="text-white font-mono text-[13px]">{re.targetTempo}</strong>
@@ -386,6 +405,18 @@ export const ProgramsExplorer: React.FC = () => {
                       <Info className="w-4 h-4" />
                     </button>
                   </div>
+                  </div>
+
+                  {/* Vista previa directa: video sin abrir ficha */}
+                  {previewExId === `${ex.id}-${idx}` && (
+                    <div className="animate-fadeIn">
+                      <ExerciseInlineVisual
+                        exercise={ex}
+                        compact
+                        onTutorial={() => setSelectedExerciseForDetail(ex)}
+                      />
+                    </div>
+                  )}
                 </div>
               );
             })}

@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { PersonalRecord, CompletedWorkout } from "../../types";
 import { resolveNextWeightFromHistory } from "../../utils/progressionEngine";
+import { isTimeBased } from "../../utils/exerciseMode";
+import { formatDuration } from "../../utils/duration";
 import { useWorkout } from "../../context/WorkoutContext";
 import { FocusTrap } from "../FocusTrap";
 import { useBackHandler } from "../../context/BackNavContext";
@@ -48,6 +50,39 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
     maximumFractionDigits: 1,
   });
 
+  // El total de series incluye calentamiento, cardio y series por tiempo: acá
+  // se muestra el desglose para que "series registradas" no se lea como
+  // volumen efectivo de trabajo.
+  const breakdown = workout.exercises.reduce(
+    (acc, wEx) => {
+      const cardio = Boolean(wEx.notes?.startsWith("cardio:"));
+      const timed = cardio || isTimeBased(wEx.exercise, wEx.targetReps);
+      wEx.sets.forEach((s) => {
+        if (!s.completed) return;
+        if (cardio) {
+          acc.cardio += 1;
+          acc.cardioSeconds += s.durationSeconds ?? 0;
+        } else if (s.type === "warmup") {
+          acc.warmup += 1;
+        } else if (timed) {
+          acc.timed += 1;
+        } else {
+          acc.work += 1;
+        }
+      });
+      return acc;
+    },
+    { work: 0, warmup: 0, cardio: 0, timed: 0, cardioSeconds: 0 }
+  );
+  const breakdownParts = [
+    breakdown.work > 0 ? `${breakdown.work} de trabajo` : null,
+    breakdown.warmup > 0 ? `${breakdown.warmup} de calentamiento` : null,
+    breakdown.timed > 0 ? `${breakdown.timed} por tiempo` : null,
+    breakdown.cardio > 0
+      ? `${breakdown.cardio} de cardio${breakdown.cardioSeconds > 0 ? ` (${formatDuration(breakdown.cardioSeconds)})` : ""}`
+      : null,
+  ].filter(Boolean) as string[];
+
   // Recomendaciones de carga para la próxima sesión por ejercicio completado
   const recommendations = workout.exercises
     .filter((wEx) => wEx.targetReps && wEx.exercise)
@@ -68,7 +103,7 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
   const generateShareText = () => {
     let text = `⚡ KINETIX — ${workout.routineName}\n`;
     text += `⏱️ Duración: ${durationMin} min | 🏋️ Volumen: ${formattedVolume} ${weightUnit}\n`;
-    text += `🔥 Series efectivas: ${workout.totalSets}`;
+    text += `🔥 Series registradas: ${workout.totalSets}`;
     if (workout.averageRir !== null) {
       text += ` | RIR prom: ${workout.averageRir}`;
     }
@@ -171,7 +206,7 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
                 {workout.totalSets}
               </div>
               <div className="text-[11px] text-neutral-400 font-medium uppercase mt-0.5">
-                efectivas
+                registradas
               </div>
             </div>
 
@@ -188,6 +223,12 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
               </div>
             </div>
           </div>
+
+          {breakdownParts.length > 0 && (
+            <p className="text-[11px] text-neutral-400 leading-snug">
+              De las {workout.totalSets} series registradas: {breakdownParts.join(" · ")}.
+            </p>
+          )}
 
           {/* P2: sRPE + carga interna (Foster) */}
           {workout.srpe != null && (
@@ -314,7 +355,7 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
             </div>
             <p className="text-xs text-neutral-300 font-mono bg-neutral-900 p-3 rounded-xl border border-neutral-800 leading-relaxed">
               ⚡ Entrené {workout.routineName} en KINETIX.<br />
-              🏋️ {formattedVolume} {weightUnit} levantados en {durationMin} min con {workout.totalSets} series efectivas.
+              🏋️ {formattedVolume} {weightUnit} levantados en {durationMin} min con {workout.totalSets} series registradas.
               {prs.length > 0 ? ` 🏆 ${prs.length} PR(s) alcanzados.` : ""}
             </p>
           </div>

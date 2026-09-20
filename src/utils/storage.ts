@@ -869,6 +869,21 @@ const isTimestampEntry = (v: unknown): boolean => {
   return isDateStamp(o.date) || isNonNegativeNum(o.timestamp) || isId(o.id);
 };
 
+/**
+ * Snapshot del temporizador de descanso (clave efímera `kinetix_rest_timer`).
+ * Solo se guarda lo necesario para reconstruirlo por TIMESTAMP tras un reload
+ * (`endAt`), nunca el contador restante: el restante se recalcula al hidratar.
+ */
+export const isRestTimerSnapshot = (v: unknown): boolean => {
+  if (!isPlainObject(v)) return false;
+  const o = v as Record<string, unknown>;
+  return (
+    isNonNegativeNum(o.endAt) &&
+    isNonNegativeNum(o.totalSeconds) &&
+    (o.exerciseName === undefined || typeof o.exerciseName === "string")
+  );
+};
+
 /** Nombres de medidas corporales definidos por el usuario (sin hardcodear). */
 const isMeasurementNames = (v: unknown): boolean =>
   Array.isArray(v) &&
@@ -893,6 +908,7 @@ const sanitizeMeasurementNames = (v: unknown): string[] | undefined => {
  *  superficial: una lista de objetos corruptos se rechaza completa. */
 export const VALIDATORS: Record<string, (v: unknown) => boolean> = {
   kinetix_active_workout: isPlainObject,
+  kinetix_rest_timer: isRestTimerSnapshot,
   kinetix_workout_history: isArrayOf(isCompletedWorkout),
   kinetix_exercise_history: isArrayOf(isExerciseHistoryEntry),
   kinetix_body_metrics: isArrayOf(isBodyMetric),
