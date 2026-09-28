@@ -8,6 +8,11 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    # La app trabaja con días LOCALES (localDateKey). Un runner corre en UTC, donde
+    # no existe desfase con la hora local y las pruebas de fecha cerca de medianoche
+    # no ejercitan el caso real. Fijamos la zona del autor para que sí lo hagan.
+    env:
+      TZ: America/Montevideo
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4

@@ -9,13 +9,19 @@ describe("localDateKey", () => {
   });
 
   it("NO se desfasa a UTC cerca de medianoche (día local, no UTC)", () => {
-    // 2026-09-07 23:30 en UTC-3 son 2026-09-08 02:30 UTC; toISOString diría "08".
-    const d = new Date(Date.UTC(2026, 8, 8, 2, 30)); // = 7 sep 23:30 en UTC-3
-    const expectedLocalDay = new Date(d.getTime() - d.getTimezoneOffset() * 60000)
-      .toISOString()
-      .slice(0, 10);
-    expect(localDateKey(d)).toBe(expectedLocalDay);
-    expect(localDateKey(d)).not.toBe(d.toISOString().slice(0, 10));
+    // 23:30 hora LOCAL, construido con componentes locales: el día local es
+    // 2026-09-07 por construcción, sin depender de la zona del runner.
+    const d = new Date(2026, 8, 7, 23, 30);
+    expect(localDateKey(d)).toBe("2026-09-07");
+
+    // Al oeste de UTC (como UTC-3) ese mismo instante ya cae en el día 08 en UTC.
+    // Cuando la zona del runner produce ese desfase, comprobamos explícitamente
+    // que NO se usa la fecha UTC. En un runner que corre en UTC el desfase no
+    // existe y la comprobación no aplica (antes fallaba justo por eso).
+    const utcDay = d.toISOString().slice(0, 10);
+    if (utcDay !== "2026-09-07") {
+      expect(localDateKey(d)).not.toBe(utcDay);
+    }
   });
 
   it("localDateKeyOfDaysAgo resta días", () => {

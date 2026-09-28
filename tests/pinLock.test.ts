@@ -41,7 +41,9 @@ describe("pinLock — validación y hash local", () => {
     const raw = localStorage.getItem("kinetix_pin_hash") ?? "{}";
     const rec = JSON.parse(raw);
     expect(typeof rec.hash).toBe("string");
-    expect(rec.hash).not.toContain("1234");
+    // El hash es hex de 64 caracteres: "1234" puede aparecer por azar (aprox.
+    // 1 de cada 1074 corridas). Comparar valores completos es determinista.
+    expect(Object.values(rec)).not.toContain("1234");
     expect(rec.hash).toMatch(/^[0-9a-f]{64}$/);
   });
 

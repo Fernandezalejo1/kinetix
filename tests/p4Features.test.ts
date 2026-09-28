@@ -149,7 +149,11 @@ describe("P4: vault de cifrado en reposo", () => {
     // En reposo: ciphertext ilegible, parse a fallback, sin borrado.
     const raw = localStorage.getItem("kinetix_workout_history");
     expect(isVaultCiphertext(raw)).toBe(true);
-    expect(raw).not.toContain("w1");
+    // El sobre cifrado guarda campos base64, y el alfabeto base64 no incluye
+    // { " : [ ] , asi que comprobar la estructura JSON es determinista. Antes
+    // se buscaba "w1", que puede aparecer por azar dentro del base64 (aprox. 1
+    // cada 4096 caracteres) y volvia el test flaky.
+    expect(raw).not.toContain('{"id":"w1"}');
     expect(safeParse("kinetix_workout_history", "FB")).toBe("FB");
     expect(localStorage.getItem("kinetix_workout_history")).not.toBeNull();
   });
