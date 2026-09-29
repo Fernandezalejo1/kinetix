@@ -1,5 +1,7 @@
 # ⚡ KINETIX — Science-Based Hypertrophy & Strength Engine
 
+[![CI](https://github.com/Fernandezalejo1/kinetix/actions/workflows/ci.yml/badge.svg)](https://github.com/Fernandezalejo1/kinetix/actions/workflows/ci.yml)
+
 > Entrenamiento de hipertrofia y fuerza basado en evidencia científica, con **analytics avanzados de volumen (MEV/MAV/MRV)**, calculadora de 1RM, programa de nutrición adaptativo, **Health Connect**, **reto de 21 días**, doble progresión automática y soporte **PWA + APK Android**.
 >
 > **Sin APIs externas, sin claves, 100% offline en tu dispositivo.**
